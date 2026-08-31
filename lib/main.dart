@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/user/login/login_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
+import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
+import 'package:maribel_wellness_centre_application/core/constants/app_routes.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
+import 'package:sizer/sizer.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   runApp(const MyApp());
 }
 
@@ -10,14 +19,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Maribel Wellness Centre',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const UserLoginScreen(),
+    return Sizer(
+      builder: (context, orientation, screenType) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Maribel Wellness Centre',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFA28CC1),
+            ),
+            useMaterial3: true,
+          ),
+          initialRoute: AppRoutes.splash,
+          routes: {
+            AppRoutes.splash: (_) => const SplashScreen(),
+            AppRoutes.login: (_) => const LoginScreen(),
+            AppRoutes.userMain: (_) => const UserMainScreen(),
+          },
+        );
+      },
     );
   }
 }
