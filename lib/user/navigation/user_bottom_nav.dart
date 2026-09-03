@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
@@ -19,8 +20,8 @@ class UserBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const Color _activeColor = Color(0xFFA28CC1);
-  static const Color _inactiveColor = Color(0xFF888888);
+  static const Color _activeColor = AppColors.accent;
+  static const Color _inactiveColor = AppColors.textMuted;
 
   @override
   Widget build(BuildContext context) {

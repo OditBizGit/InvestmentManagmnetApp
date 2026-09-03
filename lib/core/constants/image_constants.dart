@@ -15,6 +15,9 @@ class ImageConstants {
   static const String print = '$_svgPath/print.svg';
   static const String mobile = '$_svgPath/mobile.svg';
   static const String idNumber = '$_svgPath/id_number.svg';
+  // Placeholder icons for login fields — swap when dedicated assets are added.
+  static const String username = '$_svgPath/profile.svg';
+  static const String password = '$_svgPath/id_number.svg';
 
   static const String logo = '$_logoPath/Maribel logo WELLNESS CENTRE.png';
   static const String splashGif = '$_gifPath/splash_logo.gif';

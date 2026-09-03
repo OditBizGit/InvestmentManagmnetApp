@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
-import 'package:maribel_wellness_centre_application/core/constants/app_routes.dart';
+import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
+import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
@@ -13,10 +14,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  static const Color _bg = Colors.white;
-  static const Color _accent = Color(0xFFA28CC1);
-  static const Color _textPrimary = Color(0xFF3D3D3D);
-
   static const Duration _textAnimDuration = Duration(milliseconds: 1400);
   static const Duration _delayBeforeNavigate = Duration(seconds: 1);
 
@@ -82,7 +79,9 @@ class _SplashScreenState extends State<SplashScreen>
     await Future<void>.delayed(_delayBeforeNavigate);
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacementNamed(AppRoutes.userMain);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
@@ -94,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Stack(
           children: [
@@ -126,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
                           style: TextStyle(
                             fontSize: 28.sp,
                             fontWeight: FontWeight.w700,
-                            color: _accent,
+                            color: AppColors.accent,
                             letterSpacing: 0.8,
                             height: 1.1,
                           ),
@@ -138,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
-                            color: _textPrimary,
+                            color: AppColors.textPrimary,
                             letterSpacing: 1.4,
                           ),
                         ),
