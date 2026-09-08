@@ -6,7 +6,13 @@ import 'package:maribel_wellness_centre_application/core/constants/image_constan
 import 'package:sizer/sizer.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({
+    super.key,
+    required this.homeAfterLogin,
+  });
+
+  /// Destination after a successful login (Admin or User shell).
+  final Widget homeAfterLogin;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -80,7 +86,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => LoginScreen(home: widget.homeAfterLogin),
+      ),
     );
   }
 

@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:maribel_wellness_centre_application/admin/navigation/admin_main_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:sizer/sizer.dart';
+
+/// `true` → Admin interface · `false` → User interface
+const bool isAdmin = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  if (!isAdmin) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+  }
   runApp(const MyApp());
 }
 
@@ -21,12 +28,15 @@ class MyApp extends StatelessWidget {
       builder: (context, orientation, screenType) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Maribel Wellness Centre',
+          title: isAdmin ? 'Maribel Admin' : 'Maribel Wellness Centre',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: AppColors.accent),
             useMaterial3: true,
           ),
-          home: const SplashScreen(),
+          home: SplashScreen(
+            homeAfterLogin:
+                isAdmin ? const AdminMainScreen() : const UserMainScreen(),
+          ),
         );
       },
     );
