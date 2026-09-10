@@ -21,4 +21,12 @@ class ImageConstants {
 
   static const String logo = '$_logoPath/Maribel logo WELLNESS CENTRE.png';
   static const String splashGif = '$_gifPath/splash_logo.gif';
+
+
+   /// admin web logos
+  static const String dashboard = '$_svgPath/dashboard.svg';
+  static const String investors = '$_svgPath/investors.svg';
+  static const String photosVideos = '$_svgPath/photos_videos.svg';
+  static const String reports = '$_svgPath/reports.svg';
+  static const String workProgress = '$_svgPath/work_progress.svg';
 }

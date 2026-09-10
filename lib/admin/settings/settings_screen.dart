@@ -5,10 +5,8 @@ class AdminSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Admin Settings'),
-      ),
+    return const Center(
+      child: Text('Settings'),
     );
   }
 }
