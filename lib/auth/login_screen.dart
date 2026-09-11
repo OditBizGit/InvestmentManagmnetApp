@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/auth/admin_web_login_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
@@ -12,6 +13,9 @@ class LoginScreen extends StatefulWidget {
 
   /// Shell opened after login (Admin or User), set from [main.dart].
   final Widget home;
+
+  /// Below this width the mobile login UI is shown; at/above it, web login.
+  static const double webBreakpoint = 900;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -39,6 +43,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= LoginScreen.webBreakpoint) {
+          return AdminWebLoginScreen(home: widget.home);
+        }
+        return _buildMobileLogin();
+      },
+    );
+  }
+
+  Widget _buildMobileLogin() {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -248,4 +263,3 @@ class _LoginTextField extends StatelessWidget {
     );
   }
 }
-
