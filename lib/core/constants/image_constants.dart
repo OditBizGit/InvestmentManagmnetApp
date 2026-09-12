@@ -43,4 +43,6 @@ class ImageConstants {
   static const String uploadVideo = '$_svgPath/upload_video.svg';
   static const String createUpdates = '$_svgPath/create_updates.svg';
   static const String notificationBell = '$_svgPath/notification_bell.svg';
+  static const String camera = '$_svgPath/camera.svg';
+  static const String calender = '$_svgPath/calender.svg';
 }
