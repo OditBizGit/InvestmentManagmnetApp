@@ -22,16 +22,28 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static const String fontFamily = 'Montserrat';
+
   @override
   Widget build(BuildContext context) {
+    final baseTextTheme = ThemeData.light().textTheme.apply(
+      fontFamily: fontFamily,
+    );
+    final basePrimaryTextTheme = ThemeData.light().primaryTextTheme.apply(
+      fontFamily: fontFamily,
+    );
+
     return Sizer(
       builder: (context, orientation, screenType) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: isAdmin ? 'Maribel Admin' : 'Maribel Wellness Centre',
           theme: ThemeData(
+            fontFamily: fontFamily,
             colorScheme: ColorScheme.fromSeed(seedColor: AppColors.accent),
             useMaterial3: true,
+            textTheme: baseTextTheme,
+            primaryTextTheme: basePrimaryTextTheme,
           ),
           home: SplashScreen(
             homeAfterLogin:
