@@ -376,24 +376,6 @@ class _QuickActionsCard extends StatelessWidget {
       destination: AdminDrawerItem.fundingPayments,
     ),
     _QuickActionItem(
-      label: 'Upload Photo',
-      icon: ImageConstants.uploadPhoto,
-      color: AppColors.textMuted,
-      destination: AdminDrawerItem.photosVideos,
-    ),
-    _QuickActionItem(
-      label: 'Upload Video',
-      icon: ImageConstants.uploadVideo,
-      color: AppColors.textMuted,
-      destination: AdminDrawerItem.photosVideos,
-    ),
-    _QuickActionItem(
-      label: 'Create Updates',
-      icon: ImageConstants.createUpdates,
-      color: AppColors.textMuted,
-      destination: AdminDrawerItem.updatesStatus,
-    ),
-    _QuickActionItem(
       label: 'Sent Notification',
       icon: ImageConstants.notification,
       color: AppColors.textMuted,
@@ -407,22 +389,21 @@ class _QuickActionsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(title: 'Quick Actions'),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              for (var i = 0; i < 3; i++) ...[
-                if (i > 0) const SizedBox(width: 12),
-                Expanded(child: _QuickActionTile(item: _actions[i])),
-              ],
-            ],
+          const _SectionHeader(
+            title: 'Quick Actions',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+
+          // First row
           Row(
             children: [
-              for (var i = 3; i < 6; i++) ...[
-                if (i > 3) const SizedBox(width: 12),
-                Expanded(child: _QuickActionTile(item: _actions[i])),
+              for (var i = 0; i < _actions.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(
+                  child: _QuickActionTile(
+                    item: _actions[i],
+                  ),
+                ),
               ],
             ],
           ),
@@ -431,7 +412,6 @@ class _QuickActionsCard extends StatelessWidget {
     );
   }
 }
-
 class _QuickActionItem {
   const _QuickActionItem({
     required this.label,
@@ -453,8 +433,8 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
+    return SizedBox(
+      height: 100,
       child: Material(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),

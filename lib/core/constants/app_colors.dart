@@ -15,4 +15,6 @@ class AppColors {
   static const Color screenBg = Color(0xFFF7F6F9);
   static const Color green = Color(0xFF1BA752);
   static const Color error = Colors.redAccent;
+  static const Color newBorder = Color(0x1A727475);
+  static const Color successBg = Color(0xFFA28CC1);
 }

@@ -1,13 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/admin/funding/funding_payments_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/investors_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
-import 'package:maribel_wellness_centre_application/admin/photos_videos/photos_videos_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/reports_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/settings_screen.dart';
-import 'package:maribel_wellness_centre_application/admin/updates/updates_status_screen.dart';
-import 'package:maribel_wellness_centre_application/admin/users/users_screen.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_footer.dart';
 import 'package:maribel_wellness_centre_application/core/utils/logout_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/work_progress_screen.dart';
@@ -16,6 +12,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:sizer/sizer.dart';
 
 import '../dashboard/dashboard_screen.dart';
+import '../funding&payments/funding_payments_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -40,11 +37,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     AdminDrawerItem.investors: 'Investors',
     AdminDrawerItem.fundingPayments: 'Funding & Payments',
     AdminDrawerItem.workProgress: 'Work Progress',
-    AdminDrawerItem.photosVideos: 'Photos & Videos',
-    AdminDrawerItem.updatesStatus: 'Updates / Status',
     AdminDrawerItem.reports: 'Reports',
     AdminDrawerItem.settings: 'Settings',
-    AdminDrawerItem.adminUsers: 'Admin Users',
   };
 
   static const Map<AdminDrawerItem, Widget> _screens = {
@@ -52,11 +46,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     AdminDrawerItem.investors: AdminInvestorsScreen(),
     AdminDrawerItem.fundingPayments: AdminFundingPaymentsScreen(),
     AdminDrawerItem.workProgress: AdminWorkProgressScreen(),
-    AdminDrawerItem.photosVideos: AdminPhotosVideosScreen(),
-    AdminDrawerItem.updatesStatus: AdminUpdatesStatusScreen(),
     AdminDrawerItem.reports: AdminReportsScreen(),
     AdminDrawerItem.settings: AdminSettingsScreen(),
-    AdminDrawerItem.adminUsers: AdminUsersScreen(),
   };
 
   void _onSelect(AdminDrawerItem item) {
@@ -121,7 +112,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (_selectedItem != AdminDrawerItem.dashboard &&
-                            _selectedItem != AdminDrawerItem.investors)
+                            _selectedItem != AdminDrawerItem.investors &&
+                            _selectedItem != AdminDrawerItem.fundingPayments)
                           Container(
                             height: 56,
                             alignment: Alignment.centerLeft,
@@ -136,7 +128,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                               ),
                             ),
                             child: Text(
-                              _titles[_selectedItem]!,
+                              _titles[_selectedItem] ?? '',
                               style: TextStyle(
                                 fontSize: 15.sp,
                                 fontWeight: FontWeight.w600,
@@ -148,7 +140,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                           child: IndexedStack(
                             index: _selectedItem.index,
                             children: AdminDrawerItem.values
-                                .map((item) => _screens[item]!)
+                                .map((item) => _screens[item])
+                                .whereType<Widget>()
                                 .toList(growable: false),
                           ),
                         ),

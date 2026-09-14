@@ -4,42 +4,42 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
-class InvestorsOverviewSection extends StatelessWidget {
-  const InvestorsOverviewSection({
+class FundingOverviewSection extends StatelessWidget {
+  const FundingOverviewSection({
     super.key,
-    this.onAddInvestor,
+    this.onAddFunding,
   });
 
-  final VoidCallback? onAddInvestor;
+  final VoidCallback? onAddFunding;
 
   static const List<_StatCardData> _stats = [
     _StatCardData(
-      label: 'Total Investors',
-      value: '125',
-      icon: ImageConstants.totalInvestors,
+      label: 'Total Funding',
+      value: '₹65,50,00,000',
+      icon: ImageConstants.totalFunding,
       iconColor: Color(0xFF9B7EBF),
       iconBg: Color(0xFFF0EBF6),
     ),
     _StatCardData(
-      label: 'Active Investors',
-      value: '100',
-      icon: ImageConstants.activeInvestors,
+      label: 'Amount Received',
+      value: '₹85,00,000',
+      icon: ImageConstants.amountReceivable,
       iconColor: Color(0xFF2CB5A8),
       iconBg: Color(0xFFE6F7F5),
     ),
     _StatCardData(
-      label: 'Total Investment',
-      value: '₹2,500,000',
-      icon: ImageConstants.totalFunding,
+      label: 'Amount Pending',
+      value: '₹2,50,00,000',
+      icon: ImageConstants.amountRemaining,
       iconColor: Color(0xFFE06B7A),
       iconBg: Color(0xFFFDECEE),
     ),
     _StatCardData(
-      label: 'Pending Payments',
-      value: '₹24,000,000',
-      icon: ImageConstants.amountRemaining,
-      iconColor: Color(0xFFE89A3C),
-      iconBg: Color(0xFFFFF3E8),
+      label: 'Total Payments',
+      value: '₹28,50,00,000',
+      icon: ImageConstants.reports,
+      iconColor: Color(0xFF5B8DEF),
+      iconBg: Color(0xFFEAF1FC),
     ),
   ];
 
@@ -48,7 +48,7 @@ class InvestorsOverviewSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InvestorsTitleRow(onAddInvestor: onAddInvestor),
+        _FundingTitleRow(onAddFunding: onAddFunding),
         const SizedBox(height: 20),
         _StatsGrid(stats: _stats),
       ],
@@ -56,22 +56,22 @@ class InvestorsOverviewSection extends StatelessWidget {
   }
 }
 
-class _InvestorsTitleRow extends StatelessWidget {
-  const _InvestorsTitleRow({this.onAddInvestor});
+class _FundingTitleRow extends StatelessWidget {
+  const _FundingTitleRow({this.onAddFunding});
 
-  final VoidCallback? onAddInvestor;
+  final VoidCallback? onAddFunding;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 520;
+        final isCompact = constraints.maxWidth < 560;
 
         final titleBlock = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Investors',
+              'Funding & Payments',
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w700,
@@ -80,7 +80,7 @@ class _InvestorsTitleRow extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Manage all investors and their investment details',
+              'Track all funding, payments and transitions related to the projects',
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w400,
@@ -90,11 +90,11 @@ class _InvestorsTitleRow extends StatelessWidget {
           ],
         );
 
-        final addInvestorButton = Material(
+        final addFundingButton = Material(
           color: AppColors.accent,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
-            onTap: onAddInvestor,
+            onTap: onAddFunding,
             borderRadius: BorderRadius.circular(10),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -108,7 +108,7 @@ class _InvestorsTitleRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Add investor',
+                    'Add Funding',
                     style: TextStyle(
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w500,
@@ -127,7 +127,7 @@ class _InvestorsTitleRow extends StatelessWidget {
             children: [
               titleBlock,
               const SizedBox(height: 12),
-              addInvestorButton,
+              addFundingButton,
             ],
           );
         }
@@ -137,7 +137,7 @@ class _InvestorsTitleRow extends StatelessWidget {
           children: [
             Expanded(child: titleBlock),
             const SizedBox(width: 16),
-            addInvestorButton,
+            addFundingButton,
           ],
         );
       },

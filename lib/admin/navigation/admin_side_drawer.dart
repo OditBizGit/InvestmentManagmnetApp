@@ -10,11 +10,8 @@ enum AdminDrawerItem {
   investors,
   fundingPayments,
   workProgress,
-  photosVideos,
-  updatesStatus,
   reports,
   settings,
-  adminUsers,
 }
 
 /// Dispatched from dashboard quick actions to switch the admin shell tab.
@@ -60,22 +57,12 @@ class AdminSideDrawer extends StatelessWidget {
     _DrawerDestination(
       item: AdminDrawerItem.fundingPayments,
       label: 'Funding & Payments',
-      icon: ImageConstants.investors,
+      icon: ImageConstants.addPayment,
     ),
     _DrawerDestination(
       item: AdminDrawerItem.workProgress,
       label: 'Work Progress',
       icon: ImageConstants.workProgress,
-    ),
-    _DrawerDestination(
-      item: AdminDrawerItem.photosVideos,
-      label: 'Photos & Videos',
-      icon: ImageConstants.photosVideos,
-    ),
-    _DrawerDestination(
-      item: AdminDrawerItem.updatesStatus,
-      label: 'Updates / Status',
-      icon: ImageConstants.investors,
     ),
     _DrawerDestination(
       item: AdminDrawerItem.reports,
@@ -85,11 +72,6 @@ class AdminSideDrawer extends StatelessWidget {
     _DrawerDestination(
       item: AdminDrawerItem.settings,
       label: 'Settings',
-      icon: ImageConstants.investors,
-    ),
-    _DrawerDestination(
-      item: AdminDrawerItem.adminUsers,
-      label: 'Admin Users',
       icon: ImageConstants.investors,
     ),
   ];
@@ -126,9 +108,9 @@ class AdminSideDrawer extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Image.asset(
                         ImageConstants.logo,
-                        height: 36,
+                        height: 50,
                         fit: BoxFit.contain,
-                        alignment: Alignment.centerLeft,
+                        alignment: Alignment.center,
                       ),
                     )
                   else
@@ -140,7 +122,7 @@ class AdminSideDrawer extends StatelessWidget {
                         fit: BoxFit.contain,
                       ),
                     ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 35),
                   Expanded(
                     child: ListView.separated(
                       padding: EdgeInsets.zero,
