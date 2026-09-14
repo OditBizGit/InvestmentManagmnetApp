@@ -12,7 +12,6 @@ class UserStatusScreen extends StatefulWidget {
 }
 
 class _UserStatusScreenState extends State<UserStatusScreen> {
-  static const Color _screenBg = Color(0xFFF7F6F9);
 
   /// Paste any YouTube watch / youtu.be / shorts URL (or video id) here.
   static const List<_StatusItem> _items = [
@@ -60,7 +59,7 @@ class _UserStatusScreenState extends State<UserStatusScreen> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: _screenBg,
+      color: Colors.white,
       child: SafeArea(
         child: ListView.separated(
           controller: _scrollController,

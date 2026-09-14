@@ -5,6 +5,7 @@ class AppColors {
 
   static const Color white = Colors.white;
   static const Color accent = Color(0xFFA28CC1);
+  static const Color accentDark = Color.fromARGB(255, 55, 15, 105);
   static const Color textPrimary = Color(0xFF3D3D3D);
   static const Color textSecondary = Color(0xFF8A8099);
   static const Color textMuted = Color(0xFF888888);

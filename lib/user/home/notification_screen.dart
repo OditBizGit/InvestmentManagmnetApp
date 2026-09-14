@@ -4,7 +4,7 @@ import 'package:sizer/sizer.dart';
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
-  static const Color _bg = Color(0xFFF7F7F7);
+  static const Color _bg = Color(0xFFF3F2F2);
   static const Color _textPrimary = Color(0xFF2F2F2F);
   static const Color _textSecondary = Color(0xFF8A8A8A);
   static const Color _time = Color(0xFF4DB6AC);
@@ -15,37 +15,45 @@ class NotificationScreen extends StatelessWidget {
       time: '10m ago',
       description:
           'High-resolution site photos uploaded for alpha healthcare facility',
+      isRead: false,
     ),
     _NotificationItem(
       title: 'New Project Updates',
       time: '2h ago',
       description:
           'High-resolution site photos uploaded for alpha healthcare facility',
+      isRead: false,
     ),
     _NotificationItem(
       title: 'New Project Updates',
       time: '1d ago',
       description:
           'High-resolution site photos uploaded for alpha healthcare facility',
+      isRead: true,
     ),
     _NotificationItem(
       title: 'New Project Updates',
       time: '1d ago',
       description:
           'High-resolution site photos uploaded for alpha healthcare facility',
+      isRead: true,
     ),
     _NotificationItem(
       title: 'New Project Updates',
       time: '1d ago',
       description:
           'High-resolution site photos uploaded for alpha healthcare facility',
+      isRead: true,
     ),
   ];
+
+  static int get unreadCount =>
+      _notifications.where((item) => !item.isRead).length;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,11 +114,13 @@ class _NotificationItem {
     required this.title,
     required this.time,
     required this.description,
+    required this.isRead,
   });
 
   final String title;
   final String time;
   final String description;
+  final bool isRead;
 }
 
 class _NotificationCard extends StatelessWidget {
@@ -120,11 +130,15 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isUnread = !item.isRead;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 3.9.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isUnread
+            ? NotificationScreen._time.withValues(alpha: 0.2)
+            : NotificationScreen._bg,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -156,7 +170,9 @@ class _NotificationCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w500,
-                  color: NotificationScreen._time,
+                  color: isUnread
+                      ? NotificationScreen._time
+                      : NotificationScreen._textSecondary,
                 ),
               ),
             ],

@@ -19,24 +19,36 @@ class UserHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+    return ColoredBox(
+      color: Colors.white,
+      child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _HomeHeader(),
-            SizedBox(height: 2.h),
-            const _InvestmentSummaryCard(),
-            SizedBox(height: 2.5.h),
-            const TopInvestorsCarousel(),
-            SizedBox(height: 2.h),
-            const ServiceGalleryCarousel(),
-            SizedBox(height: 2.h),
-            const PhaseProgressCard(),
-            SizedBox(height: 2.5.h),
-            const LatestProjectUpdates(),
-            SizedBox(height: 1.h),
+            Padding(
+              padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 0.5.h),
+              child: const _HomeHeader(),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(4.w, 3.h, 4.w, 1.5.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _InvestmentSummaryCard(),
+                    SizedBox(height: 2.5.h),
+                    const TopInvestorsCarousel(),
+                    SizedBox(height: 2.h),
+                    const ServiceGalleryCarousel(),
+                    SizedBox(height: 2.h),
+                    const PhaseProgressCard(),
+                    SizedBox(height: 2.5.h),
+                    const LatestProjectUpdates(),
+                    SizedBox(height: 1.h),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -46,6 +58,8 @@ class UserHomeScreen extends StatelessWidget {
 
 class _HomeHeader extends StatelessWidget {
   const _HomeHeader();
+
+  static final int _notificationCount = NotificationScreen.unreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +74,15 @@ class _HomeHeader extends StatelessWidget {
                 TextSpan(
                   text: 'Good Morning, ',
                   style: TextStyle(
-                    fontSize: 16.sp,
+                    fontSize: 17.sp,
                     fontWeight: FontWeight.w400,
-                    color: UserHomeScreen._textPrimary,
+                    color: UserHomeScreen._accent,
                   ),
                   children: [
                     TextSpan(
                       text: 'John',
                       style: TextStyle(
-                        fontSize: 16.sp,
+                        fontSize: 17.sp,
                         fontWeight: FontWeight.w700,
                         color: UserHomeScreen._textPrimary,
                       ),
@@ -76,7 +90,7 @@ class _HomeHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 0.6.h),
+              SizedBox(height: 0.1.h),
               Text(
                 'Here is the latest status of your hospital investment',
                 style: TextStyle(
@@ -101,10 +115,45 @@ class _HomeHeader extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: EdgeInsets.all(1.w),
-            child: SvgPicture.asset(
-              ImageConstants.notification,
-              width: 5.5.w,
-              height: 5.5.w,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                SvgPicture.asset(
+                  ImageConstants.notification,
+                  width: 5.5.w,
+                  height: 5.5.w,
+                ),
+                if (_notificationCount > 0)
+                  Positioned(
+                    right: -1.2.w,
+                    top: -1.2.w,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        minWidth: 4.w,
+                        minHeight: 4.w,
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _notificationCount > 9 ? 1.w : 0.6.w,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE53935),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _notificationCount > 99
+                            ? '99+'
+                            : '$_notificationCount',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -127,23 +176,33 @@ class _InvestmentSummaryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 8.w,
-            backgroundColor: Colors.white,
-            backgroundImage: const NetworkImage(
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
+          Container(
+            padding: EdgeInsets.all(0.4.w),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: UserHomeScreen._accent,
+                width: 2,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 9.w,
+              backgroundColor: Colors.white,
+              backgroundImage: const NetworkImage(
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
+              ),
             ),
           ),
-          SizedBox(height: 1.2.h),
+          SizedBox(height: 0.8.h),
           Text(
             'John Mathew',
             style: TextStyle(
-              fontSize: 15.sp,
+              fontSize: 15.5.sp,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
             ),
           ),
-          SizedBox(height: 0.8.h),
+          SizedBox(height: 0.5.h),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 0.5.h),
             decoration: BoxDecoration(
@@ -153,7 +212,7 @@ class _InvestmentSummaryCard extends StatelessWidget {
             child: Text(
               'INV - 10254',
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: 13.5.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -164,7 +223,7 @@ class _InvestmentSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatCard(
-                  icon: Icons.account_balance_wallet_outlined,
+                  iconPath: ImageConstants.totalCollection,
                   label: 'Total Collection',
                   amount: '₹2,50,000',
                   amountColor: Colors.black87,
@@ -173,7 +232,7 @@ class _InvestmentSummaryCard extends StatelessWidget {
               SizedBox(width: 3.w),
               Expanded(
                 child: _StatCard(
-                  icon: Icons.credit_card_outlined,
+                  iconPath: ImageConstants.totalCommitment,
                   label: 'Total Commitment',
                   amount: '₹50,000',
                   amountColor: UserHomeScreen._green,
@@ -189,13 +248,13 @@ class _InvestmentSummaryCard extends StatelessWidget {
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
-    required this.icon,
+    required this.iconPath,
     required this.label,
     required this.amount,
     required this.amountColor,
   });
 
-  final IconData icon;
+  final String iconPath;
   final String label;
   final String amount;
   final Color amountColor;
@@ -211,21 +270,29 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: UserHomeScreen._accent, size: 5.5.w),
+          SvgPicture.asset(
+            iconPath,
+            width: 5.5.w,
+            height: 5.5.w,
+            colorFilter: const ColorFilter.mode(
+              UserHomeScreen._accent,
+              BlendMode.srcIn,
+            ),
+          ),
           SizedBox(height: 0.8.h),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12.sp,
+              fontSize: 13.sp,
               fontWeight: FontWeight.w400,
               color: UserHomeScreen._textSecondary,
             ),
           ),
-          SizedBox(height: 0.4.h),
+          SizedBox(height: 0.1.h),
           Text(
             amount,
             style: TextStyle(
-              fontSize: 13.sp,
+              fontSize: 15.sp,
               fontWeight: FontWeight.w700,
               color: amountColor,
             ),

@@ -9,6 +9,10 @@ import 'package:maribel_wellness_centre_application/user/updates/updates_screen.
 class UserMainScreen extends StatefulWidget {
   const UserMainScreen({super.key});
 
+  static void goToTab(BuildContext context, int index) {
+    context.findAncestorStateOfType<_UserMainScreenState>()?.selectTab(index);
+  }
+
   @override
   State<UserMainScreen> createState() => _UserMainScreenState();
 }
@@ -24,7 +28,7 @@ class _UserMainScreenState extends State<UserMainScreen> {
     UserProfileScreen(),
   ];
 
-  void _onTabSelected(int index) {
+  void selectTab(int index) {
     if (_currentIndex == index) {
       return;
     }
@@ -41,7 +45,7 @@ class _UserMainScreenState extends State<UserMainScreen> {
       ),
       bottomNavigationBar: UserBottomNav(
         currentIndex: _currentIndex,
-        onTap: _onTabSelected,
+        onTap: selectTab,
       ),
     );
   }

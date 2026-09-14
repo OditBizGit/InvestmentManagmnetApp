@@ -683,7 +683,7 @@ class _StatusVideoCardState extends State<StatusVideoCard> {
           Row(
             children: [
               Text(
-                'VIDEO LINK',
+                'VIDEO',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,

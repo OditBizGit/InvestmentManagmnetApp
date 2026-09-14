@@ -7,7 +7,7 @@ import 'package:maribel_wellness_centre_application/user/navigation/user_main_sc
 import 'package:sizer/sizer.dart';
 
 /// `true` → Admin interface · `false` → User interface
-const bool isAdmin = true;
+const bool isAdmin = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

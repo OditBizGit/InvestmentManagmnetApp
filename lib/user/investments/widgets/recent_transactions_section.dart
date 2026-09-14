@@ -46,7 +46,7 @@ class RecentTransactionsSection extends StatelessWidget {
         Text(
           'Recent Transaction',
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: 15.5.sp,
             fontWeight: FontWeight.w700,
             color: _textPrimary,
           ),
@@ -102,16 +102,16 @@ class _TransactionCard extends StatelessWidget {
                     Text(
                       transaction.title,
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 14.5.sp,
                         fontWeight: FontWeight.w700,
                         color: RecentTransactionsSection._textPrimary,
                       ),
                     ),
-                    SizedBox(height: 0.4.h),
+                    SizedBox(height: 0.2.h),
                     Text(
                       transaction.subtitle,
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 12.5.sp,
                         fontWeight: FontWeight.w400,
                         color: RecentTransactionsSection._textSecondary,
                       ),
@@ -132,7 +132,7 @@ class _TransactionCard extends StatelessWidget {
               Text(
                 transaction.date,
                 style: TextStyle(
-                  fontSize: 13.sp,
+                  fontSize: 13.5.sp,
                   fontWeight: FontWeight.w500,
                   color: RecentTransactionsSection._textPrimary,
                 ),
@@ -141,7 +141,7 @@ class _TransactionCard extends StatelessWidget {
               Text(
                 transaction.amount,
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
                   color: RecentTransactionsSection._green,
                 ),

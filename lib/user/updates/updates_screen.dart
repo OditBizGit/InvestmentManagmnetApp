@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
 class UserUpdatesScreen extends StatelessWidget {
@@ -34,7 +36,7 @@ class UserUpdatesScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: ListView.builder(
           padding: EdgeInsets.only(
@@ -78,7 +80,7 @@ class _UpdateCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(5.w),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -119,8 +121,8 @@ class _UpdateCard extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.05),
-                          Colors.black.withOpacity(0.15),
+                          Colors.black.withValues(alpha: 0.05),
+                          Colors.black.withValues(alpha: 0.15),
                         ],
                       ),
                     ),
@@ -130,11 +132,11 @@ class _UpdateCard extends StatelessWidget {
                       width: 12.w,
                       height: 12.w,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 8,
                           ),
                         ],
@@ -158,21 +160,23 @@ class _UpdateCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 12.5.sp,
+                    fontSize: 13.5.sp,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
                 ),
-                SizedBox(height: 0.8.h),
+                SizedBox(height: 0.4.h),
                 Row(
                   children: [
-                    Icon(Icons.access_time,
-                        size: 3.5.w, color: Colors.grey[500]),
+                    SvgPicture.asset(ImageConstants.timeLine,
+                        width: 3.5.w, height: 3.5.w, 
+                        colorFilter: ColorFilter.mode(Colors.grey[500]!, 
+                        BlendMode.srcIn)),
                     SizedBox(width: 1.w),
                     Text(
                       time,
                       style: TextStyle(
-                        fontSize: 10.5.sp,
+                        fontSize: 12.sp,
                         color: Colors.grey[600],
                       ),
                     ),

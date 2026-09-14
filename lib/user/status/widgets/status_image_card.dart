@@ -30,11 +30,12 @@ class StatusImageCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _accent.withValues(alpha: 0.55)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -44,7 +45,7 @@ class StatusImageCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: AspectRatio(
-              aspectRatio: 16 / 10,
+              aspectRatio: 16 / 9,
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.cover,

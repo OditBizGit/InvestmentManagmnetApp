@@ -5,19 +5,37 @@ class ImageConstants {
   static const String _logoPath = 'aseets/logo';
   static const String _gifPath = 'aseets/gif';
 
+//User Dashboard
   static const String home = '$_svgPath/home.svg';
   static const String investment = '$_svgPath/investment.svg';
   static const String status = '$_svgPath/status.svg';
   static const String updates = '$_svgPath/settings.svg';
   static const String profile = '$_svgPath/profile.svg';
+  static const String totalCollection = '$_svgPath/total_collection.svg';
+  static const String totalCommitment = '$_svgPath/total_commitment.svg';
+  static const String tools = '$_svgPath/tools.svg';
+  static const String active = '$_svgPath/active.svg';
+  static const String copy = '$_svgPath/copy.svg';
+  static const String share = '$_svgPath/share.svg';
+  static const String download = '$_svgPath/download.svg';
+  static const String view = '$_svgPath/view.svg';
+  static const String timeLine = '$_svgPath/time_line.svg';
+  static const String email = '$_svgPath/email.svg';
+  static const String phone = '$_svgPath/phone.svg';
+  static const String personalInfo = '$_svgPath/personal_info.svg';
+  static const String investmentDetails = '$_svgPath/investment_details.svg';
+  static const String documents = '$_svgPath/document.svg';
+  static const String bankDetails = '$_svgPath/bank_details.svg';
+  static const String deliveredDocuments = '$_svgPath/delivered_documents.svg';
+  static const String nomineeDetails = '$_svgPath/nominee_details.svg';
 
   static const String notification = '$_svgPath/notification.svg';
   static const String print = '$_svgPath/print.svg';
   static const String mobile = '$_svgPath/mobile.svg';
   static const String idNumber = '$_svgPath/id_number.svg';
   // Placeholder icons for login fields — swap when dedicated assets are added.
-  static const String username = '$_svgPath/profile.svg';
-  static const String password = '$_svgPath/id_number.svg';
+  static const String username = '$_svgPath/user.svg';
+  static const String password = '$_svgPath/password.svg';
 
   static const String logo = '$_logoPath/Maribel logo WELLNESS CENTRE.png';
   static const String splashGif = '$_gifPath/splash_logo.gif';

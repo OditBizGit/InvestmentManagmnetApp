@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
 class StatusCardActions extends StatelessWidget {
@@ -30,28 +32,28 @@ class StatusCardActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _ActionButton(
-          icon: Icons.copy_rounded,
+          iconPath: ImageConstants.copy,
           background: _copyBg,
           iconColor: _iconMuted,
           onTap: onCopy,
         ),
         SizedBox(width: 2.w),
         _ActionButton(
-          icon: Icons.share_rounded,
+          iconPath: ImageConstants.share,
           background: _shareBg,
           iconColor: _shareIcon,
           onTap: onShare,
         ),
         SizedBox(width: 2.w),
         _ActionButton(
-          icon: Icons.download_rounded,
+          iconPath: ImageConstants.download,
           background: _downloadBg,
           iconColor: _downloadIcon,
           onTap: onDownload,
         ),
         SizedBox(width: 2.w),
         _ActionButton(
-          icon: Icons.visibility_outlined,
+          iconPath: ImageConstants.view,
           background: _viewBg,
           iconColor: _viewIcon,
           onTap: onView,
@@ -63,13 +65,13 @@ class StatusCardActions extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
-    required this.icon,
+    required this.iconPath,
     required this.background,
     required this.iconColor,
     this.onTap,
   });
 
-  final IconData icon;
+  final String iconPath;
   final Color background;
   final Color iconColor;
   final VoidCallback? onTap;
@@ -85,7 +87,14 @@ class _ActionButton extends StatelessWidget {
         child: SizedBox(
           width: 9.w,
           height: 9.w,
-          child: Icon(icon, size: 4.5.w, color: iconColor),
+          child: Center(
+            child: SvgPicture.asset(
+              iconPath,
+              width: 4.5.w,
+              height: 4.5.w,
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+            ),
+          ),
         ),
       ),
     );

@@ -25,8 +25,8 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
   ];
 
   static const Map<String, List<double>> _phaseProgress = {
-    'Phase 1': [0.22, 0.38, 0.48, 0.72, 0.92],
-    'Phase 2': [0.18, 0.30, 0.45, 0.58, 0.70],
+    'Phase 1': [0.22, 0.48, 0.28, 0.82, 0.52],
+    'Phase 2': [0.38, 0.10, 0.85, 0.78, 0.99],
     'Phase 3': [0.12, 0.25, 0.40, 0.55, 0.62],
     'Phase 4': [0.08, 0.18, 0.28, 0.35, 0.42],
     'Phase 5': [0.05, 0.10, 0.16, 0.22, 0.28],
@@ -66,7 +66,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
                         color: _textPrimary,
                       ),
                     ),
-                    SizedBox(height: 0.4.h),
+                    SizedBox(height: 0.2.h),
                     Text(
                       'From pending to completed All in one place.',
                       style: TextStyle(
@@ -92,7 +92,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
           ),
           SizedBox(height: 2.h),
           SizedBox(
-            height: 14.h,
+            height: 22.h,
             width: double.infinity,
             child: CustomPaint(
               painter: _WorkProgressChartPainter(
@@ -123,7 +123,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
   }
 }
 
-class _PhaseDropdown extends StatelessWidget {
+class _PhaseDropdown extends StatefulWidget {
   const _PhaseDropdown({
     required this.phases,
     required this.selectedPhase,
@@ -134,83 +134,202 @@ class _PhaseDropdown extends StatelessWidget {
   final String selectedPhase;
   final ValueChanged<String?> onChanged;
 
+  @override
+  State<_PhaseDropdown> createState() => _PhaseDropdownState();
+}
+
+class _PhaseDropdownState extends State<_PhaseDropdown> {
+  static const Color _accent = Color(0xFFA28CC1);
+  static const Color _accentSoft = Color(0xFFF0EBF6);
+  static const Color _border = Color(0xFFE8E4EE);
+
+  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _fieldKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _toggle() {
+    if (_isOpen) {
+      _removeOverlay();
+    } else {
+      _showOverlay();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (_isOpen && mounted) {
+      setState(() => _isOpen = false);
+    } else {
+      _isOpen = false;
+    }
+  }
+
+  void _showOverlay() {
+    final fieldBox =
+        _fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (fieldBox == null) return;
+
+    final fieldSize = fieldBox.size;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _removeOverlay,
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, fieldSize.height + 6),
+              child: Material(
+                color: Colors.transparent,
+                child: SizedBox(
+                  width: fieldSize.width,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (var i = 0; i < widget.phases.length; i++) ...[
+                            if (i > 0)
+                              Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: _border.withValues(alpha: 0.8),
+                              ),
+                            _PhaseOption(
+                              label: widget.phases[i],
+                              isSelected:
+                                  widget.phases[i] == widget.selectedPhase,
+                              onTap: () {
+                                final phase = widget.phases[i];
+                                _removeOverlay();
+                                widget.onChanged(phase);
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isOpen = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Material(
+        key: _fieldKey,
+        color: _accentSoft,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: _toggle,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 2.2.w, vertical: 0.5.h),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: _isOpen
+                    ? _accent
+                    : _accent.withValues(alpha: 0.28),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.selectedPhase,
+                  style: TextStyle(
+                    fontSize: 12.5.sp,
+                    fontWeight: FontWeight.w600,
+                    color: _accent,
+                  ),
+                ),
+                SizedBox(width: 1.w),
+                AnimatedRotation(
+                  turns: _isOpen ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: _accent,
+                    size: 5.w,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PhaseOption extends StatelessWidget {
+  const _PhaseOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
   static const Color _accent = Color(0xFFA28CC1);
   static const Color _accentSoft = Color(0xFFF0EBF6);
   static const Color _textPrimary = Color(0xFF3D3D3D);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 2.5.w),
-      decoration: BoxDecoration(
-        color: _accentSoft,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _accent.withValues(alpha: 0.25)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedPhase,
-          isDense: true,
-          borderRadius: BorderRadius.circular(12),
-          dropdownColor: Colors.white,
-          elevation: 4,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: _accent,
-            size: 5.w,
-          ),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.5.h),
+        color: isSelected ? _accentSoft : Colors.white,
+        child: Text(
+          label,
           style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            color: _accent,
+            fontSize: 13.5.sp,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? _accent : _textPrimary,
           ),
-          selectedItemBuilder: (context) {
-            return [
-              for (final phase in phases)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    phase,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _accent,
-                    ),
-                  ),
-                ),
-            ];
-          },
-          items: [
-            for (final phase in phases)
-              DropdownMenuItem<String>(
-                value: phase,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 0.4.h),
-                  decoration: BoxDecoration(
-                    color: phase == selectedPhase
-                        ? _accentSoft
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 2.w),
-                    child: Text(
-                      phase,
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: phase == selectedPhase
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: phase == selectedPhase ? _accent : _textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-          onChanged: onChanged,
-          menuMaxHeight: 40.h,
         ),
       ),
     );

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
 class PhaseProgressCard extends StatelessWidget {
@@ -35,14 +37,18 @@ class PhaseProgressCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.handyman_outlined,
-                color: _progress,
-                size: 5.w,
+              SvgPicture.asset(
+                ImageConstants.tools,
+                width: 5.w,
+                height: 5.w,
+                colorFilter: const ColorFilter.mode(
+                  _progress,
+                  BlendMode.srcIn,
+                ),
               ),
               SizedBox(width: 2.w),
               Text(
-                'Phase 1 progress.',
+                'Phase 1 progress',
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
@@ -92,7 +98,7 @@ class _ProgressRow extends StatelessWidget {
             Text(
               item.label,
               style: TextStyle(
-                fontSize: 13.sp,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 color: PhaseProgressCard._textPrimary,
               ),
@@ -100,7 +106,7 @@ class _ProgressRow extends StatelessWidget {
             Text(
               '$percent%',
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 color: PhaseProgressCard._textPrimary,
               ),
@@ -112,13 +118,14 @@ class _ProgressRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
             value: item.progress,
-            minHeight: 0.7.h,
+            minHeight: 0.9.h,
             backgroundColor: PhaseProgressCard._track,
             valueColor: const AlwaysStoppedAnimation<Color>(
               PhaseProgressCard._progress,
             ),
           ),
         ),
+        SizedBox(height: 0.5.h),
       ],
     );
   }

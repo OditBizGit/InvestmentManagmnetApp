@@ -46,7 +46,7 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
             return _GalleryCollage(images: _galleryPages[index]);
           },
           options: CarouselOptions(
-            height: 28.h,
+            height: 25.h,
             viewportFraction: 1,
             enableInfiniteScroll: true,
             autoPlay: true,

@@ -20,7 +20,7 @@ class UserBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const Color _activeColor = AppColors.accent;
+  static const Color _activeColor = AppColors.accentDark;
   static const Color _inactiveColor = AppColors.textMuted;
 
   @override
@@ -131,7 +131,7 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: 12.5.sp,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: color,
               ),

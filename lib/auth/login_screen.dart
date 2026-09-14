@@ -67,31 +67,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 3.h),
                 Image.asset(
                   ImageConstants.logo,
-                  height: 8.h,
+                  height: 9.h,
                   fit: BoxFit.contain,
                   alignment: Alignment.centerLeft,
                 ),
-                SizedBox(height: 5.h),
+                SizedBox(height: 4.h),
                 Text(
                   'Welcome Back',
                   style: TextStyle(
                     fontSize: 22.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
-                    height: 1.2,
                   ),
                 ),
-                SizedBox(height: 1.h),
+                SizedBox(height: 0.1.h),
                 Text(
                   'Track your hospital investment with complete transparency.',
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w400,
                     color: AppColors.textSecondary,
-                    height: 1.4,
                   ),
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: 3.5.h),
                 _LoginTextField(
                   label: 'Username',
                   hint: 'Enter your username',
@@ -105,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 2.5.h),
+                SizedBox(height: 2.h),
                 _LoginTextField(
                   label: 'Password',
                   hint: 'Enter your password',
@@ -123,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
                       color: AppColors.accent,
-                      size: 20.sp,
+                      size: 18.5.sp,
                     ),
                   ),
                   validator: (value) {
@@ -150,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Login',
                       style: TextStyle(
-                        fontSize: 15.sp,
+                        fontSize: 15.5.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -197,7 +195,7 @@ class _LoginTextField extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 13.sp,
+            fontSize: 14.5.sp,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
@@ -210,23 +208,23 @@ class _LoginTextField extends StatelessWidget {
           onFieldSubmitted: onFieldSubmitted,
           validator: validator,
           style: TextStyle(
-            fontSize: 13.sp,
+            fontSize: 14.5.sp,
             fontWeight: FontWeight.w400,
             color: AppColors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              fontSize: 13.sp,
+              fontSize: 14.5.sp,
               fontWeight: FontWeight.w400,
               color: AppColors.hint,
             ),
             prefixIcon: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 3.5.w),
+              padding: EdgeInsets.symmetric(horizontal: 3.w),
               child: SvgPicture.asset(
                 iconPath,
-                width: 5.w,
-                height: 5.w,
+                width: 5.5.w,
+                height: 5.5.w,
                 colorFilter: const ColorFilter.mode(
                   AppColors.accent,
                   BlendMode.srcIn,

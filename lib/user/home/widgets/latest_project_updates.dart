@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/user_bottom_nav.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:sizer/sizer.dart';
 
 class LatestProjectUpdates extends StatelessWidget {
@@ -16,7 +18,7 @@ class LatestProjectUpdates extends StatelessWidget {
         Text(
           'Latest Project Updates',
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: 15.sp,
             fontWeight: FontWeight.w700,
             color: _textPrimary,
           ),
@@ -56,16 +58,16 @@ class LatestProjectUpdates extends StatelessWidget {
         Text(
           'Second Floor Structural Work Completed',
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: 14.5.sp,
             fontWeight: FontWeight.w700,
             color: _textPrimary,
           ),
         ),
-        SizedBox(height: 0.8.h),
+        SizedBox(height: 0.4.h),
         Text(
           'The main load-bearing walls and celling structures for the secondary patient wing are now fully cured and approved by site inspectors',
           style: TextStyle(
-            fontSize: 13.sp,
+            fontSize: 13.5.sp,
             fontWeight: FontWeight.w400,
             color: _textSecondary,
             height: 1.45,
@@ -78,7 +80,9 @@ class LatestProjectUpdates extends StatelessWidget {
             color: _button,
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
-              onTap: () {},
+              onTap: () {
+                UserMainScreen.goToTab(context, UserBottomNav.updatesIndex);
+              },
               borderRadius: BorderRadius.circular(10),
               child: Padding(
                 padding: EdgeInsets.symmetric(
@@ -91,7 +95,7 @@ class LatestProjectUpdates extends StatelessWidget {
                     Text(
                       'View Update',
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 13.5.sp,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),

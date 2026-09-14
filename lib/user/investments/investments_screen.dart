@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/investments/widgets/recent_transactions_section.dart';
 import 'package:maribel_wellness_centre_application/user/investments/widgets/work_progress_card.dart';
 import 'package:sizer/sizer.dart';
@@ -14,34 +16,42 @@ class UserInvestmentsScreen extends StatelessWidget {
   static const Color _greenSoft = Color(0xFFE6F6EC);
   static const Color _red = Color(0xFFE05A4F);
   static const Color _border = Color(0xFFE8E4EE);
-  static const Color _screenBg = Color(0xFFF7F6F9);
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: _screenBg,
+      color: Colors.white,
       child: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _InvestmentsHeader(),
-              SizedBox(height: 2.h),
-              const _ProjectHeroCard(),
-              SizedBox(height: 1.8.h),
-              const _InvestmentAmountCard(),
-              SizedBox(height: 1.5.h),
-              const _NextPaymentCard(),
-              SizedBox(height: 1.5.h),
-              const _CapitalAllocationCard(),
-              SizedBox(height: 1.5.h),
-              const WorkProgressCard(),
-              SizedBox(height: 2.5.h),
-              const RecentTransactionsSection(),
-              SizedBox(height: 1.h),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 0.8.h),
+              child: const _InvestmentsHeader(),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 1.5.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _ProjectHeroCard(),
+                    SizedBox(height: 1.8.h),
+                    const _InvestmentAmountCard(),
+                    SizedBox(height: 1.5.h),
+                    const _NextPaymentCard(),
+                    SizedBox(height: 1.5.h),
+                    const _CapitalAllocationCard(),
+                    SizedBox(height: 1.5.h),
+                    const WorkProgressCard(),
+                    SizedBox(height: 2.5.h),
+                    const RecentTransactionsSection(),
+                    SizedBox(height: 1.h),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -59,7 +69,7 @@ class _InvestmentsHeader extends StatelessWidget {
         Text(
           'My Investment',
           style: TextStyle(
-            fontSize: 18.sp,
+            fontSize: 17.sp,
             fontWeight: FontWeight.w700,
             color: UserInvestmentsScreen._textPrimary,
           ),
@@ -69,7 +79,7 @@ class _InvestmentsHeader extends StatelessWidget {
           children: [
             _StatusChip(
               background: UserInvestmentsScreen._accentSoft,
-              icon: Icons.work_outline_rounded,
+              iconPath: ImageConstants.investors,
               iconColor: UserInvestmentsScreen._accent,
               label: 'Investor ID: INV-10254',
               labelColor: UserInvestmentsScreen._accent,
@@ -77,7 +87,7 @@ class _InvestmentsHeader extends StatelessWidget {
             const Spacer(),
             _StatusChip(
               background: UserInvestmentsScreen._greenSoft,
-              icon: Icons.check_circle_outline_rounded,
+              iconPath: ImageConstants.active,
               iconColor: UserInvestmentsScreen._green,
               label: 'Active',
               labelColor: UserInvestmentsScreen._green,
@@ -92,14 +102,14 @@ class _InvestmentsHeader extends StatelessWidget {
 class _StatusChip extends StatelessWidget {
   const _StatusChip({
     required this.background,
-    required this.icon,
+    required this.iconPath,
     required this.iconColor,
     required this.label,
     required this.labelColor,
   });
 
   final Color background;
-  final IconData icon;
+  final String iconPath;
   final Color iconColor;
   final String label;
   final Color labelColor;
@@ -115,7 +125,12 @@ class _StatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 4.2.w, color: iconColor),
+          SvgPicture.asset(
+            iconPath,
+            width: 4.2.w,
+            height: 4.2.w,
+            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+          ),
           SizedBox(width: 1.5.w),
           Text(
             label,
@@ -143,7 +158,7 @@ class _ProjectHeroCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: AspectRatio(
-        aspectRatio: 16 / 10,
+        aspectRatio: 16 / 9,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -198,11 +213,10 @@ class _ProjectHeroCard extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 0.3.h),
                   Text(
                     'Phase 2 Expansion Project',
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: 12.5.sp,
                       fontWeight: FontWeight.w400,
                       color: Colors.white.withValues(alpha: 0.92),
                     ),
@@ -249,12 +263,12 @@ class _InvestmentAmountCard extends StatelessWidget {
           Text(
             'Investment',
             style: TextStyle(
-              fontSize: 13.sp,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w400,
               color: UserInvestmentsScreen._textSecondary,
             ),
           ),
-          SizedBox(height: 0.6.h),
+          SizedBox(height: 0.2.h),
           Text(
             '₹2,50,000',
             style: TextStyle(
@@ -281,18 +295,19 @@ class _NextPaymentCard extends StatelessWidget {
           Text(
             'Next Payment',
             style: TextStyle(
-              fontSize: 13.sp,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w400,
               color: UserInvestmentsScreen._textSecondary,
             ),
           ),
-          SizedBox(height: 1.h),
+          SizedBox(height: 0.6.h),
           Row(
             children: [
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 4.2.w,
-                color: UserInvestmentsScreen._accent,
+              SvgPicture.asset(
+                ImageConstants.calender,
+                width: 4.w,
+                height: 4.w,
+                colorFilter: ColorFilter.mode(UserInvestmentsScreen._accent, BlendMode.srcIn),
               ),
               SizedBox(width: 2.w),
               Expanded(
@@ -308,7 +323,7 @@ class _NextPaymentCard extends StatelessWidget {
               Text(
                 '₹50,000',
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
                   color: UserInvestmentsScreen._accent,
                 ),
@@ -382,7 +397,7 @@ class _AllocationRow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 13.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w400,
             color: UserInvestmentsScreen._textSecondary,
           ),
@@ -390,7 +405,7 @@ class _AllocationRow extends StatelessWidget {
         Text(
           amount,
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: 15.sp,
             fontWeight: FontWeight.w700,
             color: amountColor,
           ),
