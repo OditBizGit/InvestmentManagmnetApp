@@ -69,12 +69,12 @@ flutter:
   uses-material-design: true
 
   assets:
-    - aseets/svg_icons/
-    - aseets/logo/
-    - aseets/gif/
+    - assets/svg_icons/
+    - assets/logo/
+    - assets/gif/
 
   fonts:
     - family: Montserrat
       fonts:
-        - asset: aseets/font/Montserrat-Bold.ttf
+        - asset: assets/font/Montserrat-Bold.ttf
           weight: 700

@@ -1,9 +1,9 @@
 class ImageConstants {
   ImageConstants._();
 
-  static const String _svgPath = 'aseets/svg_icons';
-  static const String _logoPath = 'aseets/logo';
-  static const String _gifPath = 'aseets/gif';
+  static const String _svgPath = 'assets/svg_icons';
+  static const String _logoPath = 'assets/logo';
+  static const String _gifPath = 'assets/gif';
 
 //User Dashboard
   static const String home = '$_svgPath/home.svg';
