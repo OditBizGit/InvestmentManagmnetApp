@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_main_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
@@ -12,7 +13,7 @@ import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
 /// `true` → Admin interface · `false` → User interface
-const bool isAdmin = false;
+const bool isAdmin = true;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,9 @@ class MyApp extends StatelessWidget {
       providers: [
         RepositoryProvider<AuthRepository>.value(
           value: getIt<AuthRepository>(),
+        ),
+        RepositoryProvider<InvestorsRepository>.value(
+          value: getIt<InvestorsRepository>(),
         ),
       ],
       child: MultiBlocProvider(

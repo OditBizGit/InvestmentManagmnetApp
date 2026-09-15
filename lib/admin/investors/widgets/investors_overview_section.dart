@@ -8,49 +8,53 @@ class InvestorsOverviewSection extends StatelessWidget {
   const InvestorsOverviewSection({
     super.key,
     this.onAddInvestor,
+    this.totalInvestors = 0,
+    this.activeInvestors = 0,
   });
 
   final VoidCallback? onAddInvestor;
-
-  static const List<_StatCardData> _stats = [
-    _StatCardData(
-      label: 'Total Investors',
-      value: '125',
-      icon: ImageConstants.totalInvestors,
-      iconColor: Color(0xFF9B7EBF),
-      iconBg: Color(0xFFF0EBF6),
-    ),
-    _StatCardData(
-      label: 'Active Investors',
-      value: '100',
-      icon: ImageConstants.activeInvestors,
-      iconColor: Color(0xFF2CB5A8),
-      iconBg: Color(0xFFE6F7F5),
-    ),
-    _StatCardData(
-      label: 'Total Investment',
-      value: '₹2,500,000',
-      icon: ImageConstants.totalFunding,
-      iconColor: Color(0xFFE06B7A),
-      iconBg: Color(0xFFFDECEE),
-    ),
-    _StatCardData(
-      label: 'Pending Payments',
-      value: '₹24,000,000',
-      icon: ImageConstants.amountRemaining,
-      iconColor: Color(0xFFE89A3C),
-      iconBg: Color(0xFFFFF3E8),
-    ),
-  ];
+  final int totalInvestors;
+  final int activeInvestors;
 
   @override
   Widget build(BuildContext context) {
+    final stats = [
+      _StatCardData(
+        label: 'Total Investors',
+        value: '$totalInvestors',
+        icon: ImageConstants.totalInvestors,
+        iconColor: const Color(0xFF9B7EBF),
+        iconBg: const Color(0xFFF0EBF6),
+      ),
+      _StatCardData(
+        label: 'Active Investors',
+        value: '$activeInvestors',
+        icon: ImageConstants.activeInvestors,
+        iconColor: const Color(0xFF2CB5A8),
+        iconBg: const Color(0xFFE6F7F5),
+      ),
+      const _StatCardData(
+        label: 'Total Investment',
+        value: '₹2,500,000',
+        icon: ImageConstants.totalFunding,
+        iconColor: Color(0xFFE06B7A),
+        iconBg: Color(0xFFFDECEE),
+      ),
+      const _StatCardData(
+        label: 'Pending Payments',
+        value: '₹24,000,000',
+        icon: ImageConstants.amountRemaining,
+        iconColor: Color(0xFFE89A3C),
+        iconBg: Color(0xFFFFF3E8),
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _InvestorsTitleRow(onAddInvestor: onAddInvestor),
         const SizedBox(height: 20),
-        _StatsGrid(stats: _stats),
+        _StatsGrid(stats: stats),
       ],
     );
   }

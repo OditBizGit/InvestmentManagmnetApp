@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/constants/image_constants.dart';
 
-/// Left column: Basic Information + Investment Details cards.
+/// Left column: Basic Information + Login Credentials + Investment Details.
 class AddInvestorFormCards extends StatelessWidget {
   const AddInvestorFormCards({
     super.key,
@@ -16,12 +17,17 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.emailController,
     required this.addressController,
     required this.amountController,
+    required this.usernameController,
+    required this.passwordController,
     required this.investorType,
     required this.typeOptions,
     required this.onTypeChanged,
     required this.investmentDate,
     required this.onPickDate,
     required this.formatDate,
+    this.profilePhoto,
+    required this.onPickProfilePhoto,
+    required this.onClearProfilePhoto,
   });
 
   final GlobalKey<FormState> formKey;
@@ -31,12 +37,17 @@ class AddInvestorFormCards extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController addressController;
   final TextEditingController amountController;
+  final TextEditingController usernameController;
+  final TextEditingController passwordController;
   final String? investorType;
   final List<String> typeOptions;
   final ValueChanged<String?> onTypeChanged;
   final DateTime? investmentDate;
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
+  final PickedPhoto? profilePhoto;
+  final VoidCallback onPickProfilePhoto;
+  final VoidCallback onClearProfilePhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +64,14 @@ class AddInvestorFormCards extends StatelessWidget {
             investorType: investorType,
             typeOptions: typeOptions,
             onTypeChanged: onTypeChanged,
+            profilePhoto: profilePhoto,
+            onPickProfilePhoto: onPickProfilePhoto,
+            onClearProfilePhoto: onClearProfilePhoto,
+          ),
+          const SizedBox(height: 16),
+          _LoginCredentialsCard(
+            usernameController: usernameController,
+            passwordController: passwordController,
           ),
           const SizedBox(height: 16),
           _InvestmentDetailsCard(
@@ -77,6 +96,9 @@ class _BasicInformationCard extends StatelessWidget {
     required this.investorType,
     required this.typeOptions,
     required this.onTypeChanged,
+    this.profilePhoto,
+    required this.onPickProfilePhoto,
+    required this.onClearProfilePhoto,
   });
 
   final TextEditingController fullNameController;
@@ -87,6 +109,9 @@ class _BasicInformationCard extends StatelessWidget {
   final String? investorType;
   final List<String> typeOptions;
   final ValueChanged<String?> onTypeChanged;
+  final PickedPhoto? profilePhoto;
+  final VoidCallback onPickProfilePhoto;
+  final VoidCallback onClearProfilePhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +120,11 @@ class _BasicInformationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _PhotoUploadBox(),
+          _PhotoUploadBox(
+            photo: profilePhoto,
+            onPick: onPickProfilePhoto,
+            onClear: onClearProfilePhoto,
+          ),
           const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -301,6 +330,105 @@ class _BasicInformationCard extends StatelessWidget {
   }
 }
 
+class _LoginCredentialsCard extends StatefulWidget {
+  const _LoginCredentialsCard({
+    required this.usernameController,
+    required this.passwordController,
+  });
+
+  final TextEditingController usernameController;
+  final TextEditingController passwordController;
+
+  @override
+  State<_LoginCredentialsCard> createState() => _LoginCredentialsCardState();
+}
+
+class _LoginCredentialsCardState extends State<_LoginCredentialsCard> {
+  bool _obscurePassword = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return AddInvestorSectionCard(
+      title: 'Login Credentials',
+      subtitle:
+          'Create a username and password for this investor to access their account.',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final twoCol = constraints.maxWidth >= 560;
+          final usernameField = AddInvestorLabeledField(
+            label: 'Username',
+            isRequired: true,
+            child: AddInvestorTextInput(
+              controller: widget.usernameController,
+              hint: 'Enter username',
+              validator: (value) {
+                final username = value?.trim() ?? '';
+                if (username.isEmpty) {
+                  return 'Please enter username';
+                }
+                if (username.length < 3) {
+                  return 'Username must be at least 3 characters';
+                }
+                return null;
+              },
+            ),
+          );
+          final passwordField = AddInvestorLabeledField(
+            label: 'Password',
+            isRequired: true,
+            child: AddInvestorTextInput(
+              controller: widget.passwordController,
+              hint: 'Enter password',
+              obscureText: _obscurePassword,
+              suffixIcon: IconButton(
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.hint,
+                  size: 20,
+                ),
+              ),
+              validator: (value) {
+                final password = value ?? '';
+                if (password.isEmpty) {
+                  return 'Please enter password';
+                }
+                if (password.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
+            ),
+          );
+
+          if (!twoCol) {
+            return Column(
+              children: [
+                usernameField,
+                const SizedBox(height: 14),
+                passwordField,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: usernameField),
+              const SizedBox(width: 14),
+              Expanded(child: passwordField),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _InvestmentDetailsCard extends StatelessWidget {
   const _InvestmentDetailsCard({
     required this.amountController,
@@ -382,58 +510,105 @@ class _InvestmentDetailsCard extends StatelessWidget {
 }
 
 class _PhotoUploadBox extends StatelessWidget {
-  const _PhotoUploadBox();
+  const _PhotoUploadBox({
+    this.photo,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final PickedPhoto? photo;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = photo != null;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: onPick,
         borderRadius: BorderRadius.circular(12),
         child: Row(
           children: [
-            Container(
-              width: 10.h,
-              height: 10.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F1F5),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              alignment: Alignment.center,
-              child: SvgPicture.asset(
-                ImageConstants.camera,
-                width: 4.h,
-                height: 4.h,
-              ),
-            ),
-
-            const SizedBox(width: 30),
-
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+            Stack(
+              clipBehavior: Clip.none,
               children: [
-                Text(
-                  'Upload Profile Photo',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                Container(
+                  width: 10.h,
+                  height: 10.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F1F5),
+                    borderRadius: BorderRadius.circular(24),
+                    image: hasPhoto
+                        ? DecorationImage(
+                            image: MemoryImage(photo!.bytes),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
+                  alignment: Alignment.center,
+                  child: hasPhoto
+                      ? null
+                      : SvgPicture.asset(
+                          ImageConstants.camera,
+                          width: 4.h,
+                          height: 4.h,
+                        ),
                 ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  'JPEG, PNG (Max 2MB)',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
+                if (hasPhoto)
+                  Positioned(
+                    top: -6,
+                    right: -6,
+                    child: Material(
+                      color: AppColors.white,
+                      shape: const CircleBorder(),
+                      elevation: 1,
+                      child: InkWell(
+                        onTap: onClear,
+                        customBorder: const CircleBorder(),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
               ],
+            ),
+            const SizedBox(width: 30),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    hasPhoto ? 'Change Profile Photo' : 'Upload Profile Photo',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    hasPhoto
+                        ? photo!.name
+                        : 'JPEG, PNG (Max 2MB)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -447,9 +622,11 @@ class AddInvestorSectionCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.child,
+    this.subtitle,
   });
 
   final String title;
+  final String? subtitle;
   final Widget child;
 
   @override
@@ -480,6 +657,18 @@ class AddInvestorSectionCard extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           child,
         ],
@@ -540,18 +729,23 @@ class AddInvestorTextInput extends StatelessWidget {
     required this.hint,
     this.keyboardType,
     this.validator,
+    this.obscureText = false,
+    this.suffixIcon,
   });
 
   final TextEditingController controller;
   final String hint;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
+  final bool obscureText;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      obscureText: obscureText,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       validator: validator,
       style: TextStyle(
@@ -559,7 +753,9 @@ class AddInvestorTextInput extends StatelessWidget {
         fontWeight: FontWeight.w400,
         color: AppColors.textPrimary,
       ),
-      decoration: addInvestorInputDecoration(hint),
+      decoration: addInvestorInputDecoration(hint).copyWith(
+        suffixIcon: suffixIcon,
+      ),
     );
   }
 }

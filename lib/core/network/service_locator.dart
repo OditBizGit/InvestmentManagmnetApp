@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
@@ -101,12 +103,20 @@ Future<void> setupDi() async {
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepository(dio: getIt<Dio>()),
   );
+  getIt.registerLazySingleton<InvestorsRepository>(
+    () => InvestorsRepository(dio: getIt<Dio>()),
+  );
 
   // ── BLoC / Cubit factories ────────────────────────────────────────
   getIt.registerFactory<LoginCubit>(
     () => LoginCubit(
       authRepository: getIt<AuthRepository>(),
       localStorage: getIt<LocalStorage>(),
+    ),
+  );
+  getIt.registerFactory<InvestorsCubit>(
+    () => InvestorsCubit(
+      repository: getIt<InvestorsRepository>(),
     ),
   );
 }

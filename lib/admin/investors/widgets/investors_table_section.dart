@@ -1,124 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
 
 class InvestorsTableSection extends StatelessWidget {
-  const InvestorsTableSection({super.key});
+  const InvestorsTableSection({
+    super.key,
+    required this.investors,
+    this.isLoading = false,
+  });
+
+  final List<InvestorModel> investors;
+  final bool isLoading;
 
   static const double _minTableWidth = 980;
 
-  static const List<_Investor> _investors = [
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Complete',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-    _Investor(
-      name: 'Corey Herwitz',
-      type: 'Cooperate Investor',
-      mobile: '+91 6545 7654 78',
-      email: 'corey@gmail.com',
-      investAmount: '₹20.000000',
-      paidAmount: '₹1,0000',
-      status: 'Pending',
-      joinedDate: '03 Jun, 2026',
-    ),
-  ];
+  String _formatDate(DateTime? date) {
+    if (date == null) return '-';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,24 +76,57 @@ class InvestorsTableSection extends StatelessWidget {
                       clipBehavior: Clip.antiAlias,
                       child: SizedBox(
                         height: 540,
-                        child: Scrollbar(
-                          thumbVisibility: true,
-                          child: ListView.separated(
-                            padding: EdgeInsets.zero,
-                            itemCount: _investors.length,
-                            separatorBuilder: (_, __) => const Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: AppColors.cardBg,
-                            ),
-                            itemBuilder: (context, index) {
-                              return _InvestorRow(
-                                index: index,
-                                investor: _investors[index],
-                              );
-                            },
-                          ),
-                        ),
+                        child: isLoading
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.accent,
+                                ),
+                              )
+                            : investors.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      'No investors found',
+                                      style: TextStyle(
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  )
+                                : Scrollbar(
+                                    thumbVisibility: true,
+                                    child: ListView.separated(
+                                      padding: EdgeInsets.zero,
+                                      itemCount: investors.length,
+                                      separatorBuilder: (_, _) =>
+                                          const Divider(
+                                        height: 1,
+                                        thickness: 1,
+                                        color: AppColors.cardBg,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        final investor = investors[index];
+                                        return _InvestorRow(
+                                          index: index,
+                                          name: investor.fullName,
+                                          type: investor.investorType ?? '-',
+                                          mobile:
+                                              investor.phoneNumber ?? '-',
+                                          email: investor.email,
+                                          investAmount: '-',
+                                          paidAmount: '-',
+                                          status: investor.isActive
+                                              ? 'Active'
+                                              : 'Inactive',
+                                          joinedDate: _formatDate(
+                                            investor.createdDate,
+                                          ),
+                                          profileImage:
+                                              investor.profileImageUrl,
+                                        );
+                                      },
+                                    ),
+                                  ),
                       ),
                     ),
                   ],
@@ -255,15 +202,32 @@ class _HeaderCell extends StatelessWidget {
 class _InvestorRow extends StatelessWidget {
   const _InvestorRow({
     required this.index,
-    required this.investor,
+    required this.name,
+    required this.type,
+    required this.mobile,
+    required this.email,
+    required this.investAmount,
+    required this.paidAmount,
+    required this.status,
+    required this.joinedDate,
+    this.profileImage,
   });
 
   final int index;
-  final _Investor investor;
+  final String name;
+  final String type;
+  final String mobile;
+  final String email;
+  final String investAmount;
+  final String paidAmount;
+  final String status;
+  final String joinedDate;
+  final String? profileImage;
 
   @override
   Widget build(BuildContext context) {
     final isEven = index.isEven;
+    final imageUrl = profileImage;
 
     return ColoredBox(
       color: isEven ? AppColors.white : const Color(0xFFFBF9FC),
@@ -289,17 +253,39 @@ class _InvestorRow extends StatelessWidget {
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: Image.network(
-                        'https://i.pravatar.cc/100?img=${index + 11}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) {
-                          return const Icon(
-                            Icons.person,
-                            size: 18,
-                            color: AppColors.textSecondary,
-                          );
-                        },
-                      ),
+                      child: imageUrl != null && imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              headers: const {
+                                'Accept': 'image/*,*/*',
+                              },
+                              errorBuilder: (_, _, _) {
+                                return const Icon(
+                                  Icons.person,
+                                  size: 18,
+                                  color: AppColors.textSecondary,
+                                );
+                              },
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child: SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: AppColors.accent,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : const Icon(
+                              Icons.person,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -308,7 +294,7 @@ class _InvestorRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            investor.name,
+                            name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -319,7 +305,7 @@ class _InvestorRow extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            investor.type,
+                            type,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -333,18 +319,18 @@ class _InvestorRow extends StatelessWidget {
                   ],
                 ),
               ),
-              _Cell(investor.mobile, flex: 3),
-              _Cell(investor.email, flex: 3),
-              _Cell(investor.investAmount, flex: 2),
-              _Cell(investor.paidAmount, flex: 2),
+              _Cell(mobile, flex: 3),
+              _Cell(email, flex: 3),
+              _Cell(investAmount, flex: 2),
+              _Cell(paidAmount, flex: 2),
               Expanded(
                 flex: 2,
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: _StatusBadge(status: investor.status),
+                  child: _StatusBadge(status: status),
                 ),
               ),
-              _Cell(investor.joinedDate, flex: 2),
+              _Cell(joinedDate, flex: 2),
               Expanded(
                 flex: 1,
                 child: Center(
@@ -404,7 +390,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool complete = status == 'Complete';
+    final bool active = status == 'Active';
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -412,7 +398,7 @@ class _StatusBadge extends StatelessWidget {
         vertical: 5,
       ),
       decoration: BoxDecoration(
-        color: complete
+        color: active
             ? AppColors.green.withValues(alpha: 0.12)
             : AppColors.error.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(6),
@@ -422,31 +408,9 @@ class _StatusBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 8.5.sp,
           fontWeight: FontWeight.w600,
-          color: complete ? AppColors.green : AppColors.error,
+          color: active ? AppColors.green : AppColors.error,
         ),
       ),
     );
   }
-}
-
-class _Investor {
-  const _Investor({
-    required this.name,
-    required this.type,
-    required this.mobile,
-    required this.email,
-    required this.investAmount,
-    required this.paidAmount,
-    required this.status,
-    required this.joinedDate,
-  });
-
-  final String name;
-  final String type;
-  final String mobile;
-  final String email;
-  final String investAmount;
-  final String paidAmount;
-  final String status;
-  final String joinedDate;
 }

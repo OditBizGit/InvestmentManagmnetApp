@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/add_investor_widget/add_investor_form_cards.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/add_investor_widget/add_investor_side_panel.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 import 'package:sizer/sizer.dart';
 
 class AddNewInvestorScreen extends StatefulWidget {
@@ -25,11 +26,14 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
   final _amountController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _formCardsKey = GlobalKey();
 
   String? _investorType;
   DateTime? _investmentDate = DateTime.now();
+  PickedPhoto? _profilePhoto;
   double? _formCardsHeight;
   bool _heightSyncScheduled = false;
 
@@ -49,6 +53,8 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
     _emailController.dispose();
     _addressController.dispose();
     _amountController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -91,6 +97,16 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
 
       setState(() => _formCardsHeight = nextHeight);
     });
+  }
+
+  Future<void> _pickProfilePhoto() async {
+    final photo = await PhotoPickerHelper.pickProfilePhoto();
+    if (photo == null || !mounted) return;
+    setState(() => _profilePhoto = photo);
+  }
+
+  void _clearProfilePhoto() {
+    setState(() => _profilePhoto = null);
   }
 
   Future<void> _pickDate() async {
@@ -163,12 +179,17 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
             emailController: _emailController,
             addressController: _addressController,
             amountController: _amountController,
+            usernameController: _usernameController,
+            passwordController: _passwordController,
             investorType: _investorType,
             typeOptions: _typeOptions,
             onTypeChanged: (value) => setState(() => _investorType = value),
             investmentDate: _investmentDate,
             onPickDate: _pickDate,
             formatDate: _formatDate,
+            profilePhoto: _profilePhoto,
+            onPickProfilePhoto: _pickProfilePhoto,
+            onClearProfilePhoto: _clearProfilePhoto,
           );
 
           final sidePanel = AddInvestorSidePanel(
