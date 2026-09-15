@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/home/notification_screen.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/investment_summary_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/latest_project_updates.dart';
@@ -18,127 +22,88 @@ class UserHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<HomeCubit>()..loadHome(),
+      child: const _UserHomeView(),
+    );
+  }
+}
+
+class _UserHomeView extends StatelessWidget {
+  const _UserHomeView();
+
+  @override
+  Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.white,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 0.5.h),
-              child: const _HomeHeader(),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(4.w, 3.h, 4.w, 1.5.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _InvestmentSummaryCardHost(),
-                    SizedBox(height: 2.5.h),
-                    const _TopInvestorsCarouselHost(),
-                    SizedBox(height: 2.h),
-                    const _ServiceGalleryCarouselHost(),
-                    SizedBox(height: 2.h),
-                    const _PhaseProgressCardHost(),
-                    SizedBox(height: 2.5.h),
-                    const _LatestProjectUpdatesHost(),
-                    SizedBox(height: 1.h),
-                  ],
+        child: BlocConsumer<HomeCubit, HomeState>(
+          listener: (context, state) {
+            if (state is HomeFailure) {
+              AppSnackBar.show(
+                context,
+                message: state.message,
+                icon: Icons.error_outline_rounded,
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading =
+                state is HomeInitial || state is HomeLoading;
+            final profile =
+                state is HomeSuccess ? state.profile : null;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 0.5.h),
+                  child: _HomeHeader(
+                    displayName: profile?.displayName ?? 'Investor',
+                  ),
                 ),
-              ),
-            ),
-          ],
+                Expanded(
+                  child: RefreshIndicator(
+                    color: UserHomeScreen._accent,
+                    onRefresh: () =>
+                        context.read<HomeCubit>().loadHome(),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(4.w, 3.h, 4.w, 1.5.h),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InvestmentSummaryCard(
+                            isLoading: isLoading,
+                            profile: profile,
+                          ),
+                          SizedBox(height: 2.5.h),
+                          TopInvestorsCarousel(isLoading: isLoading),
+                          SizedBox(height: 2.h),
+                          ServiceGalleryCarousel(isLoading: isLoading),
+                          SizedBox(height: 2.h),
+                          PhaseProgressCard(isLoading: isLoading),
+                          SizedBox(height: 2.5.h),
+                          LatestProjectUpdates(isLoading: isLoading),
+                          SizedBox(height: 1.h),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _HomeSectionLoadingHost extends StatefulWidget {
-  const _HomeSectionLoadingHost({required this.builder});
-
-  final Widget Function(bool isLoading) builder;
-
-  @override
-  State<_HomeSectionLoadingHost> createState() =>
-      _HomeSectionLoadingHostState();
-}
-
-class _HomeSectionLoadingHostState extends State<_HomeSectionLoadingHost> {
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.delayed(const Duration(milliseconds: 8400), () {
-      if (mounted) setState(() => _isLoading = false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.builder(_isLoading);
-  }
-}
-
-class _InvestmentSummaryCardHost extends StatelessWidget {
-  const _InvestmentSummaryCardHost();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeSectionLoadingHost(
-      builder: (isLoading) => InvestmentSummaryCard(isLoading: isLoading),
-    );
-  }
-}
-
-class _TopInvestorsCarouselHost extends StatelessWidget {
-  const _TopInvestorsCarouselHost();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeSectionLoadingHost(
-      builder: (isLoading) => TopInvestorsCarousel(isLoading: isLoading),
-    );
-  }
-}
-
-class _ServiceGalleryCarouselHost extends StatelessWidget {
-  const _ServiceGalleryCarouselHost();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeSectionLoadingHost(
-      builder: (isLoading) => ServiceGalleryCarousel(isLoading: isLoading),
-    );
-  }
-}
-
-class _PhaseProgressCardHost extends StatelessWidget {
-  const _PhaseProgressCardHost();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeSectionLoadingHost(
-      builder: (isLoading) => PhaseProgressCard(isLoading: isLoading),
-    );
-  }
-}
-
-class _LatestProjectUpdatesHost extends StatelessWidget {
-  const _LatestProjectUpdatesHost();
-
-  @override
-  Widget build(BuildContext context) {
-    return _HomeSectionLoadingHost(
-      builder: (isLoading) => LatestProjectUpdates(isLoading: isLoading),
-    );
-  }
-}
-
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader();
+  const _HomeHeader({required this.displayName});
+
+  final String displayName;
 
   static final int _notificationCount = NotificationScreen.unreadCount;
 
@@ -161,7 +126,7 @@ class _HomeHeader extends StatelessWidget {
                   ),
                   children: [
                     TextSpan(
-                      text: 'John Mathew',
+                      text: displayName.toUpperCase(),
                       style: TextStyle(
                         fontSize: 17.sp,
                         fontWeight: FontWeight.w700,

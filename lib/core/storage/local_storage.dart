@@ -19,6 +19,8 @@ class LocalStorage {
   static const String _fullNameKey = 'full_name';
   static const String _userRoleKey = 'user_role';
   static const String _userEmailKey = 'user_email';
+  static const String _investorCodeKey = 'investor_code';
+  static const String _profileImageKey = 'profile_image';
   static const String _isLoggedInKey = 'is_logged_in';
 
   // ── Auth token ────────────────────────────────────────────────────
@@ -64,6 +66,16 @@ class LocalStorage {
 
   String? getUserEmail() => _prefs.getString(_userEmailKey);
 
+  Future<bool> setInvestorCode(String investorCode) =>
+      _prefs.setString(_investorCodeKey, investorCode);
+
+  String? getInvestorCode() => _prefs.getString(_investorCodeKey);
+
+  Future<bool> setProfileImage(String profileImage) =>
+      _prefs.setString(_profileImageKey, profileImage);
+
+  String? getProfileImage() => _prefs.getString(_profileImageKey);
+
   Future<bool> setIsLoggedIn(bool value) =>
       _prefs.setBool(_isLoggedInKey, value);
 
@@ -87,6 +99,8 @@ class LocalStorage {
     String? fullName,
     String? userRole,
     String? userEmail,
+    String? investorCode,
+    String? profileImage,
   }) async {
     await clearSession();
     await setAuthToken(authToken);
@@ -96,6 +110,12 @@ class LocalStorage {
     if (fullName != null) await setFullName(fullName);
     if (userRole != null) await setUserRole(userRole);
     if (userEmail != null) await setUserEmail(userEmail);
+    if (investorCode != null && investorCode.isNotEmpty) {
+      await setInvestorCode(investorCode);
+    }
+    if (profileImage != null && profileImage.isNotEmpty) {
+      await setProfileImage(profileImage);
+    }
     await setIsLoggedIn(true);
   }
 
@@ -109,6 +129,8 @@ class LocalStorage {
       _prefs.remove(_fullNameKey),
       _prefs.remove(_userRoleKey),
       _prefs.remove(_userEmailKey),
+      _prefs.remove(_investorCodeKey),
+      _prefs.remove(_profileImageKey),
       _prefs.remove(_isLoggedInKey),
     ]);
   }

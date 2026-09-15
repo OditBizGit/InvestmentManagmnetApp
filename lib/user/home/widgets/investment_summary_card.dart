@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -8,9 +9,11 @@ class InvestmentSummaryCard extends StatelessWidget {
   const InvestmentSummaryCard({
     super.key,
     this.isLoading = false,
+    this.profile,
   });
 
   final bool isLoading;
+  final HomeProfileModel? profile;
 
   static const Color _accent = Color(0xFFA28CC1);
   static const Color _cardBg = Color(0xFFF0EBF6);
@@ -28,7 +31,9 @@ class InvestmentSummaryCard extends StatelessWidget {
         color: _cardBg,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: isLoading ? const _LoadingBody() : const _InvestmentSummaryBody(),
+      child: isLoading
+          ? const _LoadingBody()
+          : _InvestmentSummaryBody(profile: profile),
     );
   }
 }
@@ -64,11 +69,13 @@ class _InvestmentSummaryBody extends StatelessWidget {
     this.isLoading = false,
     this.tileColor = Colors.white,
     this.headerOpacity = 1,
+    this.profile,
   });
 
   final bool isLoading;
   final Color tileColor;
   final double headerOpacity;
+  final HomeProfileModel? profile;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +83,10 @@ class _InvestmentSummaryBody extends StatelessWidget {
       children: [
         Opacity(
           opacity: headerOpacity,
-          child: _ProfileHeader(isLoading: isLoading),
+          child: _ProfileHeader(
+            isLoading: isLoading,
+            profile: profile,
+          ),
         ),
         SizedBox(height: 2.h),
         Row(
@@ -110,9 +120,13 @@ class _InvestmentSummaryBody extends StatelessWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.isLoading});
+  const _ProfileHeader({
+    required this.isLoading,
+    this.profile,
+  });
 
   final bool isLoading;
+  final HomeProfileModel? profile;
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +140,12 @@ class _ProfileHeader extends StatelessWidget {
       fontWeight: FontWeight.w600,
       color: Colors.white,
     );
+
+    final imageUrl = isLoading ? null : profile?.profileImageUrl;
+    final displayName = profile?.displayName ?? 'Investor';
+    final investorCode = profile?.investorCode?.trim();
+    final displayCode =
+        (investorCode != null && investorCode.isNotEmpty) ? investorCode : '';
 
     return Column(
       children: [
@@ -141,10 +161,14 @@ class _ProfileHeader extends StatelessWidget {
           child: CircleAvatar(
             radius: 9.w,
             backgroundColor: Colors.white,
-            backgroundImage: isLoading
+            backgroundImage:
+                imageUrl == null ? null : NetworkImage(imageUrl),
+            child: isLoading || imageUrl != null
                 ? null
-                : const NetworkImage(
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
+                : Icon(
+                    Icons.person_outline_rounded,
+                    size: 9.w,
+                    color: InvestmentSummaryCard._accent,
                   ),
           ),
         ),
@@ -157,21 +181,34 @@ class _ProfileHeader extends StatelessWidget {
             widthFactor: 0.72,
           )
         else
-          Text('John Mathew', style: nameStyle),
+          Text(displayName, style: nameStyle),
         SizedBox(height: 0.5.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 0.5.h),
-          decoration: BoxDecoration(
-            color: isLoading ? Colors.white : InvestmentSummaryCard._accent,
-            borderRadius: BorderRadius.circular(20),
+        if (isLoading)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 0.5.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'INV - 10254',
+              style: badgeStyle.copyWith(color: Colors.transparent),
+            ),
+          )
+        else if (displayCode.isNotEmpty)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 0.5.h),
+            decoration: BoxDecoration(
+              color: InvestmentSummaryCard._accent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              displayCode.toUpperCase().startsWith('INV-')
+                  ? displayCode
+                  : 'INV - $displayCode',
+              style: badgeStyle,
+            ),
           ),
-          child: Text(
-            'INV - 10254',
-            style: isLoading
-                ? badgeStyle.copyWith(color: Colors.transparent)
-                : badgeStyle,
-          ),
-        ),
       ],
     );
   }

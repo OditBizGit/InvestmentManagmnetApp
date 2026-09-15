@@ -17,6 +17,7 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> login({
     required String username,
     required String password,
+    String? requiredRole,
   }) async {
     emit(LoginLoading());
     try {
@@ -35,6 +36,19 @@ class LoginCubit extends Cubit<LoginState> {
       }
 
       final data = response.data!;
+      if (requiredRole != null &&
+          data.userRole.toLowerCase() != requiredRole.toLowerCase()) {
+        emit(
+          LoginFailure(
+            'Access denied. Only $requiredRole accounts can log in here.',
+          ),
+        );
+        return;
+      }
+
+      final investorCode = data.investorCode?.trim();
+      final profileImage = data.profileImage?.trim();
+
       // Replace any previous session with the newly returned token/data.
       await _localStorage.saveSession(
         authToken: data.token,
@@ -43,6 +57,14 @@ class LoginCubit extends Cubit<LoginState> {
         fullName: data.fullName,
         userRole: data.userRole,
         userEmail: data.email,
+        investorCode:
+            (investorCode != null && investorCode.isNotEmpty)
+                ? investorCode
+                : null,
+        profileImage:
+            (profileImage != null && profileImage.isNotEmpty)
+                ? profileImage
+                : null,
       );
 
       emit(LoginSuccess(response));

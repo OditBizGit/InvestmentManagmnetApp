@@ -7,12 +7,28 @@ import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart'
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
+import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
+import 'package:maribel_wellness_centre_application/user/home/repository/home_repository.dart';
 
 /// Global service locator instance.
 final GetIt getIt = GetIt.instance;
 
 /// API base URL used by network clients / repositories.
 const String kBaseUrl = 'http://103.38.50.206:3052/';
+
+/// Builds a full URL from a stored relative path such as `/investorphotos/...`.
+String? resolveMediaUrl(String? path) {
+  if (path == null) return null;
+  final trimmed = path.trim();
+  if (trimmed.isEmpty) return null;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  final base = kBaseUrl.endsWith('/')
+      ? kBaseUrl.substring(0, kBaseUrl.length - 1)
+      : kBaseUrl;
+  return '$base${trimmed.startsWith('/') ? trimmed : '/$trimmed'}';
+}
 
 /// Registers core dependencies used by Flutter BLoC layers.
 ///
@@ -106,6 +122,9 @@ Future<void> setupDi() async {
   getIt.registerLazySingleton<InvestorsRepository>(
     () => InvestorsRepository(dio: getIt<Dio>()),
   );
+  getIt.registerLazySingleton<HomeRepository>(
+    () => HomeRepository(localStorage: getIt<LocalStorage>()),
+  );
 
   // ── BLoC / Cubit factories ────────────────────────────────────────
   getIt.registerFactory<LoginCubit>(
@@ -117,6 +136,11 @@ Future<void> setupDi() async {
   getIt.registerFactory<InvestorsCubit>(
     () => InvestorsCubit(
       repository: getIt<InvestorsRepository>(),
+    ),
+  );
+  getIt.registerFactory<HomeCubit>(
+    () => HomeCubit(
+      repository: getIt<HomeRepository>(),
     ),
   );
 }

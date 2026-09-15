@@ -24,7 +24,10 @@ class UserProfileScreen extends StatelessWidget {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
-        builder: (_) => const LoginScreen(home: UserMainScreen()),
+        builder: (_) => const LoginScreen(
+          home: UserMainScreen(),
+          snackBarMessage: 'Logged out successfully',
+        ),
       ),
       (_) => false,
     );

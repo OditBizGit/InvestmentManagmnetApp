@@ -8,12 +8,13 @@ import 'package:maribel_wellness_centre_application/auth/repository/login_reposi
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/user/home/repository/home_repository.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
 /// `true` → Admin interface · `false` → User interface
-const bool isAdmin = true;
+const bool isAdmin = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,9 @@ class MyApp extends StatelessWidget {
         ),
         RepositoryProvider<InvestorsRepository>.value(
           value: getIt<InvestorsRepository>(),
+        ),
+        RepositoryProvider<HomeRepository>.value(
+          value: getIt<HomeRepository>(),
         ),
       ],
       child: MultiBlocProvider(

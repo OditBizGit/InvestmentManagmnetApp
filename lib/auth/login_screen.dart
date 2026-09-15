@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/auth/admin_web_login_screen.dart';
+import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:sizer/sizer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
     super.key,
     required this.home,
+    this.snackBarMessage,
   });
 
   /// Shell opened after login (Admin or User), set from [main.dart].
   final Widget home;
+
+  /// Shown once after this screen opens (e.g. after logout).
+  final String? snackBarMessage;
 
   /// Below this width the mobile login UI is shown; at/above it, web login.
   static const double webBreakpoint = 900;
@@ -28,6 +35,21 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    final message = widget.snackBarMessage;
+    if (message == null || message.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: message,
+        icon: Icons.check_circle_outline_rounded,
+      );
+    });
+  }
+
+  @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
@@ -36,9 +58,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onLogin() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => widget.home),
-    );
+    context.read<LoginCubit>().login(
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+          requiredRole: 'Investor',
+        );
   }
 
   @override
@@ -54,112 +78,158 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildMobileLogin() {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 6.w),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 3.h),
-                Image.asset(
-                  ImageConstants.logo,
-                  height: 9.h,
-                  fit: BoxFit.contain,
-                  alignment: Alignment.centerLeft,
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  'Welcome Back',
-                  style: TextStyle(
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 0.1.h),
-                Text(
-                  'Track your hospital investment with complete transparency.',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 3.5.h),
-                _LoginTextField(
-                  label: 'Username',
-                  hint: 'Enter your username',
-                  iconPath: ImageConstants.username,
-                  controller: _usernameController,
-                  textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your username';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 2.h),
-                _LoginTextField(
-                  label: 'Password',
-                  hint: 'Enter your password',
-                  iconPath: ImageConstants.password,
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _onLogin(),
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: AppColors.accent,
-                      size: 18.5.sp,
+    return BlocConsumer<LoginCubit, LoginState>(
+      listener: (context, state) {
+        if (state is LoginSuccess) {
+          final message = state.response.message.isNotEmpty
+              ? state.response.message
+              : 'Logged in successfully';
+          AppSnackBar.show(
+            context,
+            message: message,
+            icon: Icons.check_circle_outline_rounded,
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(builder: (_) => widget.home),
+          );
+        } else if (state is LoginFailure) {
+          AppSnackBar.show(
+            context,
+            message: state.message,
+            icon: Icons.error_outline_rounded,
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is LoginLoading;
+
+        return Scaffold(
+          backgroundColor: AppColors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 6.w),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 3.h),
+                    Image.asset(
+                      ImageConstants.logo,
+                      height: 9.h,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.centerLeft,
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 4.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 6.h,
-                  child: ElevatedButton(
-                    onPressed: _onLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      'Login',
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Welcome Back',
                       style: TextStyle(
-                        fontSize: 15.5.sp,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                  ),
+                    SizedBox(height: 0.1.h),
+                    Text(
+                      'Track your hospital investment with complete transparency.',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 3.5.h),
+                    _LoginTextField(
+                      label: 'Username',
+                      hint: 'Enter your username',
+                      iconPath: ImageConstants.username,
+                      controller: _usernameController,
+                      textInputAction: TextInputAction.next,
+                      enabled: !isLoading,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your username';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 2.h),
+                    _LoginTextField(
+                      label: 'Password',
+                      hint: 'Enter your password',
+                      iconPath: ImageConstants.password,
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      enabled: !isLoading,
+                      onFieldSubmitted: isLoading ? null : (_) => _onLogin(),
+                      suffixIcon: IconButton(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                );
+                              },
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.accent,
+                          size: 18.5.sp,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 4.h),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 6.h,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _onLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.white,
+                          disabledBackgroundColor: AppColors.accent,
+                          disabledForegroundColor: AppColors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.white,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 15.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                  ],
                 ),
-                SizedBox(height: 4.h),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -171,6 +241,7 @@ class _LoginTextField extends StatelessWidget {
     required this.iconPath,
     required this.controller,
     this.obscureText = false,
+    this.enabled = true,
     this.textInputAction,
     this.onFieldSubmitted,
     this.suffixIcon,
@@ -182,6 +253,7 @@ class _LoginTextField extends StatelessWidget {
   final String iconPath;
   final TextEditingController controller;
   final bool obscureText;
+  final bool enabled;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
   final Widget? suffixIcon;
@@ -204,6 +276,7 @@ class _LoginTextField extends StatelessWidget {
         TextFormField(
           controller: controller,
           obscureText: obscureText,
+          enabled: enabled,
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
           validator: validator,
@@ -238,6 +311,10 @@ class _LoginTextField extends StatelessWidget {
               vertical: 1.8.h,
             ),
             enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: AppColors.border),
             ),

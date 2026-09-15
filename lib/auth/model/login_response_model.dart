@@ -30,6 +30,7 @@ class LoginDataModel {
   final String email;
   final String? phoneNumber;
   final String? investorCode;
+  final String? profileImage;
   final String userRole;
   final String token;
 
@@ -40,6 +41,7 @@ class LoginDataModel {
     required this.email,
     this.phoneNumber,
     this.investorCode,
+    this.profileImage,
     required this.userRole,
     required this.token,
   });
@@ -52,6 +54,7 @@ class LoginDataModel {
       email: json['email'] ?? '',
       phoneNumber: json['phoneNumber'],
       investorCode: json['investorCode'],
+      profileImage: json['profileImage'],
       userRole: json['userRole'] ?? '',
       token: json['token'] ?? '',
     );
