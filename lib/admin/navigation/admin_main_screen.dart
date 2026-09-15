@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/investors_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/reports_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/settings_screen.dart';
+import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_footer.dart';
 import 'package:maribel_wellness_centre_application/core/utils/logout_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/work_progress_screen.dart';
@@ -58,6 +60,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   Future<void> _onLogout() async {
     final confirmed = await showLogoutConfirmDialog(context);
     if (!confirmed || !mounted) return;
+
+    await context.read<LoginCubit>().logout();
+    if (!mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(

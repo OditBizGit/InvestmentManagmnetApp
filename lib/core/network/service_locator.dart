@@ -1,13 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
+import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
+import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 
 /// Global service locator instance.
 final GetIt getIt = GetIt.instance;
 
 /// API base URL used by network clients / repositories.
-const String kBaseUrl = 'https://api.maribelwellness.com/v1/';
+const String kBaseUrl = 'http://103.38.50.206:3052/';
 
 /// Registers core dependencies used by Flutter BLoC layers.
 ///
@@ -41,9 +44,19 @@ Future<void> setupDi() async {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final token = getIt<LocalStorage>().getAuthToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          final isPublicAuthRequest = _isPublicAuthRequest(options);
+
+          // Never attach a (possibly stale) token to login / public auth calls.
+          if (isPublicAuthRequest) {
+            options.headers.remove('Authorization');
+          } else {
+            // Always read the latest token from LocalStorage.
+            final token = getIt<LocalStorage>().getAuthToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            } else {
+              options.headers.remove('Authorization');
+            }
           }
 
           if (kDebugMode) {
@@ -84,7 +97,24 @@ Future<void> setupDi() async {
     return dio;
   });
 
+  // ── Repositories ──────────────────────────────────────────────────
+  getIt.registerLazySingleton<AuthRepository>(
+    () => AuthRepository(dio: getIt<Dio>()),
+  );
+
   // ── BLoC / Cubit factories ────────────────────────────────────────
-  // Register feature Blocs/Cubits here as factories, e.g.:
-  // getIt.registerFactory(() => AuthBloc(localStorage: getIt()));
+  getIt.registerFactory<LoginCubit>(
+    () => LoginCubit(
+      authRepository: getIt<AuthRepository>(),
+      localStorage: getIt<LocalStorage>(),
+    ),
+  );
+}
+
+/// Public auth endpoints that must not send an Authorization header.
+bool _isPublicAuthRequest(RequestOptions options) {
+  final path = options.path;
+  final fullPath = options.uri.path;
+  return path.contains(ApiEndpoints.login) ||
+      fullPath.contains(ApiEndpoints.login);
 }

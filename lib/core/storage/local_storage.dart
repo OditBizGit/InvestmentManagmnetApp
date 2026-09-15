@@ -16,6 +16,7 @@ class LocalStorage {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
   static const String _usernameKey = 'username';
+  static const String _fullNameKey = 'full_name';
   static const String _userRoleKey = 'user_role';
   static const String _userEmailKey = 'user_email';
   static const String _isLoggedInKey = 'is_logged_in';
@@ -48,6 +49,11 @@ class LocalStorage {
 
   String? getUsername() => _prefs.getString(_usernameKey);
 
+  Future<bool> setFullName(String fullName) =>
+      _prefs.setString(_fullNameKey, fullName);
+
+  String? getFullName() => _prefs.getString(_fullNameKey);
+
   Future<bool> setUserRole(String role) =>
       _prefs.setString(_userRoleKey, role);
 
@@ -63,31 +69,44 @@ class LocalStorage {
 
   bool getIsLoggedIn() => _prefs.getBool(_isLoggedInKey) ?? false;
 
+  /// True when a non-empty auth token is saved (survives app restart).
+  bool hasValidSession() {
+    final token = getAuthToken();
+    return token != null && token.isNotEmpty && getIsLoggedIn();
+  }
+
   /// Saves the common session fields returned after a successful login.
+  ///
+  /// Clears any previous session first so the new auth token fully replaces
+  /// the old one and cannot leak into the next request.
   Future<void> saveSession({
     required String authToken,
     String? refreshToken,
     String? userId,
     String? username,
+    String? fullName,
     String? userRole,
     String? userEmail,
   }) async {
+    await clearSession();
     await setAuthToken(authToken);
     if (refreshToken != null) await setRefreshToken(refreshToken);
     if (userId != null) await setUserId(userId);
     if (username != null) await setUsername(username);
+    if (fullName != null) await setFullName(fullName);
     if (userRole != null) await setUserRole(userRole);
     if (userEmail != null) await setUserEmail(userEmail);
     await setIsLoggedIn(true);
   }
 
-  /// Clears auth and session data (e.g. on logout).
+  /// Completely removes the auth token and all session-specific data.
   Future<void> clearSession() async {
     await Future.wait([
       _prefs.remove(_authTokenKey),
       _prefs.remove(_refreshTokenKey),
       _prefs.remove(_userIdKey),
       _prefs.remove(_usernameKey),
+      _prefs.remove(_fullNameKey),
       _prefs.remove(_userRoleKey),
       _prefs.remove(_userEmailKey),
       _prefs.remove(_isLoggedInKey),

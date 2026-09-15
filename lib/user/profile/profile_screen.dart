@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
@@ -16,6 +18,9 @@ class UserProfileScreen extends StatelessWidget {
   Future<void> _onLogout(BuildContext context) async {
     final confirmed = await showUserLogoutConfirmDialog(context);
     if (!confirmed || !context.mounted) return;
+
+    await context.read<LoginCubit>().logout();
+    if (!context.mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(

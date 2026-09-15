@@ -3,6 +3,8 @@ import 'package:gif_view/gif_view.dart';
 import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:sizer/sizer.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -85,9 +87,13 @@ class _SplashScreenState extends State<SplashScreen>
     await Future<void>.delayed(_delayBeforeNavigate);
     if (!mounted) return;
 
+    final hasSession = getIt<LocalStorage>().hasValidSession();
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => LoginScreen(home: widget.homeAfterLogin),
+        builder: (_) => hasSession
+            ? widget.homeAfterLogin
+            : LoginScreen(home: widget.homeAfterLogin),
       ),
     );
   }
