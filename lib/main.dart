@@ -3,14 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_main_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:sizer/sizer.dart';
 
 /// `true` → Admin interface · `false` → User interface
-const bool isAdmin = false;
+const bool isAdmin = true;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await setupDi();
   if (!isAdmin) {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
