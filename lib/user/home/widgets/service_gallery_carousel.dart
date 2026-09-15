@@ -1,9 +1,19 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class ServiceGalleryCarousel extends StatefulWidget {
-  const ServiceGalleryCarousel({super.key});
+  const ServiceGalleryCarousel({
+    super.key,
+    this.isLoading = false,
+  });
+
+  final bool isLoading;
+
+  static const Color _accent = Color(0xFFA28CC1);
+  static const Color _shimmerBase = Color(0xFFE0E0E0);
+  static const Color _shimmerHighlight = Color(0xFFF5F5F5);
 
   @override
   State<ServiceGalleryCarousel> createState() =>
@@ -11,8 +21,6 @@ class ServiceGalleryCarousel extends StatefulWidget {
 }
 
 class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
-  static const Color _accent = Color(0xFFA28CC1);
-
   int _currentIndex = 0;
 
   static const List<List<String>> _galleryPages = [
@@ -38,6 +46,10 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isLoading) {
+      return const _GalleryShimmer();
+    }
+
     return Column(
       children: [
         CarouselSlider.builder(
@@ -67,13 +79,112 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
               width: isActive ? 2.5.w : 1.8.w,
               height: 1.8.w,
               decoration: BoxDecoration(
-                color: isActive ? _accent : const Color(0xFFD0C8DB),
+                color: isActive
+                    ? ServiceGalleryCarousel._accent
+                    : const Color(0xFFD0C8DB),
                 shape: BoxShape.circle,
               ),
             );
           }),
         ),
       ],
+    );
+  }
+}
+
+class _GalleryShimmer extends StatelessWidget {
+  const _GalleryShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 25.h,
+          width: double.infinity,
+          child: Shimmer.fromColors(
+            baseColor: ServiceGalleryCarousel._shimmerBase,
+            highlightColor: ServiceGalleryCarousel._shimmerHighlight,
+            direction: ShimmerDirection.ltr,
+            period: const Duration(milliseconds: 1400),
+            child: const _GalleryCollageShimmer(),
+          ),
+        ),
+        SizedBox(height: 1.h),
+        Shimmer.fromColors(
+          baseColor: ServiceGalleryCarousel._shimmerBase,
+          highlightColor: ServiceGalleryCarousel._shimmerHighlight,
+          direction: ShimmerDirection.ltr,
+          period: const Duration(milliseconds: 1400),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(3, (index) {
+              return Container(
+                margin: EdgeInsets.symmetric(horizontal: 0.8.w),
+                width: index == 0 ? 2.5.w : 1.8.w,
+                height: 1.8.w,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GalleryCollageShimmer extends StatelessWidget {
+  const _GalleryCollageShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                Expanded(child: _ShimmerTile(borderRadius: 4)),
+                SizedBox(height: 0.6.w),
+                Expanded(child: _ShimmerTile(borderRadius: 4)),
+              ],
+            ),
+          ),
+          SizedBox(width: 0.6.w),
+          Expanded(
+            flex: 3,
+            child: _ShimmerTile(borderRadius: 4),
+          ),
+          SizedBox(width: 0.6.w),
+          Expanded(
+            flex: 3,
+            child: _ShimmerTile(borderRadius: 4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShimmerTile extends StatelessWidget {
+  const _ShimmerTile({required this.borderRadius});
+
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Colors.white,
+      ),
     );
   }
 }

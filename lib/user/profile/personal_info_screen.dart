@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/user/profile/change_request_screen.dart';
 import 'package:sizer/sizer.dart';
 
 class PersonalInfoScreen extends StatelessWidget {
@@ -8,11 +9,11 @@ class PersonalInfoScreen extends StatelessWidget {
   static const List<_PersonalInfoItem> _items = [
     _PersonalInfoItem(
       label: 'Phone Number 1',
-      value: '+91 7656 6543 67',
+      value: '+91 7656654367',
     ),
     _PersonalInfoItem(
       label: 'Phone Number 2',
-      value: '+91 8234 5432 54',
+      value: '+91 8234543254',
     ),
     _PersonalInfoItem(
       label: 'Permanent Address',
@@ -100,7 +101,13 @@ class PersonalInfoScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ChangeRequestScreen(),
+                      ),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.accent,
                     side: const BorderSide(color: AppColors.border),

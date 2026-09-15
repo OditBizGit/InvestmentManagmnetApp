@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:maribel_wellness_centre_application/user/status/widgets/status_image_card.dart';
 import 'package:maribel_wellness_centre_application/user/status/widgets/status_video_card.dart';
 import 'package:sizer/sizer.dart';
@@ -75,17 +76,19 @@ class _UserStatusScreenState extends State<UserStatusScreen> {
                 activeVideoUrl: _activeVideoUrl,
                 scrollListenable: _scrollTick,
                 onCopy: () => _copyLink(context, item.url),
-                onShare: () => _showSnack(context, 'Share tapped'),
-                onDownload: () => _showSnack(context, 'Download started'),
-                onView: () => _showSnack(context, 'View video'),
+                onShare: () => AppSnackBar.show(context, message: 'Share tapped'),
+                onDownload: () =>
+                    AppSnackBar.show(context, message: 'Download started'),
+                onView: () => AppSnackBar.show(context, message: 'View video'),
               );
             }
             return StatusImageCard(
               imageUrl: item.url,
               onCopy: () => _copyLink(context, item.url),
-              onShare: () => _showSnack(context, 'Share tapped'),
-              onDownload: () => _showSnack(context, 'Download started'),
-              onView: () => _showSnack(context, 'View image'),
+              onShare: () => AppSnackBar.show(context, message: 'Share tapped'),
+              onDownload: () =>
+                  AppSnackBar.show(context, message: 'Download started'),
+              onView: () => AppSnackBar.show(context, message: 'View image'),
             );
           },
         ),
@@ -96,19 +99,12 @@ class _UserStatusScreenState extends State<UserStatusScreen> {
   Future<void> _copyLink(BuildContext context, String url) async {
     await Clipboard.setData(ClipboardData(text: url));
     if (!context.mounted) return;
-    _showSnack(context, 'Link copied');
-  }
-
-  void _showSnack(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 1),
-        ),
-      );
+    AppSnackBar.show(
+      context,
+      message: 'Link copied',
+      duration: const Duration(seconds: 1),
+      icon: Icons.copy_rounded,
+    );
   }
 }
 

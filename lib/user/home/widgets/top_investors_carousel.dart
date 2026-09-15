@@ -1,13 +1,22 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class TopInvestorsCarousel extends StatelessWidget {
-  const TopInvestorsCarousel({super.key});
+  const TopInvestorsCarousel({
+    super.key,
+    this.isLoading = false,
+  });
+
+  final bool isLoading;
 
   static const Color _cardBg = Color(0xFFF0EBF6);
   static const Color _textPrimary = Color(0xFF4A3F5C);
+  static const Color _shimmerBase = Color(0xFFE0E0E0);
+  static const Color _shimmerHighlight = Color(0xFFF5F5F5);
+  static const int _shimmerCardCount = 3;
 
   static const List<_InvestorData> _investors = [
     _InvestorData(
@@ -47,6 +56,15 @@ class TopInvestorsCarousel extends StatelessWidget {
     ),
   ];
 
+  static CarouselOptions get _carouselOptions => CarouselOptions(
+        height: 22.h,
+        viewportFraction: 0.42,
+        enableInfiniteScroll: false,
+        padEnds: false,
+        autoPlay: false,
+        enlargeCenterPage: false,
+      );
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -62,18 +80,14 @@ class TopInvestorsCarousel extends StatelessWidget {
         ),
         SizedBox(height: 1.5.h),
         CarouselSlider.builder(
-          itemCount: _investors.length,
+          itemCount: isLoading ? _shimmerCardCount : _investors.length,
           itemBuilder: (context, index, realIndex) {
+            if (isLoading) {
+              return const _InvestorCardShimmer();
+            }
             return _InvestorCard(investor: _investors[index]);
           },
-          options: CarouselOptions(
-            height: 22.h,
-            viewportFraction: 0.42,
-            enableInfiniteScroll: false,
-            padEnds: false,
-            autoPlay: false,
-            enlargeCenterPage: false,
-          ),
+          options: _carouselOptions,
         ),
       ],
     );
@@ -101,15 +115,7 @@ class _InvestorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(right: 2.w),
-      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE6E0ED)),
-      ),
+    return _InvestorCardShell(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -127,6 +133,7 @@ class _InvestorCard extends StatelessWidget {
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
+                height: 1.35,
               ),
             ),
           ),
@@ -155,6 +162,136 @@ class _InvestorCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _InvestorCardShimmer extends StatelessWidget {
+  const _InvestorCardShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final nameStyle = TextStyle(
+      fontSize: 13.sp,
+      fontWeight: FontWeight.w600,
+      color: Colors.black87,
+      height: 1.35,
+    );
+    final amountStyle = TextStyle(
+      fontSize: 13.5.sp,
+      fontWeight: FontWeight.w700,
+      color: Colors.black87,
+    );
+
+    return _InvestorCardShell(
+      child: Shimmer.fromColors(
+        baseColor: TopInvestorsCarousel._shimmerBase,
+        highlightColor: TopInvestorsCarousel._shimmerHighlight,
+        direction: ShimmerDirection.ltr,
+        period: const Duration(milliseconds: 1400),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 8.w,
+              backgroundColor: Colors.white,
+            ),
+            SizedBox(height: 1.h),
+            SizedBox(
+              width: double.infinity,
+              child: _PlaceholderLine(
+                sample: 'Alexander Christopher',
+                style: nameStyle,
+                alignment: Alignment.center,
+                widthFactor: 0.78,
+              ),
+            ),
+            SizedBox(height: 0.2.h),
+            _PlaceholderLine(
+              sample: '25 Lack',
+              style: amountStyle,
+              alignment: Alignment.center,
+              widthFactor: 0.45,
+            ),
+            SizedBox(height: 0.6.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (_) {
+                return Icon(
+                  Icons.star,
+                  size: 4.2.w,
+                  color: Colors.white,
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InvestorCardShell extends StatelessWidget {
+  const _InvestorCardShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(right: 2.w),
+      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE6E0ED)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _PlaceholderLine extends StatelessWidget {
+  const _PlaceholderLine({
+    required this.sample,
+    required this.style,
+    this.widthFactor = 0.8,
+    this.alignment = Alignment.centerLeft,
+  });
+
+  final String sample;
+  final TextStyle style;
+  final double widthFactor;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Text(
+          sample,
+          maxLines: 1,
+          overflow: TextOverflow.clip,
+          textAlign: TextAlign.center,
+          style: style.copyWith(color: Colors.transparent),
+        ),
+        Positioned.fill(
+          child: Align(
+            alignment: alignment,
+            child: FractionallySizedBox(
+              widthFactor: widthFactor,
+              heightFactor: 0.68,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

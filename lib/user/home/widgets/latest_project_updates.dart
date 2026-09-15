@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_bottom_nav.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class LatestProjectUpdates extends StatelessWidget {
-  const LatestProjectUpdates({super.key});
+  const LatestProjectUpdates({
+    super.key,
+    this.isLoading = false,
+  });
+
+  final bool isLoading;
 
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _textSecondary = Color(0xFF8A8A8A);
   static const Color _button = Color(0xFFA28CC1);
+  static const Color _shimmerBase = Color(0xFFE0E0E0);
+  static const Color _shimmerHighlight = Color(0xFFF5F5F5);
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const _LatestProjectUpdatesShimmer();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -113,6 +125,144 @@ class LatestProjectUpdates extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LatestProjectUpdatesShimmer extends StatelessWidget {
+  const _LatestProjectUpdatesShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final sectionTitleStyle = TextStyle(
+      fontSize: 15.sp,
+      fontWeight: FontWeight.w700,
+      color: LatestProjectUpdates._textPrimary,
+    );
+    final titleStyle = TextStyle(
+      fontSize: 14.5.sp,
+      fontWeight: FontWeight.w700,
+      color: LatestProjectUpdates._textPrimary,
+    );
+    final bodyStyle = TextStyle(
+      fontSize: 13.5.sp,
+      fontWeight: FontWeight.w400,
+      color: LatestProjectUpdates._textSecondary,
+      height: 1.45,
+    );
+    final buttonStyle = TextStyle(
+      fontSize: 13.5.sp,
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+
+    return Shimmer.fromColors(
+      baseColor: LatestProjectUpdates._shimmerBase,
+      highlightColor: LatestProjectUpdates._shimmerHighlight,
+      direction: ShimmerDirection.ltr,
+      period: const Duration(milliseconds: 1400),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PlaceholderLine(
+            sample: 'Latest Project Updates',
+            style: sectionTitleStyle,
+            widthFactor: 0.7,
+          ),
+          SizedBox(height: 1.5.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                width: double.infinity,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(height: 1.5.h),
+          _PlaceholderLine(
+            sample: 'Second Floor Structural Work Completed',
+            style: titleStyle,
+            widthFactor: 0.85,
+          ),
+          SizedBox(height: 0.4.h),
+          _PlaceholderLine(
+            sample:
+                'The main load-bearing walls and celling structures for the',
+            style: bodyStyle,
+            widthFactor: 1,
+          ),
+          SizedBox(height: 0.35.h),
+          _PlaceholderLine(
+            sample: 'secondary patient wing are now fully cured',
+            style: bodyStyle,
+            widthFactor: 0.9,
+          ),
+          SizedBox(height: 0.35.h),
+          _PlaceholderLine(
+            sample: 'and approved by site inspectors',
+            style: bodyStyle,
+            widthFactor: 0.65,
+          ),
+          SizedBox(height: 1.8.h),
+          _PlaceholderLine(
+            sample: 'View Update →',
+            style: buttonStyle,
+            widthFactor: 1,
+            heightPadding: 1.2.h,
+            horizontalPadding: 4.w,
+            borderRadius: 10,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderLine extends StatelessWidget {
+  const _PlaceholderLine({
+    required this.sample,
+    required this.style,
+    this.widthFactor = 1,
+    this.heightPadding = 0,
+    this.horizontalPadding = 0,
+    this.borderRadius = 4,
+  });
+
+  final String sample;
+  final TextStyle style;
+  final double widthFactor;
+  final double heightPadding;
+  final double horizontalPadding;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: sample, style: style),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+
+        final maxWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : painter.width + (horizontalPadding * 2);
+        final contentWidth =
+            (painter.width * widthFactor) + (horizontalPadding * 2);
+        final width = contentWidth.clamp(0.0, maxWidth);
+
+        return Container(
+          width: width,
+          height: painter.height + (heightPadding * 2),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        );
+      },
     );
   }
 }

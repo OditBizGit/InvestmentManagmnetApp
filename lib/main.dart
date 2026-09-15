@@ -12,7 +12,7 @@ import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
 /// `true` → Admin interface · `false` → User interface
-const bool isAdmin = true;
+const bool isAdmin = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
