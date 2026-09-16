@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.maribel_wellness_centre_application"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
