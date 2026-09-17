@@ -97,7 +97,7 @@ class _InvestmentSummaryBody extends StatelessWidget {
                 tileColor: tileColor,
                 iconPath: ImageConstants.totalCollection,
                 label: 'Total Collection',
-                amount: '₹2,50,000',
+                amount: _formatCurrency(profile?.totalCollection ?? 0),
                 amountColor: Colors.black87,
               ),
             ),
@@ -108,7 +108,7 @@ class _InvestmentSummaryBody extends StatelessWidget {
                 tileColor: tileColor,
                 iconPath: ImageConstants.totalCommitment,
                 label: 'Total Commitment',
-                amount: '₹50,000',
+                amount: _formatCurrency(profile?.totalCommitment ?? 0),
                 amountColor: InvestmentSummaryCard._green,
               ),
             ),
@@ -116,6 +116,23 @@ class _InvestmentSummaryBody extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  static String _formatCurrency(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw = isWhole
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final digits = parts.first;
+    final withCommas = digits.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
   }
 }
 
@@ -284,9 +301,10 @@ class _StatCard extends StatelessWidget {
           SizedBox(height: 0.1.h),
           if (isLoading)
             _PlaceholderLine(
-              sample: amount,
+              sample: '₹2,50,000',
               style: amountStyle,
-              widthFactor: 0.7,
+              widthFactor: 0.88,
+              heightFactor: 0.82,
             )
           else
             Text(amount, style: amountStyle),
@@ -301,12 +319,14 @@ class _PlaceholderLine extends StatelessWidget {
     required this.sample,
     required this.style,
     this.widthFactor = 0.8,
+    this.heightFactor = 0.68,
     this.alignment = Alignment.centerLeft,
   });
 
   final String sample;
   final TextStyle style;
   final double widthFactor;
+  final double heightFactor;
   final Alignment alignment;
 
   @override
@@ -324,7 +344,7 @@ class _PlaceholderLine extends StatelessWidget {
             alignment: alignment,
             child: FractionallySizedBox(
               widthFactor: widthFactor,
-              heightFactor: 0.68,
+              heightFactor: heightFactor,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.white,
