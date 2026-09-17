@@ -22,6 +22,9 @@ class FundingTransactionsTable extends StatefulWidget {
 class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
   static const double _minTableWidth = 1040;
 
+  final ScrollController _horizontalController = ScrollController();
+  final ScrollController _verticalController = ScrollController();
+
   _TransactionTab _selectedTab = _TransactionTab.all;
 
   static const List<FundingTransaction> _transactions = [
@@ -103,6 +106,13 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
   }
 
   @override
+  void dispose() {
+    _horizontalController.dispose();
+    _verticalController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final rows = _filteredTransactions;
 
@@ -136,8 +146,10 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
                   : constraints.maxWidth;
 
               return Scrollbar(
+                controller: _horizontalController,
                 thumbVisibility: tableWidth > constraints.maxWidth,
                 child: SingleChildScrollView(
+                  controller: _horizontalController,
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
                     width: tableWidth,
@@ -165,8 +177,10 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
                                     ),
                                   )
                                 : Scrollbar(
+                                    controller: _verticalController,
                                     thumbVisibility: true,
                                     child: ListView.separated(
+                                      controller: _verticalController,
                                       padding: EdgeInsets.zero,
                                       itemCount: rows.length,
                                       separatorBuilder: (_, __) =>

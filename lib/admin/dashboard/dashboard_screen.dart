@@ -3,8 +3,21 @@ import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dash
 import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dashboard_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 
-class AdminHomeScreen extends StatelessWidget {
+class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
+
+  @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +40,18 @@ class AdminHomeScreen extends StatelessWidget {
                 child: const DashboardTopBar(),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    0,
-                    horizontalPadding,
-                    24,
+                child: Scrollbar(
+                  controller: _scrollController,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      24,
+                    ),
+                    child: const DashboardOverview(),
                   ),
-                  child: const DashboardOverview(),
                 ),
               ),
             ],

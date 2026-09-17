@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/add_new_investor.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/add_new_investor.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/widgets/investors_overview_section.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/widgets/investors_table_section.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/widgets/investors_top_bar.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_response_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_overview_section.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_table_section.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
@@ -82,6 +83,9 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
               final investors = state is InvestorsSuccess
                   ? state.investors
                   : <InvestorModel>[];
+              final totals = state is InvestorsSuccess
+                  ? state.total
+                  : const InvestorTotalsModel();
               final isLoading = state is InvestorsLoading ||
                   state is InvestorsInitial;
               final totalCount = investors.length;
@@ -120,6 +124,9 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
                               onAddInvestor: _openAddInvestor,
                               totalInvestors: totalCount,
                               activeInvestors: activeCount,
+                              totalProjectInvestment:
+                                  totals.totalInvestmentAmount,
+                              totalPaidAmount: totals.totalPaidAmount,
                             ),
                             const SizedBox(height: 20),
                             InvestorsTableSection(

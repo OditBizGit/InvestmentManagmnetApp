@@ -1,11 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/add_investor_widget/add_investor_form_cards.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/add_investor_widget/add_investor_side_panel.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_form_cards.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_side_panel.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 import 'package:sizer/sizer.dart';
 
-class AddNewInvestorScreen extends StatefulWidget {
+class AddNewInvestorScreen extends StatelessWidget {
   const AddNewInvestorScreen({
     super.key,
     this.onBack,
@@ -16,10 +23,36 @@ class AddNewInvestorScreen extends StatefulWidget {
   final VoidCallback? onAddSuccess;
 
   @override
-  State<AddNewInvestorScreen> createState() => _AddNewInvestorScreenState();
+  Widget build(BuildContext context) {
+    return RepositoryProvider<InvestorsRepository>.value(
+      value: getIt<InvestorsRepository>(),
+      child: BlocProvider(
+        create: (context) => InvestorsCubit(
+          repository: context.read<InvestorsRepository>(),
+        )..fetchInvestorTypes(),
+        child: _AddNewInvestorView(
+          onBack: onBack,
+          onAddSuccess: onAddSuccess,
+        ),
+      ),
+    );
+  }
 }
 
-class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
+class _AddNewInvestorView extends StatefulWidget {
+  const _AddNewInvestorView({
+    this.onBack,
+    this.onAddSuccess,
+  });
+
+  final VoidCallback? onBack;
+  final VoidCallback? onAddSuccess;
+
+  @override
+  State<_AddNewInvestorView> createState() => _AddNewInvestorViewState();
+}
+
+class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   final _fullNameController = TextEditingController();
   final _organizationController = TextEditingController();
   final _mobileController = TextEditingController();
@@ -36,14 +69,6 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
   PickedPhoto? _profilePhoto;
   double? _formCardsHeight;
   bool _heightSyncScheduled = false;
-
-  static const _typeOptions = [
-    'Individual Investor',
-    'Corporate Investor',
-    'Institutional Investor',
-    'Angel Investor',
-    'Other',
-  ];
 
   @override
   void dispose() {
@@ -66,18 +91,50 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
     Navigator.of(context).maybePop();
   }
 
-  void _handleAdd() {
+  Future<void> _handleAdd() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       setState(() {});
       return;
     }
 
-    if (widget.onAddSuccess != null) {
-      widget.onAddSuccess!();
+    if (_investorType == null || _investorType!.trim().isEmpty) {
+      AppToast.error('Please select investor type', context: context);
       return;
     }
-    _handleBack();
+
+    if (_investmentDate == null) {
+      AppToast.error('Please select investment date', context: context);
+      return;
+    }
+
+    final amount = double.tryParse(
+      _amountController.text.trim().replaceAll(',', ''),
+    );
+
+    MultipartFile? profileImage;
+    if (_profilePhoto != null) {
+      profileImage = MultipartFile.fromBytes(
+        _profilePhoto!.bytes,
+        filename: _profilePhoto!.name,
+      );
+    }
+
+    final request = RegisterInvestorRequestModel(
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
+      fullName: _fullNameController.text.trim(),
+      email: _emailController.text.trim(),
+      phoneNumber: _mobileController.text.trim(),
+      investorType: _investorType!.trim(),
+      organization: _organizationController.text.trim(),
+      address: _addressController.text.trim(),
+      investmentAmount: amount,
+      investmentDate: _investmentDate!,
+      profileImage: profileImage,
+    );
+
+    await context.read<InvestorsCubit>().registerInvestor(request);
   }
 
   void _scheduleFormCardsHeightSync() {
@@ -95,6 +152,7 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
       final nextHeight = box.size.height;
       if (_formCardsHeight == nextHeight) return;
 
+      if (!mounted) return;
       setState(() => _formCardsHeight = nextHeight);
     });
   }
@@ -153,89 +211,114 @@ class _AddNewInvestorScreenState extends State<AddNewInvestorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.screenBg,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontalPadding = constraints.maxWidth < 600 ? 16.0 : 24.0;
-          final isNarrow = constraints.maxWidth < 980;
+    return BlocConsumer<InvestorsCubit, InvestorsState>(
+      listener: (context, state) {
+        if (state is RegisterInvestorSuccess) {
+          AppToast.success(state.message, context: context);
+          // Defer navigation so this screen can finish the current frame
+          // before being removed from the tree.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (widget.onAddSuccess != null) {
+              widget.onAddSuccess!();
+              return;
+            }
+            _handleBack();
+          });
+        } else if (state is RegisterInvestorFailure) {
+          AppToast.error(state.message, context: context);
+        }
+      },
+      builder: (context, state) {
+        final isRegistering = state is RegisterInvestorLoading;
 
-          if (!isNarrow) {
-            _scheduleFormCardsHeightSync();
-          } else if (_formCardsHeight != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && _formCardsHeight != null) {
-                setState(() => _formCardsHeight = null);
+        return ColoredBox(
+          color: AppColors.screenBg,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final horizontalPadding =
+                  constraints.maxWidth < 600 ? 16.0 : 24.0;
+              final isNarrow = constraints.maxWidth < 980;
+
+              if (!isNarrow) {
+                _scheduleFormCardsHeightSync();
+              } else if (_formCardsHeight != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && _formCardsHeight != null) {
+                    setState(() => _formCardsHeight = null);
+                  }
+                });
               }
-            });
-          }
 
-          final formCards = AddInvestorFormCards(
-            key: _formCardsKey,
-            formKey: _formKey,
-            fullNameController: _fullNameController,
-            organizationController: _organizationController,
-            mobileController: _mobileController,
-            emailController: _emailController,
-            addressController: _addressController,
-            amountController: _amountController,
-            usernameController: _usernameController,
-            passwordController: _passwordController,
-            investorType: _investorType,
-            typeOptions: _typeOptions,
-            onTypeChanged: (value) => setState(() => _investorType = value),
-            investmentDate: _investmentDate,
-            onPickDate: _pickDate,
-            formatDate: _formatDate,
-            profilePhoto: _profilePhoto,
-            onPickProfilePhoto: _pickProfilePhoto,
-            onClearProfilePhoto: _clearProfilePhoto,
-          );
+              final formCards = AddInvestorFormCards(
+                key: _formCardsKey,
+                formKey: _formKey,
+                fullNameController: _fullNameController,
+                organizationController: _organizationController,
+                mobileController: _mobileController,
+                emailController: _emailController,
+                addressController: _addressController,
+                amountController: _amountController,
+                usernameController: _usernameController,
+                passwordController: _passwordController,
+                investorType: _investorType,
+                onTypeChanged: (value) =>
+                    setState(() => _investorType = value),
+                investmentDate: _investmentDate,
+                onPickDate: _pickDate,
+                formatDate: _formatDate,
+                profilePhoto: _profilePhoto,
+                onPickProfilePhoto: _pickProfilePhoto,
+                onClearProfilePhoto: _clearProfilePhoto,
+              );
 
-          final sidePanel = AddInvestorSidePanel(
-            fillHeight: !isNarrow && _formCardsHeight != null,
-            onCancel: _handleBack,
-            onAdd: _handleAdd,
-          );
+              final sidePanel = AddInvestorSidePanel(
+                fillHeight: !isNarrow && _formCardsHeight != null,
+                isLoading: isRegistering,
+                onCancel: _handleBack,
+                onAdd: _handleAdd,
+              );
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              20,
-              horizontalPadding,
-              24,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _BreadcrumbHeader(onBack: _handleBack),
-                const SizedBox(height: 20),
-                if (isNarrow) ...[
-                  formCards,
-                  const SizedBox(height: 16),
-                  sidePanel,
-                ] else
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 7, child: formCards),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 4,
-                        child: _formCardsHeight == null
-                            ? sidePanel
-                            : SizedBox(
-                                height: _formCardsHeight,
-                                child: sidePanel,
-                              ),
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  20,
+                  horizontalPadding,
+                  24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _BreadcrumbHeader(onBack: _handleBack),
+                    const SizedBox(height: 20),
+                    if (isNarrow) ...[
+                      formCards,
+                      const SizedBox(height: 16),
+                      sidePanel,
+                    ] else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 7, child: formCards),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 4,
+                            child: _formCardsHeight == null
+                                ? sidePanel
+                                : SizedBox(
+                                    height: _formCardsHeight,
+                                    child: sidePanel,
+                                  ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

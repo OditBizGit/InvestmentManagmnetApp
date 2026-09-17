@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../../core/constants/image_constants.dart';
+import '../../../../../core/constants/image_constants.dart';
+
 
 /// Left column: Basic Information + Login Credentials + Investment Details.
 class AddInvestorFormCards extends StatelessWidget {
@@ -20,7 +24,6 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.usernameController,
     required this.passwordController,
     required this.investorType,
-    required this.typeOptions,
     required this.onTypeChanged,
     required this.investmentDate,
     required this.onPickDate,
@@ -40,7 +43,6 @@ class AddInvestorFormCards extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final String? investorType;
-  final List<String> typeOptions;
   final ValueChanged<String?> onTypeChanged;
   final DateTime? investmentDate;
   final VoidCallback onPickDate;
@@ -62,7 +64,6 @@ class AddInvestorFormCards extends StatelessWidget {
             emailController: emailController,
             addressController: addressController,
             investorType: investorType,
-            typeOptions: typeOptions,
             onTypeChanged: onTypeChanged,
             profilePhoto: profilePhoto,
             onPickProfilePhoto: onPickProfilePhoto,
@@ -94,7 +95,6 @@ class _BasicInformationCard extends StatelessWidget {
     required this.emailController,
     required this.addressController,
     required this.investorType,
-    required this.typeOptions,
     required this.onTypeChanged,
     this.profilePhoto,
     required this.onPickProfilePhoto,
@@ -107,7 +107,6 @@ class _BasicInformationCard extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController addressController;
   final String? investorType;
-  final List<String> typeOptions;
   final ValueChanged<String?> onTypeChanged;
   final PickedPhoto? profilePhoto;
   final VoidCallback onPickProfilePhoto;
@@ -149,10 +148,8 @@ class _BasicInformationCard extends StatelessWidget {
                     const SizedBox(height: 14),
                     AddInvestorLabeledField(
                       label: 'Investor Type',
-                      child: AddInvestorDropdownInput(
+                      child: _InvestorTypeDropdown(
                         value: investorType,
-                        hint: 'Select investor type',
-                        items: typeOptions,
                         onChanged: onTypeChanged,
                       ),
                     ),
@@ -238,10 +235,8 @@ class _BasicInformationCard extends StatelessWidget {
                       Expanded(
                         child: AddInvestorLabeledField(
                           label: 'Investor Type',
-                          child: AddInvestorDropdownInput(
+                          child: _InvestorTypeDropdown(
                             value: investorType,
-                            hint: 'Select investor type',
-                            items: typeOptions,
                             onChanged: onTypeChanged,
                           ),
                         ),
@@ -326,6 +321,65 @@ class _BasicInformationCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _InvestorTypeDropdown extends StatelessWidget {
+  const _InvestorTypeDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<InvestorsCubit, InvestorsState>(
+      listener: (context, state) {
+        if (state is InvestorTypesFailure) {
+          AppToast.error(state.message, context: context);
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is InvestorTypesLoading ||
+            (state is InvestorsInitial &&
+                context.read<InvestorsCubit>().investorTypes.isEmpty);
+        final types = (state is InvestorTypesSuccess
+                ? state.types
+                : context.read<InvestorsCubit>().investorTypes)
+            .map((type) => type.investorTypeName)
+            .where((name) => name.trim().isNotEmpty)
+            .toList();
+
+        if (isLoading) {
+          return Container(
+            height: 48,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.newBorder, width: 1),
+            ),
+            child: const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+
+        return AddInvestorDropdownInput(
+          value: value,
+          hint: types.isEmpty
+              ? 'No investor types available'
+              : 'Select investor type',
+          items: types,
+          onChanged: onChanged,
+        );
+      },
     );
   }
 }
@@ -496,7 +550,7 @@ class _InvestmentDetailsCard extends StatelessWidget {
           }
 
           return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start, 
             children: [
               Expanded(child: amountField),
               const SizedBox(width: 14),
@@ -889,7 +943,8 @@ class _AddInvestorDropdownInputState extends State<AddInvestorDropdownInput> {
 
   @override
   void dispose() {
-    _closeDropdown();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
     super.dispose();
   }
 

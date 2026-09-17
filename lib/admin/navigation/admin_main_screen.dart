@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/investors_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/investors_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/reports_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/settings_screen.dart';
@@ -14,7 +14,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:sizer/sizer.dart';
 
 import '../dashboard/dashboard_screen.dart';
-import '../funding&payments/funding_payments_screen.dart';
+import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -99,9 +99,11 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               return true;
             },
             child: ScrollConfiguration(
-              // Keep scrollbar gutter stable on web so width doesn't jump.
+              // Never use copyWith(scrollbars: true) — it wraps ScrollViews in a
+              // Scrollbar without a controller and crashes on desktop/web reload.
+              // MaterialScrollBehavior already paints scrollbars with a valid controller.
               behavior: ScrollConfiguration.of(context).copyWith(
-                scrollbars: true,
+                scrollbars: false,
               ),
               child: Row(
                 children: [

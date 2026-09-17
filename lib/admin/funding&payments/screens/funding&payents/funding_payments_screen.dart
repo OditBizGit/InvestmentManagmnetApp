@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/transaction_details/transaction_detail_screen.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_overview_section.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_payments_top_bar.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_transactions_table.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_overview_section.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_payments_top_bar.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_transactions_table.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 
-import 'add_fund/add_new_fund.dart';
+import '../add_fund/add_new_fund.dart';
+import '../transaction_details/transaction_detail_screen.dart';
 
 class AdminFundingPaymentsScreen extends StatefulWidget {
   const AdminFundingPaymentsScreen({super.key});

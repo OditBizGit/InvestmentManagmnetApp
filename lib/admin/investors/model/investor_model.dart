@@ -15,6 +15,8 @@ class InvestorModel {
   final DateTime? createdDate;
   final DateTime? modifiedDate;
   final String userRole;
+  final double totalInvestmentAmount;
+  final double totalPaidAmount;
 
   InvestorModel({
     required this.userId,
@@ -31,6 +33,8 @@ class InvestorModel {
     this.createdDate,
     this.modifiedDate,
     required this.userRole,
+    this.totalInvestmentAmount = 0,
+    this.totalPaidAmount = 0,
   });
 
   /// Absolute URL for [profileImage] (handles relative API paths).
@@ -38,24 +42,26 @@ class InvestorModel {
 
   factory InvestorModel.fromJson(Map<String, dynamic> json) {
     return InvestorModel(
-      userId: json['userId'] ?? 0,
-      username: json['username'] ?? '',
-      fullName: json['fullName'] ?? '',
-      email: json['email'] ?? '',
-      phoneNumber: json['phoneNumber'],
+      userId: _readInt(json['UserId'] ?? json['userId']),
+      username: (json['Username'] ?? json['username'] ?? '').toString(),
+      fullName: (json['FullName'] ?? json['fullName'] ?? '').toString(),
+      email: (json['Email'] ?? json['email'] ?? '').toString(),
+      phoneNumber: _readString(json['PhoneNumber'] ?? json['phoneNumber']),
       profileImage: _readProfileImage(json),
-      investorCode: json['investorCode'],
-      investorType: json['investorType'],
-      organization: json['organization'],
-      address: json['address'],
-      isActive: json['isActive'] ?? false,
-      createdDate: json['createdDate'] != null
-          ? DateTime.tryParse(json['createdDate'].toString())
-          : null,
-      modifiedDate: json['modifiedDate'] != null
-          ? DateTime.tryParse(json['modifiedDate'].toString())
-          : null,
-      userRole: json['userRole'] ?? '',
+      investorCode: _readString(json['InvestorCode'] ?? json['investorCode']),
+      investorType: _readString(json['InvestorType'] ?? json['investorType']),
+      organization: _readString(json['Organization'] ?? json['organization']),
+      address: _readString(json['Address'] ?? json['address']),
+      isActive: _readBool(json['IsActive'] ?? json['isActive']),
+      createdDate: _readDate(json['CreatedDate'] ?? json['createdDate']),
+      modifiedDate: _readDate(json['ModifiedDate'] ?? json['modifiedDate']),
+      userRole: (json['UserRole'] ?? json['userRole'] ?? '').toString(),
+      totalInvestmentAmount: _readDouble(
+        json['totalInvestmentAmount'] ?? json['TotalInvestmentAmount'],
+      ),
+      totalPaidAmount: _readDouble(
+        json['totalPaidAmount'] ?? json['TotalPaidAmount'],
+      ),
     );
   }
 
@@ -65,8 +71,41 @@ class InvestorModel {
         json['profile_image'] ??
         json['imageUrl'] ??
         json['image'];
+    return _readString(value);
+  }
+
+  static String? _readString(dynamic value) {
     if (value == null) return null;
     final text = value.toString().trim();
     return text.isEmpty ? null : text;
+  }
+
+  static int _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static double _readDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static bool _readBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' || normalized == '1';
+    }
+    return false;
+  }
+
+  static DateTime? _readDate(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
   }
 }

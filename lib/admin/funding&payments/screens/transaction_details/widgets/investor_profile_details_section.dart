@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_transactions_table.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
+
+import '../../funding&payents/widgets/funding_transactions_table.dart';
 
 class InvestorProfileDetailsSection extends StatelessWidget {
   const InvestorProfileDetailsSection({

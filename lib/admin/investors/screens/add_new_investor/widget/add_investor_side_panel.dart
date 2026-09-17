@@ -9,6 +9,7 @@ class AddInvestorSidePanel extends StatelessWidget {
     required this.onCancel,
     required this.onAdd,
     this.fillHeight = false,
+    this.isLoading = false,
   });
 
   final VoidCallback onCancel;
@@ -16,6 +17,7 @@ class AddInvestorSidePanel extends StatelessWidget {
 
   /// When true, stretches Notes so the panel matches the form cards height.
   final bool fillHeight;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +29,11 @@ class AddInvestorSidePanel extends StatelessWidget {
           child: SizedBox(
             height: 46,
             child: OutlinedButton(
-              onPressed: onCancel,
+              onPressed: isLoading ? null : onCancel,
               style: OutlinedButton.styleFrom(
                 backgroundColor: const Color(0xFFF1F0F3),
                 foregroundColor: AppColors.textPrimary,
+                disabledForegroundColor: AppColors.textMuted,
                 side: BorderSide.none,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -51,22 +54,33 @@ class AddInvestorSidePanel extends StatelessWidget {
           child: SizedBox(
             height: 46,
             child: ElevatedButton(
-              onPressed: onAdd,
+              onPressed: isLoading ? null : onAdd,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.white,
+                disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.6),
+                disabledForegroundColor: AppColors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Text(
-                'Add Investor',
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.white,
+                      ),
+                    )
+                  : Text(
+                      'Add Investor',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ),

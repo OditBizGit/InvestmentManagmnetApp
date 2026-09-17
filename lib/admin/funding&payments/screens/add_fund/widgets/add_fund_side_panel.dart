@@ -9,6 +9,7 @@ class AddFundSidePanel extends StatelessWidget {
     required this.fundingType,
     this.totalAmount,
     this.payingNow,
+    this.isLoading = false,
     required this.onCancel,
     required this.onSave,
   });
@@ -17,6 +18,7 @@ class AddFundSidePanel extends StatelessWidget {
   final String? fundingType;
   final String? totalAmount;
   final String? payingNow;
+  final bool isLoading;
   final VoidCallback onCancel;
   final VoidCallback onSave;
 
@@ -40,10 +42,11 @@ class AddFundSidePanel extends StatelessWidget {
               child: SizedBox(
                 height: 46,
                 child: OutlinedButton(
-                  onPressed: onCancel,
+                  onPressed: isLoading ? null : onCancel,
                   style: OutlinedButton.styleFrom(
                     backgroundColor: const Color(0xFFF1F0F3),
                     foregroundColor: AppColors.textPrimary,
+                    disabledForegroundColor: AppColors.textMuted,
                     side: BorderSide.none,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -64,22 +67,34 @@ class AddFundSidePanel extends StatelessWidget {
               child: SizedBox(
                 height: 46,
                 child: ElevatedButton(
-                  onPressed: onSave,
+                  onPressed: isLoading ? null : onSave,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     foregroundColor: AppColors.white,
+                    disabledBackgroundColor:
+                        AppColors.accent.withValues(alpha: 0.6),
+                    disabledForegroundColor: AppColors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text(
-                    'Save Fund& Send Receipt',
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.white,
+                          ),
+                        )
+                      : Text(
+                          'Save Fund& Send Receipt',
+                          style: TextStyle(
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),

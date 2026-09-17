@@ -10,11 +10,15 @@ class InvestorsOverviewSection extends StatelessWidget {
     this.onAddInvestor,
     this.totalInvestors = 0,
     this.activeInvestors = 0,
+    this.totalProjectInvestment = 0,
+    this.totalPaidAmount = 0,
   });
 
   final VoidCallback? onAddInvestor;
   final int totalInvestors;
   final int activeInvestors;
+  final double totalProjectInvestment;
+  final double totalPaidAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -33,19 +37,19 @@ class InvestorsOverviewSection extends StatelessWidget {
         iconColor: const Color(0xFF2CB5A8),
         iconBg: const Color(0xFFE6F7F5),
       ),
-      const _StatCardData(
-        label: 'Total Investment',
-        value: '₹2,500,000',
+      _StatCardData(
+        label: 'Total Project Investment',
+        value: _formatCurrency(totalProjectInvestment),
         icon: ImageConstants.totalFunding,
-        iconColor: Color(0xFFE06B7A),
-        iconBg: Color(0xFFFDECEE),
+        iconColor: const Color(0xFFE06B7A),
+        iconBg: const Color(0xFFFDECEE),
       ),
-      const _StatCardData(
-        label: 'Pending Payments',
-        value: '₹24,000,000',
-        icon: ImageConstants.amountRemaining,
-        iconColor: Color(0xFFE89A3C),
-        iconBg: Color(0xFFFFF3E8),
+      _StatCardData(
+        label: 'Total Paid Amount',
+        value: _formatCurrency(totalPaidAmount),
+        icon: ImageConstants.totalCollection,
+        iconColor: const Color(0xFFE89A3C),
+        iconBg: const Color(0xFFFFF3E8),
       ),
     ];
 
@@ -57,6 +61,23 @@ class InvestorsOverviewSection extends StatelessWidget {
         _StatsGrid(stats: stats),
       ],
     );
+  }
+
+  static String _formatCurrency(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw = isWhole
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final digits = parts.first;
+    final withCommas = digits.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
   }
 }
 

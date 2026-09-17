@@ -19,6 +19,8 @@ class _TransactionPaymentHistorySectionState
   static const double _minTableWidth = 1080;
   static const int _pageSize = 4;
 
+  final ScrollController _horizontalController = ScrollController();
+
   _HistoryTab _selectedTab = _HistoryTab.all;
   String _query = '';
   int _page = 1;
@@ -144,6 +146,12 @@ class _TransactionPaymentHistorySectionState
   }
 
   @override
+  void dispose() {
+    _horizontalController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final rows = _paged;
     final total = _filtered.length;
@@ -185,8 +193,10 @@ class _TransactionPaymentHistorySectionState
                   : constraints.maxWidth;
 
               return Scrollbar(
+                controller: _horizontalController,
                 thumbVisibility: tableWidth > constraints.maxWidth,
                 child: SingleChildScrollView(
+                  controller: _horizontalController,
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
                     width: tableWidth,

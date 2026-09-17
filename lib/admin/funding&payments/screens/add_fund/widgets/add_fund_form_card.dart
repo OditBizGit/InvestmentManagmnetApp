@@ -18,6 +18,7 @@ class AddFundFormCard extends StatelessWidget {
     required this.onPickDate,
     required this.formatDate,
     required this.descriptionController,
+    this.isLoadingInvestors = false,
   });
 
   final GlobalKey<FormState> formKey;
@@ -31,6 +32,7 @@ class AddFundFormCard extends StatelessWidget {
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
   final TextEditingController descriptionController;
+  final bool isLoadingInvestors;
 
   @override
   Widget build(BuildContext context) {
@@ -68,12 +70,33 @@ class AddFundFormCard extends StatelessWidget {
 
                 final investorField = _LabeledField(
                   label: 'Investor',
-                  child: _DropdownInput(
-                    value: investor,
-                    hint: 'Select investor',
-                    items: investorOptions,
-                    onChanged: onInvestorChanged,
-                  ),
+                  child: isLoadingInvestors
+                      ? Container(
+                          height: 48,
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.newBorder,
+                              width: 1,
+                            ),
+                          ),
+                          child: const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : _DropdownInput(
+                          value: investor,
+                          hint: investorOptions.isEmpty
+                              ? 'No investors available'
+                              : 'Select investor',
+                          items: investorOptions,
+                          onChanged: onInvestorChanged,
+                        ),
                 );
                 final typeField = _LabeledField(
                   label: 'Investor Type',

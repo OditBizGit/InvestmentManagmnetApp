@@ -3,7 +3,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
 
-class InvestorsTableSection extends StatelessWidget {
+class InvestorsTableSection extends StatefulWidget {
   const InvestorsTableSection({
     super.key,
     required this.investors,
@@ -13,7 +13,22 @@ class InvestorsTableSection extends StatelessWidget {
   final List<InvestorModel> investors;
   final bool isLoading;
 
+  @override
+  State<InvestorsTableSection> createState() => _InvestorsTableSectionState();
+}
+
+class _InvestorsTableSectionState extends State<InvestorsTableSection> {
   static const double _minTableWidth = 980;
+
+  final ScrollController _horizontalController = ScrollController();
+  final ScrollController _verticalController = ScrollController();
+
+  @override
+  void dispose() {
+    _horizontalController.dispose();
+    _verticalController.dispose();
+    super.dispose();
+  }
 
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
@@ -32,6 +47,23 @@ class InvestorsTableSection extends StatelessWidget {
       'Dec',
     ];
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
+  }
+
+  String _formatAmount(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw = isWhole
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final digits = parts.first;
+    final withCommas = digits.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
   }
 
   @override
@@ -58,8 +90,10 @@ class InvestorsTableSection extends StatelessWidget {
               : constraints.maxWidth;
 
           return Scrollbar(
+            controller: _horizontalController,
             thumbVisibility: tableWidth > constraints.maxWidth,
             child: SingleChildScrollView(
+              controller: _horizontalController,
               scrollDirection: Axis.horizontal,
               child: SizedBox(
                 width: tableWidth,
@@ -76,13 +110,13 @@ class InvestorsTableSection extends StatelessWidget {
                       clipBehavior: Clip.antiAlias,
                       child: SizedBox(
                         height: 540,
-                        child: isLoading
+                        child: widget.isLoading
                             ? const Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.accent,
                                 ),
                               )
-                            : investors.isEmpty
+                            : widget.investors.isEmpty
                                 ? Center(
                                     child: Text(
                                       'No investors found',
@@ -94,10 +128,12 @@ class InvestorsTableSection extends StatelessWidget {
                                     ),
                                   )
                                 : Scrollbar(
+                                    controller: _verticalController,
                                     thumbVisibility: true,
                                     child: ListView.separated(
+                                      controller: _verticalController,
                                       padding: EdgeInsets.zero,
-                                      itemCount: investors.length,
+                                      itemCount: widget.investors.length,
                                       separatorBuilder: (_, _) =>
                                           const Divider(
                                         height: 1,
@@ -105,7 +141,8 @@ class InvestorsTableSection extends StatelessWidget {
                                         color: AppColors.cardBg,
                                       ),
                                       itemBuilder: (context, index) {
-                                        final investor = investors[index];
+                                        final investor =
+                                            widget.investors[index];
                                         return _InvestorRow(
                                           index: index,
                                           name: investor.fullName,
@@ -113,8 +150,12 @@ class InvestorsTableSection extends StatelessWidget {
                                           mobile:
                                               investor.phoneNumber ?? '-',
                                           email: investor.email,
-                                          investAmount: '-',
-                                          paidAmount: '-',
+                                          investAmount: _formatAmount(
+                                            investor.totalInvestmentAmount,
+                                          ),
+                                          paidAmount: _formatAmount(
+                                            investor.totalPaidAmount,
+                                          ),
                                           status: investor.isActive
                                               ? 'Active'
                                               : 'Inactive',

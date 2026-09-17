@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_transactions_table.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/transaction_details/widgets/investor_profile_details_section.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/transaction_details/widgets/investor_profile_overview.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/transaction_details/widgets/transaction_payment_history_section.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/transaction_details/widgets/investor_profile_details_section.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/transaction_details/widgets/investor_profile_overview.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/transaction_details/widgets/transaction_payment_history_section.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
+
+import '../funding&payents/widgets/funding_transactions_table.dart';
 
 /// Detail page shown when a transaction row is selected.
 /// Keeps the admin side drawer visible (in-shell navigation).

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit/funding_payments_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
@@ -122,6 +124,9 @@ Future<void> setupDi() async {
   getIt.registerLazySingleton<InvestorsRepository>(
     () => InvestorsRepository(dio: getIt<Dio>()),
   );
+  getIt.registerLazySingleton<InvestorPaymentRepository>(
+    () => InvestorPaymentRepository(dio: getIt<Dio>()),
+  );
   getIt.registerLazySingleton<HomeRepository>(
     () => HomeRepository(localStorage: getIt<LocalStorage>()),
   );
@@ -136,6 +141,12 @@ Future<void> setupDi() async {
   getIt.registerFactory<InvestorsCubit>(
     () => InvestorsCubit(
       repository: getIt<InvestorsRepository>(),
+    ),
+  );
+  getIt.registerFactory<FundingPaymentsCubit>(
+    () => FundingPaymentsCubit(
+      investorsRepository: getIt<InvestorsRepository>(),
+      paymentRepository: getIt<InvestorPaymentRepository>(),
     ),
   );
   getIt.registerFactory<HomeCubit>(
