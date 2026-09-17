@@ -5,6 +5,7 @@ import 'package:maribel_wellness_centre_application/core/constants/image_constan
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/notification_screen.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/investment_summary_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/latest_project_updates.dart';
@@ -52,6 +53,9 @@ class _UserHomeView extends StatelessWidget {
                 state is HomeInitial || state is HomeLoading;
             final profile =
                 state is HomeSuccess ? state.profile : null;
+            final topInvestors = state is HomeSuccess
+                ? state.topInvestors
+                : const <TopInvestorModel>[];
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +82,10 @@ class _UserHomeView extends StatelessWidget {
                             profile: profile,
                           ),
                           SizedBox(height: 2.5.h),
-                          TopInvestorsCarousel(isLoading: isLoading),
+                          TopInvestorsCarousel(
+                            isLoading: isLoading,
+                            investors: topInvestors,
+                          ),
                           SizedBox(height: 2.h),
                           ServiceGalleryCarousel(isLoading: isLoading),
                           SizedBox(height: 2.h),

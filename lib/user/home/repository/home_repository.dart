@@ -1,17 +1,26 @@
+import 'dart:developer';
+
+import 'package:dio/dio.dart';
+import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/top_investors_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
 
 class HomeRepository {
   HomeRepository({
     required LocalStorage localStorage,
     required ProfileRepository profileRepository,
+    required Dio dio,
   })  : _localStorage = localStorage,
-        _profileRepository = profileRepository;
+        _profileRepository = profileRepository,
+        _dio = dio;
 
   final LocalStorage _localStorage;
   final ProfileRepository _profileRepository;
+  final Dio _dio;
 
   Future<HomeProfileModel> getHomeProfile() async {
     final localProfile = _profileFromLocalStorage();
@@ -45,6 +54,35 @@ class HomeRepository {
       totalCollection: details.totalPaidAmount,
       totalCommitment: details.investmentAmount,
     );
+  }
+
+  Future<List<TopInvestorModel>> getTopInvestors() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.topInvestors);
+      final parsed = TopInvestorsResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+
+      final looksSuccessful = parsed.status ||
+          parsed.code == 200 ||
+          parsed.message.toLowerCase().contains('success');
+
+      if (!looksSuccessful && parsed.data.isEmpty) {
+        throw Exception(
+          parsed.message.isNotEmpty
+              ? parsed.message
+              : 'Failed to load top investors',
+        );
+      }
+
+      return parsed.data;
+    } on DioException catch (e) {
+      log('Get Top Investors Error: ${e.message}');
+      rethrow;
+    } catch (e) {
+      log('Get Top Investors Error: $e');
+      rethrow;
+    }
   }
 
   HomeProfileModel _profileFromLocalStorage() {
