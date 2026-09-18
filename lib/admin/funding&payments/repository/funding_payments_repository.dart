@@ -4,40 +4,52 @@ import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
 import '../model/investor_payment_model.dart';
+import '../model/investor_transaction_history_model.dart';
 
 class InvestorPaymentRepository {
   final Dio dio;
 
-  InvestorPaymentRepository({
-    required this.dio,
-  });
+  InvestorPaymentRepository({required this.dio});
 
   Future<AddInvestorPaymentResponseModel> addInvestorPayment(
-      AddInvestorPaymentRequestModel request,
-      ) async {
+    AddInvestorPaymentRequestModel request,
+  ) async {
     try {
       final response = await dio.post(
         ApiEndpoints.addInvestorPayment,
         data: request.toJson(),
       );
 
-      return AddInvestorPaymentResponseModel.fromJson(
-        response.data,
-      );
+      return AddInvestorPaymentResponseModel.fromJson(response.data);
     } on DioException catch (e) {
-      log(
-        'Add Investor Payment Error: ${e.message}',
-      );
+      log('Add Investor Payment Error: ${e.message}');
 
-      log(
-        'Add Investor Payment Response: ${e.response?.data}',
-      );
+      log('Add Investor Payment Response: ${e.response?.data}');
 
       rethrow;
     } catch (e) {
-      log(
-        'Add Investor Payment Error: $e',
+      log('Add Investor Payment Error: $e');
+
+      rethrow;
+    }
+  }
+
+  Future<InvestorTransactionHistoryResponseModel>
+  getAllInvestorTransactionHistory() async {
+    try {
+      final response = await dio.get(
+        ApiEndpoints.transactionHistory,
       );
+
+      return InvestorTransactionHistoryResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      log('Get All Investor Transaction History Error: ${e.message}');
+
+      log('Get All Investor Transaction History Response: ${e.response?.data}');
+
+      rethrow;
+    } catch (e) {
+      log('Get All Investor Transaction History Error: $e');
 
       rethrow;
     }

@@ -2,28 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
 
-/// Right column: notes and action buttons.
+/// Fixed right column: Notes + Cancel / Add Investor actions.
 class AddInvestorSidePanel extends StatelessWidget {
   const AddInvestorSidePanel({
     super.key,
     required this.onCancel,
     required this.onAdd,
-    this.fillHeight = false,
     this.isLoading = false,
   });
 
   final VoidCallback onCancel;
   final VoidCallback onAdd;
-
-  /// When true, stretches Notes so the panel matches the form cards height.
-  final bool fillHeight;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    final notesCard = _NotesCard(expand: fillHeight);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Expanded(child: _NotesCard()),
+        const SizedBox(height: 16),
+        AddInvestorActionButtons(
+          onCancel: onCancel,
+          onAdd: onAdd,
+          isLoading: isLoading,
+        ),
+      ],
+    );
+  }
+}
 
-    final actionButtons = Row(
+/// Cancel / Add Investor button row used in the fixed side panel.
+class AddInvestorActionButtons extends StatelessWidget {
+  const AddInvestorActionButtons({
+    super.key,
+    required this.onCancel,
+    required this.onAdd,
+    this.isLoading = false,
+  });
+
+  final VoidCallback onCancel;
+  final VoidCallback onAdd;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
         Expanded(
           child: SizedBox(
@@ -58,7 +82,8 @@ class AddInvestorSidePanel extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.white,
-                disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.6),
+                disabledBackgroundColor:
+                    AppColors.accent.withValues(alpha: 0.6),
                 disabledForegroundColor: AppColors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -86,37 +111,19 @@ class AddInvestorSidePanel extends StatelessWidget {
         ),
       ],
     );
-
-    if (!fillHeight) {
-      return Column(
-        children: [
-          notesCard,
-          const SizedBox(height: 16),
-          actionButtons,
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: SizedBox.expand(child: notesCard),
-        ),
-        const SizedBox(height: 16),
-        actionButtons,
-      ],
-    );
   }
 }
 
 class _NotesCard extends StatelessWidget {
-  const _NotesCard({this.expand = false});
-
-  final bool expand;
+  const _NotesCard();
 
   static const _notes = [
     'All mandatory fields are marked with *',
+    'Set Due Date / Split Payment is required for every new investor',
+    'Choose Month, Week, or Day frequency for the payment schedule',
+    'Week/Day gap is the gap between payments, not the total duration',
+    'Advance payment is optional and is deducted before installment split',
+    'Bank, KYC, and nominee details are optional additional information',
     'You can update investor details later from the Investors list',
     'Investment amount can be updated in the Funding & Payments section',
     'An email notification can be sent to the investor after adding',
@@ -132,17 +139,14 @@ class _NotesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: expand ? double.infinity : null,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.cardBg),
       ),
-      alignment: Alignment.topLeft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Notes',
@@ -153,37 +157,46 @@ class _NotesCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          for (final note in _notes) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Container(
-                    width: 5,
-                    height: 5,
-                    decoration: const BoxDecoration(
-                      color: AppColors.textMuted,
-                      shape: BoxShape.circle,
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final note in _notes) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Container(
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                              color: AppColors.textMuted,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            note,
+                            style: TextStyle(
+                              fontSize: 9.5.sp,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textMuted,
+                              height: 1.45,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    note,
-                    style: TextStyle(
-                      fontSize: 9.5.sp,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
-                      height: 1.45,
-                    ),
-                  ),
-                ),
-              ],
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-          ],
+          ),
         ],
       ),
     );

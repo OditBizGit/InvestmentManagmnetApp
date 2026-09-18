@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_transaction_history_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
@@ -7,41 +8,73 @@ import 'package:sizer/sizer.dart';
 class FundingOverviewSection extends StatelessWidget {
   const FundingOverviewSection({
     super.key,
+    this.transactions = const [],
     this.onAddFunding,
   });
 
+  final List<InvestorTransactionHistoryModel> transactions;
   final VoidCallback? onAddFunding;
 
-  static const List<_StatCardData> _stats = [
-    _StatCardData(
-      label: 'Total Funding',
-      value: '₹65,50,00,000',
-      icon: ImageConstants.totalFunding,
-      iconColor: Color(0xFF9B7EBF),
-      iconBg: Color(0xFFF0EBF6),
-    ),
-    _StatCardData(
-      label: 'Amount Received',
-      value: '₹85,00,000',
-      icon: ImageConstants.amountReceivable,
-      iconColor: Color(0xFF2CB5A8),
-      iconBg: Color(0xFFE6F7F5),
-    ),
-    _StatCardData(
-      label: 'Amount Pending',
-      value: '₹2,50,00,000',
-      icon: ImageConstants.amountRemaining,
-      iconColor: Color(0xFFE06B7A),
-      iconBg: Color(0xFFFDECEE),
-    ),
-    _StatCardData(
-      label: 'Total Payments',
-      value: '₹28,50,00,000',
-      icon: ImageConstants.reports,
-      iconColor: Color(0xFF5B8DEF),
-      iconBg: Color(0xFFEAF1FC),
-    ),
-  ];
+  List<_StatCardData> get _stats {
+    final totalFunding = transactions
+        .map((e) => e.investmentAmount)
+        .fold<double>(0, (max, value) => value > max ? value : max);
+    final amountReceived = transactions
+        .map((e) => e.receivedAmount)
+        .fold<double>(0, (sum, value) => sum + value);
+    final amountPending = transactions
+        .map((e) => e.pendingAmount)
+        .fold<double>(0, (sum, value) => sum + value);
+    final pendingFallback =
+        (totalFunding - amountReceived).clamp(0.0, double.infinity).toDouble();
+    final pending = amountPending > 0 ? amountPending : pendingFallback;
+
+    return [
+      _StatCardData(
+        label: 'Total Funding',
+        value: _formatCurrency(totalFunding),
+        icon: ImageConstants.totalFunding,
+        iconColor: const Color(0xFF9B7EBF),
+        iconBg: const Color(0xFFF0EBF6),
+      ),
+      _StatCardData(
+        label: 'Amount Received',
+        value: _formatCurrency(amountReceived),
+        icon: ImageConstants.amountReceivable,
+        iconColor: const Color(0xFF2CB5A8),
+        iconBg: const Color(0xFFE6F7F5),
+      ),
+      _StatCardData(
+        label: 'Amount Pending',
+        value: _formatCurrency(pending),
+        icon: ImageConstants.amountRemaining,
+        iconColor: const Color(0xFFE06B7A),
+        iconBg: const Color(0xFFFDECEE),
+      ),
+      _StatCardData(
+        label: 'Total Payments',
+        value: '${transactions.length}',
+        icon: ImageConstants.reports,
+        iconColor: const Color(0xFF5B8DEF),
+        iconBg: const Color(0xFFEAF1FC),
+      ),
+    ];
+  }
+
+  static String _formatCurrency(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw =
+        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
+  }
 
   @override
   Widget build(BuildContext context) {

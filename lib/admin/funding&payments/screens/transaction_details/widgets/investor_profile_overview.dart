@@ -41,7 +41,7 @@ class InvestorProfileOverview extends StatelessWidget {
       icon: ImageConstants.amountRemaining,
       iconColor: Color(0xFFE06B7A),
       iconBg: Color(0xFFFDECEE),
-      badgeLabel: 'Next Due: 15 Jul, 2026',
+      badgeLabel: 'Next Due: 15 Jun, 2026',
       badgeColor: Color(0xFFE06B7A),
       badgeBg: Color(0xFFFDECEE),
     ),

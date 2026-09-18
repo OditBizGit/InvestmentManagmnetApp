@@ -6,12 +6,36 @@ class RegisterInvestorRequestModel {
   final String fullName;
   final String email;
   final String phoneNumber;
+  final String alternativeNumber;
   final String investorType;
   final String organization;
   final String address;
+
   final double? investmentAmount;
   final DateTime investmentDate;
+
+  final int investmentSplitMonths;
+  final String investmentSplitType;
+  final double investmentAdvanceAmount;
+
+  final String aadhaarNumber;
+  final String panCardNumber;
+  final String accountNumber;
+  final String ifscCode;
+  final String bankName;
+
+  final DateTime? dateOfBirth;
+
+  final String nomineeName;
+  final String nomineeRelationship;
+  final String nomineeAddress;
+  final DateTime? nomineeDateOfBirth;
+  final String nomineeAadhaarNumber;
+  final String nomineePanCardNumber;
+  final String nomineePhoneNumber;
+
   final MultipartFile? profileImage;
+  final MultipartFile? nomineeProfilePhoto;
 
   RegisterInvestorRequestModel({
     required this.username,
@@ -19,12 +43,30 @@ class RegisterInvestorRequestModel {
     required this.fullName,
     required this.email,
     required this.phoneNumber,
+    required this.alternativeNumber,
     required this.investorType,
     required this.organization,
     required this.address,
     this.investmentAmount,
     required this.investmentDate,
+    required this.investmentSplitMonths,
+    required this.investmentSplitType,
+    required this.investmentAdvanceAmount,
+    required this.aadhaarNumber,
+    required this.panCardNumber,
+    required this.accountNumber,
+    required this.ifscCode,
+    required this.bankName,
+    this.dateOfBirth,
+    required this.nomineeName,
+    required this.nomineeRelationship,
+    required this.nomineeAddress,
+    this.nomineeDateOfBirth,
+    required this.nomineeAadhaarNumber,
+    required this.nomineePanCardNumber,
+    required this.nomineePhoneNumber,
     this.profileImage,
+    this.nomineeProfilePhoto,
   });
 
   Future<FormData> toFormData() async {
@@ -34,12 +76,40 @@ class RegisterInvestorRequestModel {
       'FullName': fullName,
       'Email': email,
       'PhoneNumber': phoneNumber,
+      'AlternativeNumber': alternativeNumber,
       'InvestorType': investorType,
       'Organization': organization,
       'Address': address,
+
       'InvestmentAmount': investmentAmount,
       'InvestmentDate': investmentDate.toIso8601String(),
-      if (profileImage != null) 'ProfileImage': profileImage,
+
+      'InvestmentSplitMonths': investmentSplitMonths,
+      'InvestmentSplitType': investmentSplitType,
+      'InvestmentAdvanceAmount': investmentAdvanceAmount,
+
+      'AadhaarNumber': aadhaarNumber,
+      'PanCardNumber': panCardNumber,
+      'AccountNumber': accountNumber,
+      'IFSCCode': ifscCode,
+      'BankName': bankName,
+
+      if (dateOfBirth != null) 'DateOfBirth': dateOfBirth!.toIso8601String(),
+
+      'NomineeName': nomineeName,
+      'NomineeRelationship': nomineeRelationship,
+      'NomineeAddress': nomineeAddress,
+      if (nomineeDateOfBirth != null)
+        'NomineeDateOfBirth': nomineeDateOfBirth!.toIso8601String(),
+      'NomineeAadhaarNumber': nomineeAadhaarNumber,
+      'NomineePanCardNumber': nomineePanCardNumber,
+      'NomineePhoneNumber': nomineePhoneNumber,
+
+      if (profileImage != null)
+        'ProfileImage': profileImage,
+
+      if (nomineeProfilePhoto != null)
+        'NomineeProfilePhoto': nomineeProfilePhoto,
     });
   }
 }
@@ -82,6 +152,11 @@ class RegisterInvestorDataModel {
   final String? investorType;
   final String? organization;
   final String? address;
+
+  final int investmentSplitMonths;
+  final double monthlyInvestmentAmount;
+  final DateTime? investmentStartDate;
+
   final String userRole;
   final bool isActive;
   final DateTime? createdDate;
@@ -97,6 +172,9 @@ class RegisterInvestorDataModel {
     this.investorType,
     this.organization,
     this.address,
+    required this.investmentSplitMonths,
+    required this.monthlyInvestmentAmount,
+    this.investmentStartDate,
     required this.userRole,
     required this.isActive,
     this.createdDate,
@@ -107,20 +185,64 @@ class RegisterInvestorDataModel {
       ) {
     return RegisterInvestorDataModel(
       userId: json['UserId'] ?? json['userId'] ?? 0,
+
       username: json['Username'] ?? json['username'] ?? '',
+
       fullName: json['FullName'] ?? json['fullName'] ?? '',
+
       email: json['Email'] ?? json['email'] ?? '',
-      phoneNumber: json['PhoneNumber'] ?? json['phoneNumber'],
-      profileImage: json['ProfileImage'] ?? json['profileImage'],
-      investorCode: json['InvestorCode'] ?? json['investorCode'],
-      investorType: json['InvestorType'] ?? json['investorType'],
-      organization: json['Organization'] ?? json['organization'],
-      address: json['Address'] ?? json['address'],
-      userRole: json['UserRole'] ?? json['userRole'] ?? '',
-      isActive: json['IsActive'] ?? json['isActive'] ?? false,
-      createdDate: (json['CreatedDate'] ?? json['createdDate']) != null
+
+      phoneNumber:
+      json['PhoneNumber'] ?? json['phoneNumber'],
+
+      profileImage:
+      json['ProfileImage'] ?? json['profileImage'],
+
+      investorCode:
+      json['InvestorCode'] ?? json['investorCode'],
+
+      investorType:
+      json['InvestorType'] ?? json['investorType'],
+
+      organization:
+      json['Organization'] ?? json['organization'],
+
+      address:
+      json['Address'] ?? json['address'],
+
+      investmentSplitMonths:
+      json['InvestmentSplitMonths'] ??
+          json['investmentSplitMonths'] ??
+          0,
+
+      monthlyInvestmentAmount:
+      (json['MonthlyInvestmentAmount'] ??
+          json['monthlyInvestmentAmount'] ??
+          0)
+          .toDouble(),
+
+      investmentStartDate:
+      (json['InvestmentStartDate'] ??
+          json['investmentStartDate']) !=
+          null
           ? DateTime.tryParse(
-        json['CreatedDate'] ?? json['createdDate'],
+        json['InvestmentStartDate'] ??
+            json['investmentStartDate'],
+      )
+          : null,
+
+      userRole:
+      json['UserRole'] ?? json['userRole'] ?? '',
+
+      isActive:
+      json['IsActive'] ?? json['isActive'] ?? false,
+
+      createdDate:
+      (json['CreatedDate'] ?? json['createdDate']) !=
+          null
+          ? DateTime.tryParse(
+        json['CreatedDate'] ??
+            json['createdDate'],
       )
           : null,
     );

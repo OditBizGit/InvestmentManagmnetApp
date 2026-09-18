@@ -63,11 +63,20 @@ class _AddNewFundView extends StatefulWidget {
 class _AddNewFundViewState extends State<_AddNewFundView> {
   final _formKey = GlobalKey<FormState>();
   final _totalAmountController = TextEditingController();
+  final _totalPaidAmountController = TextEditingController();
+  final _remainingAmountController = TextEditingController();
   final _payingNowController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   InvestorModel? _selectedInvestor;
   DateTime _fundingDate = DateTime.now();
+
+  double get _totalAmount => _selectedInvestor?.totalInvestmentAmount ?? 0;
+  double get _basePaidAmount => _selectedInvestor?.totalPaidAmount ?? 0;
+  double get _remainingBalance {
+    final remaining = _totalAmount - _basePaidAmount;
+    return remaining < 0 ? 0 : remaining;
+  }
 
   @override
   void initState() {
@@ -76,13 +85,68 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   }
 
   void _onPayingNowChanged() {
+    _syncPaidAndRemainingDisplays();
     setState(() {});
+  }
+
+  double? _parseAmount(String? value) {
+    if (value == null) return null;
+    final cleaned = value.trim().replaceAll(',', '').replaceAll('₹', '');
+    if (cleaned.isEmpty) return null;
+    return double.tryParse(cleaned);
+  }
+
+  void _syncPaidAndRemainingDisplays() {
+    if (_selectedInvestor == null) {
+      _totalPaidAmountController.text = '';
+      _remainingAmountController.text = '';
+      return;
+    }
+
+    final payingNow = _parseAmount(_payingNowController.text);
+    final addAmount =
+        (payingNow != null && payingNow > 0) ? payingNow : 0.0;
+    final projectedPaid = _basePaidAmount + addAmount;
+    final remaining = _totalAmount - projectedPaid;
+
+    _totalPaidAmountController.text = _formatCurrency(projectedPaid);
+    _remainingAmountController.text = _formatCurrency(
+      remaining < 0 ? 0 : remaining,
+    );
+  }
+
+  String? _validatePayingNow(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter amount paying now';
+    }
+
+    final amount = _parseAmount(value);
+    if (amount == null) {
+      return 'Enter a valid amount';
+    }
+    if (amount <= 0) {
+      return 'Amount must be greater than zero';
+    }
+    if (_selectedInvestor == null) {
+      return 'Please select an investor first';
+    }
+
+    final remaining = _remainingBalance;
+    if (remaining <= 0) {
+      return 'No remaining balance to pay';
+    }
+    if (amount > remaining) {
+      return 'Cannot exceed remaining balance of ${_formatCurrency(remaining)}';
+    }
+    return null;
   }
 
   @override
   void dispose() {
     _payingNowController.removeListener(_onPayingNowChanged);
     _totalAmountController.dispose();
+    _totalPaidAmountController.dispose();
+    _remainingAmountController.dispose();
     _payingNowController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -97,9 +161,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
     setState(() {
       _selectedInvestor = selected;
+      _payingNowController.clear();
       _totalAmountController.text = selected == null
           ? ''
           : _formatCurrency(selected.totalInvestmentAmount);
+      _syncPaidAndRemainingDisplays();
     });
   }
 
@@ -123,11 +189,18 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    final paidAmount = double.tryParse(
-      _payingNowController.text.trim().replaceAll(',', ''),
-    );
+    final paidAmount = _parseAmount(_payingNowController.text);
     if (paidAmount == null || paidAmount <= 0) {
       AppToast.error('Enter a valid paying amount', context: context);
+      return;
+    }
+
+    final remaining = _remainingBalance;
+    if (paidAmount > remaining) {
+      AppToast.error(
+        'Cannot exceed remaining balance of ${_formatCurrency(remaining)}',
+        context: context,
+      );
       return;
     }
 
@@ -241,6 +314,13 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                   constraints.maxWidth < 600 ? 16.0 : 24.0;
               final isNarrow = constraints.maxWidth < 980;
 
+              final payingNowText = _payingNowController.text.trim();
+              final payingNowAmount = _parseAmount(payingNowText);
+              final formattedPayingNow =
+                  payingNowAmount != null && payingNowAmount > 0
+                      ? _formatCurrency(payingNowAmount)
+                      : null;
+
               final formCard = AddFundFormCard(
                 formKey: _formKey,
                 investor: _selectedInvestor?.fullName,
@@ -248,7 +328,10 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 onInvestorChanged: _onInvestorChanged,
                 investorType: _selectedInvestor?.investorType,
                 totalAmountController: _totalAmountController,
+                totalPaidAmountController: _totalPaidAmountController,
+                remainingAmountController: _remainingAmountController,
                 payingNowController: _payingNowController,
+                payingNowValidator: _validatePayingNow,
                 fundingDate: _fundingDate,
                 onPickDate: _pickDate,
                 formatDate: _formatDate,
@@ -262,9 +345,14 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 totalAmount: _totalAmountController.text.isEmpty
                     ? null
                     : _totalAmountController.text,
-                payingNow: _payingNowController.text.trim().isEmpty
+                paidAmount: _totalPaidAmountController.text.isEmpty
                     ? null
-                    : _payingNowController.text.trim(),
+                    : _totalPaidAmountController.text,
+                remainingAmount: _remainingAmountController.text.isEmpty
+                    ? null
+                    : _remainingAmountController.text,
+                payingNow: formattedPayingNow ??
+                    (payingNowText.isEmpty ? null : payingNowText),
                 isLoading: isSaving,
                 onCancel: _handleBack,
                 onSave: _handleSave,

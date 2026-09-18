@@ -8,6 +8,8 @@ class AddFundSidePanel extends StatelessWidget {
     required this.investor,
     required this.fundingType,
     this.totalAmount,
+    this.paidAmount,
+    this.remainingAmount,
     this.payingNow,
     this.isLoading = false,
     required this.onCancel,
@@ -17,6 +19,8 @@ class AddFundSidePanel extends StatelessWidget {
   final String? investor;
   final String? fundingType;
   final String? totalAmount;
+  final String? paidAmount;
+  final String? remainingAmount;
   final String? payingNow;
   final bool isLoading;
   final VoidCallback onCancel;
@@ -31,6 +35,8 @@ class AddFundSidePanel extends StatelessWidget {
           investor: investor,
           fundingType: fundingType,
           totalAmount: totalAmount,
+          paidAmount: paidAmount,
+          remainingAmount: remainingAmount,
           payingNow: payingNow,
         ),
         const SizedBox(height: 16),
@@ -110,12 +116,16 @@ class _SelectDetailsCard extends StatelessWidget {
     required this.investor,
     required this.fundingType,
     this.totalAmount,
+    this.paidAmount,
+    this.remainingAmount,
     this.payingNow,
   });
 
   final String? investor;
   final String? fundingType;
   final String? totalAmount;
+  final String? paidAmount;
+  final String? remainingAmount;
   final String? payingNow;
 
   @override
@@ -154,6 +164,24 @@ class _SelectDetailsCard extends StatelessWidget {
             label: 'Total Amount',
             value: totalAmount ?? 'Not Selected',
             isPlaceholder: totalAmount == null,
+          ),
+          const SizedBox(height: 12),
+          _DetailRow(
+            icon: Icons.payments_rounded,
+            iconBg: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF43A047),
+            label: 'Paid Amount',
+            value: paidAmount ?? 'Not Selected',
+            isPlaceholder: paidAmount == null,
+          ),
+          const SizedBox(height: 12),
+          _DetailRow(
+            icon: Icons.hourglass_bottom_rounded,
+            iconBg: const Color(0xFFFFF3E0),
+            iconColor: const Color(0xFFFB8C00),
+            label: 'Remaining Amount',
+            value: remainingAmount ?? 'Not Selected',
+            isPlaceholder: remainingAmount == null,
           ),
           const SizedBox(height: 12),
           _DetailRow(
@@ -239,8 +267,9 @@ class _NotesCard extends StatelessWidget {
   const _NotesCard();
 
   static const _notes = [
-    'Select an investor to auto-fill type and total amount.',
-    'Enter how much the investor is paying now for this funding entry.',
+    'Select an investor to auto-fill type, total, paid, and remaining amounts.',
+    'Paying Now updates Paid and Remaining amounts in real time.',
+    'You cannot pay more than the remaining balance.',
     'Funding date defaults to today and can be changed if needed.',
   ];
 

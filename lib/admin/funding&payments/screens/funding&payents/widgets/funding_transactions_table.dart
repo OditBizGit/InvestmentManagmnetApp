@@ -9,9 +9,19 @@ enum _TransactionTab { all, received, pending }
 class FundingTransactionsTable extends StatefulWidget {
   const FundingTransactionsTable({
     super.key,
+    this.transactions = const [],
+    this.isLoading = false,
+    this.isEmpty = false,
+    this.errorMessage,
+    this.onRetry,
     this.onTransactionTap,
   });
 
+  final List<FundingTransaction> transactions;
+  final bool isLoading;
+  final bool isEmpty;
+  final String? errorMessage;
+  final VoidCallback? onRetry;
   final ValueChanged<FundingTransaction>? onTransactionTap;
 
   @override
@@ -27,81 +37,18 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
 
   _TransactionTab _selectedTab = _TransactionTab.all;
 
-  static const List<FundingTransaction> _transactions = [
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Payment',
-      party: 'Corey Herwitz',
-      description: 'Investment-Phase 2',
-      amount: '₹20.000000',
-      status: 'Pending',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Received',
-      party: 'ABC Constructions',
-      description: 'corey@gmail.com',
-      amount: '₹20.000000',
-      status: 'Completed',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Payment',
-      party: 'Corey Herwitz',
-      description: 'Investment-Phase 2',
-      amount: '₹20.000000',
-      status: 'Pending',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Received',
-      party: 'ABC Constructions',
-      description: 'corey@gmail.com',
-      amount: '₹20.000000',
-      status: 'Completed',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Payment',
-      party: 'Corey Herwitz',
-      description: 'Investment-Phase 2',
-      amount: '₹20.000000',
-      status: 'Pending',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Received',
-      party: 'ABC Constructions',
-      description: 'corey@gmail.com',
-      amount: '₹20.000000',
-      status: 'Completed',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Payment',
-      party: 'Corey Herwitz',
-      description: 'Investment-Phase 2',
-      amount: '₹20.000000',
-      status: 'Pending',
-    ),
-    FundingTransaction(
-      date: '03 Jun, 2026',
-      type: 'Received',
-      party: 'ABC Constructions',
-      description: 'corey@gmail.com',
-      amount: '₹20.000000',
-      status: 'Completed',
-    ),
-  ];
-
   List<FundingTransaction> get _filteredTransactions {
     switch (_selectedTab) {
       case _TransactionTab.all:
-        return _transactions;
+        return widget.transactions;
       case _TransactionTab.received:
-        return _transactions.where((t) => t.type == 'Received').toList();
+        return widget.transactions
+            .where((t) => t.type.toLowerCase() == 'received')
+            .toList();
       case _TransactionTab.pending:
-        return _transactions.where((t) => t.status == 'Pending').toList();
+        return widget.transactions
+            .where((t) => t.status.toLowerCase().contains('pending'))
+            .toList();
     }
   }
 
@@ -110,6 +57,89 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
     _horizontalController.dispose();
     _verticalController.dispose();
     super.dispose();
+  }
+
+  Widget _buildTableBody(List<FundingTransaction> rows) {
+    if (widget.isLoading) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      );
+    }
+
+    if (widget.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.error,
+                ),
+              ),
+              if (widget.onRetry != null) ...[
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: widget.onRetry,
+                  child: Text(
+                    'Retry',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (widget.isEmpty || rows.isEmpty) {
+      return Center(
+        child: Text(
+          'No transactions found',
+          style: TextStyle(
+            fontSize: 11.sp,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+    }
+
+    return Scrollbar(
+      controller: _verticalController,
+      thumbVisibility: true,
+      child: ListView.separated(
+        controller: _verticalController,
+        padding: EdgeInsets.zero,
+        itemCount: rows.length,
+        separatorBuilder: (_, _) => const Divider(
+          height: 1,
+          thickness: 1,
+          color: AppColors.cardBg,
+        ),
+        itemBuilder: (context, index) {
+          return _TransactionRow(
+            index: index,
+            transaction: rows[index],
+            onTap: widget.onTransactionTap == null
+                ? null
+                : () => widget.onTransactionTap!(rows[index]),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -166,42 +196,7 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
                           clipBehavior: Clip.antiAlias,
                           child: SizedBox(
                             height: 480,
-                            child: rows.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'No transactions found',
-                                      style: TextStyle(
-                                        fontSize: 11.sp,
-                                        color: AppColors.textMuted,
-                                      ),
-                                    ),
-                                  )
-                                : Scrollbar(
-                                    controller: _verticalController,
-                                    thumbVisibility: true,
-                                    child: ListView.separated(
-                                      controller: _verticalController,
-                                      padding: EdgeInsets.zero,
-                                      itemCount: rows.length,
-                                      separatorBuilder: (_, __) =>
-                                          const Divider(
-                                        height: 1,
-                                        thickness: 1,
-                                        color: AppColors.cardBg,
-                                      ),
-                                      itemBuilder: (context, index) {
-                                        return _TransactionRow(
-                                          index: index,
-                                          transaction: rows[index],
-                                          onTap: widget.onTransactionTap == null
-                                              ? null
-                                              : () => widget.onTransactionTap!(
-                                                    rows[index],
-                                                  ),
-                                        );
-                                      },
-                                    ),
-                                  ),
+                            child: _buildTableBody(rows),
                           ),
                         ),
                       ],
@@ -632,7 +627,11 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = status == 'Completed';
+    final lower = status.toLowerCase();
+    final isCompleted = lower.contains('complete') ||
+        lower.contains('paid') ||
+        lower.contains('success') ||
+        lower.contains('received');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

@@ -822,8 +822,12 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = status == 'Completed';
-    final isScheduled = status == 'Scheduled';
+    final lower = status.toLowerCase();
+    final isCompleted = lower.contains('complete') ||
+        lower.contains('paid') ||
+        lower.contains('success') ||
+        lower.contains('received');
+    final isScheduled = lower.contains('schedul');
 
     final Color bg;
     final Color fg;

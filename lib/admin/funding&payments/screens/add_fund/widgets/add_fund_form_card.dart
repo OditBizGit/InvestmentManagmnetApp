@@ -13,7 +13,10 @@ class AddFundFormCard extends StatelessWidget {
     required this.onInvestorChanged,
     required this.investorType,
     required this.totalAmountController,
+    required this.totalPaidAmountController,
+    required this.remainingAmountController,
     required this.payingNowController,
+    required this.payingNowValidator,
     required this.fundingDate,
     required this.onPickDate,
     required this.formatDate,
@@ -27,7 +30,10 @@ class AddFundFormCard extends StatelessWidget {
   final ValueChanged<String?> onInvestorChanged;
   final String? investorType;
   final TextEditingController totalAmountController;
+  final TextEditingController totalPaidAmountController;
+  final TextEditingController remainingAmountController;
   final TextEditingController payingNowController;
+  final String? Function(String?) payingNowValidator;
   final DateTime fundingDate;
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
@@ -113,18 +119,31 @@ class AddFundFormCard extends StatelessWidget {
                     readOnly: true,
                   ),
                 );
+                final totalPaidAmountField = _LabeledField(
+                  label: 'Paid Amount',
+                  child: _TextInput(
+                    controller: totalPaidAmountController,
+                    hint: 'Updates with paying now',
+                    readOnly: true,
+                  ),
+                );
+                final remainingAmountField = _LabeledField(
+                  label: 'Remaining Amount',
+                  child: _TextInput(
+                    controller: remainingAmountController,
+                    hint: 'Updates with paying now',
+                    readOnly: true,
+                  ),
+                );
                 final payingNowField = _LabeledField(
                   label: 'Paying Now',
                   child: _TextInput(
                     controller: payingNowController,
                     hint: 'Enter amount paying now',
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter amount paying now';
-                      }
-                      return null;
-                    },
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: payingNowValidator,
                   ),
                 );
                 final dateField = _LabeledField(
@@ -153,6 +172,10 @@ class AddFundFormCard extends StatelessWidget {
                       const SizedBox(height: 14),
                       totalAmountField,
                       const SizedBox(height: 14),
+                      totalPaidAmountField,
+                      const SizedBox(height: 14),
+                      remainingAmountField,
+                      const SizedBox(height: 14),
                       payingNowField,
                       const SizedBox(height: 14),
                       dateField,
@@ -177,6 +200,15 @@ class AddFundFormCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: totalAmountField),
+                        const SizedBox(width: 14),
+                        Expanded(child: totalPaidAmountField),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: remainingAmountField),
                         const SizedBox(width: 14),
                         Expanded(child: payingNowField),
                       ],

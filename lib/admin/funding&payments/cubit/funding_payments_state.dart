@@ -35,3 +35,25 @@ final class AddPaymentFailure extends FundingPaymentsState {
 
   final String message;
 }
+
+final class TransactionHistoryLoading extends FundingPaymentsState {}
+
+final class TransactionHistorySuccess extends FundingPaymentsState {
+  TransactionHistorySuccess(this.transactions);
+
+  final List<InvestorTransactionHistoryModel> transactions;
+}
+
+final class TransactionHistoryEmpty extends FundingPaymentsState {
+  TransactionHistoryEmpty({
+    this.message = 'No transaction history found',
+  });
+
+  final String message;
+}
+
+final class TransactionHistoryFailure extends FundingPaymentsState {
+  TransactionHistoryFailure(this.message);
+
+  final String message;
+}
