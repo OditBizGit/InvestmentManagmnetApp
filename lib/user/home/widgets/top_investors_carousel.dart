@@ -1,6 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -8,53 +11,18 @@ class TopInvestorsCarousel extends StatelessWidget {
   const TopInvestorsCarousel({
     super.key,
     this.isLoading = false,
+    this.investors = const [],
   });
 
   final bool isLoading;
+  final List<TopInvestorModel> investors;
 
   static const Color _cardBg = Color(0xFFF0EBF6);
+  static const Color _accent = Color(0xFFA28CC1);
   static const Color _textPrimary = Color(0xFF4A3F5C);
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
   static const int _shimmerCardCount = 3;
-
-  static const List<_InvestorData> _investors = [
-    _InvestorData(
-      name: 'Mary John Christopher Arakkal',
-      amount: '2 Cr',
-      imageUrl:
-          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop',
-      rating: 5,
-    ),
-    _InvestorData(
-      name: 'Alexander Christopher',
-      amount: '25 Lack',
-      imageUrl:
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop',
-      rating: 5,
-    ),
-    _InvestorData(
-      name: 'Mary Mariyam John Mathew Chacko',
-      amount: '2 Cr',
-      imageUrl:
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop',
-      rating: 5,
-    ),
-    _InvestorData(
-      name: 'Sulaiman Chacko',
-      amount: '1.5 Cr',
-      imageUrl:
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
-      rating: 4,
-    ),
-    _InvestorData(
-      name: 'Joel',
-      amount: '80 Lack',
-      imageUrl:
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop',
-      rating: 5,
-    ),
-  ];
 
   static CarouselOptions get _carouselOptions => CarouselOptions(
         height: 22.h,
@@ -65,8 +33,48 @@ class TopInvestorsCarousel extends StatelessWidget {
         enlargeCenterPage: false,
       );
 
+  static String formatAmount(double amount) {
+    if (amount >= 10000000) {
+      final crore = amount / 10000000;
+      return '${_trimDecimal(crore)} Cr';
+    }
+    if (amount >= 100000) {
+      final lakh = amount / 100000;
+      return '${_trimDecimal(lakh)} Lakh';
+    }
+    final isWhole = amount == amount.roundToDouble();
+    final raw = isWhole
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
+  }
+
+  static String _trimDecimal(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    final text = value.toStringAsFixed(1);
+    if (text.endsWith('.0')) {
+      return text.substring(0, text.length - 2);
+    }
+    return text;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final itemCount = isLoading
+        ? _shimmerCardCount
+        : (investors.isEmpty ? 0 : investors.length);
+    final topAmount = _topInvestmentAmount(investors);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -79,89 +87,181 @@ class TopInvestorsCarousel extends StatelessWidget {
           ),
         ),
         SizedBox(height: 1.5.h),
-        CarouselSlider.builder(
-          itemCount: isLoading ? _shimmerCardCount : _investors.length,
-          itemBuilder: (context, index, realIndex) {
-            if (isLoading) {
-              return const _InvestorCardShimmer();
-            }
-            return _InvestorCard(investor: _investors[index]);
-          },
-          options: _carouselOptions,
+        if (!isLoading && investors.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 2.h),
+            child: Text(
+              'No top investors found',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w400,
+                color: _textPrimary.withValues(alpha: 0.6),
+              ),
+            ),
+          )
+        else
+          CarouselSlider.builder(
+            itemCount: itemCount,
+            itemBuilder: (context, index, realIndex) {
+              if (isLoading) {
+                return const _InvestorCardShimmer();
+              }
+              final investor = investors[index];
+              return _InvestorCard(
+                investor: investor,
+                showTopBadge: topAmount != null &&
+                    investor.investmentAmount == topAmount,
+              );
+            },
+            options: _carouselOptions,
+          ),
+      ],
+    );
+  }
+
+  static double? _topInvestmentAmount(List<TopInvestorModel> investors) {
+    if (investors.isEmpty) return null;
+
+    var topAmount = investors.first.investmentAmount;
+    for (final investor in investors.skip(1)) {
+      if (investor.investmentAmount > topAmount) {
+        topAmount = investor.investmentAmount;
+      }
+    }
+    return topAmount;
+  }
+}
+
+class _InvestorCard extends StatelessWidget {
+  const _InvestorCard({
+    required this.investor,
+    this.showTopBadge = false,
+  });
+
+  final TopInvestorModel investor;
+  final bool showTopBadge;
+
+  static String _toTitleCase(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+
+    return trimmed.split(RegExp(r'\s+')).map((word) {
+      if (word.isEmpty) return word;
+      if (word.length == 1) return word.toUpperCase();
+      return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
+    }).join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = investor.profileImageUrl;
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        _InvestorCardShell(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 8.w,
+                backgroundColor: TopInvestorsCarousel._cardBg,
+                backgroundImage: hasImage ? NetworkImage(imageUrl) : null,
+                child: hasImage
+                    ? null
+                    : Icon(
+                        Icons.person_rounded,
+                        size: 8.w,
+                        color: TopInvestorsCarousel._accent,
+                      ),
+              ),
+              SizedBox(height: 1.h),
+              SizedBox(
+                width: double.infinity,
+                child: _SlidingText(
+                  text: _toTitleCase(
+                    investor.fullName.isNotEmpty
+                        ? investor.fullName
+                        : 'Investor',
+                  ),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              SizedBox(height: 0.2.h),
+              Text(
+                TopInvestorsCarousel.formatAmount(investor.investmentAmount),
+                style: TextStyle(
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 0.6.h),
+              _StarRating(
+                rating: investor.rating,
+                size: 4.2.w,
+              ),
+            ],
+          ),
         ),
+        if (showTopBadge)
+          Positioned(
+            top: 0.6.h,
+            right: 2.8.w,
+            child: SvgPicture.asset(
+              ImageConstants.topBadge,
+              width: 6.w,
+              height: 6.w,
+              fit: BoxFit.contain,
+            ),
+          ),
       ],
     );
   }
 }
 
-class _InvestorData {
-  const _InvestorData({
-    required this.name,
-    required this.amount,
-    required this.imageUrl,
+class _StarRating extends StatelessWidget {
+  const _StarRating({
     required this.rating,
+    required this.size,
   });
 
-  final String name;
-  final String amount;
-  final String imageUrl;
   final double rating;
-}
+  final double size;
 
-class _InvestorCard extends StatelessWidget {
-  const _InvestorCard({required this.investor});
-
-  final _InvestorData investor;
+  static const Color _filled = Color(0xFFFFC107);
+  static const Color _empty = Color(0xFFD0D0D0);
 
   @override
   Widget build(BuildContext context) {
-    return _InvestorCardShell(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 8.w,
-            backgroundColor: TopInvestorsCarousel._cardBg,
-            backgroundImage: NetworkImage(investor.imageUrl),
-          ),
-          SizedBox(height: 1.h),
-          SizedBox(
-            width: double.infinity,
-            child: _SlidingText(
-              text: investor.name,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-                height: 1.35,
-              ),
-            ),
-          ),
-          SizedBox(height: 0.2.h),
-          Text(
-            investor.amount,
-            style: TextStyle(
-              fontSize: 13.5.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
-          SizedBox(height: 0.6.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (index) {
-              final filled = index < investor.rating.round();
-              return Icon(
-                Icons.star,
-                size: 4.2.w,
-                color: filled
-                    ? const Color(0xFFFFC107)
-                    : const Color(0xFFD0D0D0),
-              );
-            }),
-          ),
-        ],
-      ),
+    final clamped = rating.clamp(0.0, 5.0);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        final starValue = clamped - index;
+        final IconData icon;
+        final Color color;
+
+        if (starValue >= 1) {
+          icon = Icons.star;
+          color = _filled;
+        } else if (starValue >= 0.5) {
+          icon = Icons.star_half;
+          color = _filled;
+        } else {
+          icon = Icons.star;
+          color = _empty;
+        }
+
+        return Icon(icon, size: size, color: color);
+      }),
     );
   }
 }
@@ -208,7 +308,7 @@ class _InvestorCardShimmer extends StatelessWidget {
             ),
             SizedBox(height: 0.2.h),
             _PlaceholderLine(
-              sample: '25 Lack',
+              sample: '25 Lakh',
               style: amountStyle,
               alignment: Alignment.center,
               widthFactor: 0.45,

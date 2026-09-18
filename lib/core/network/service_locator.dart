@@ -136,6 +136,7 @@ Future<void> setupDi() async {
     () => HomeRepository(
       localStorage: getIt<LocalStorage>(),
       profileRepository: getIt<ProfileRepository>(),
+      dio: getIt<Dio>(),
     ),
   );
 
