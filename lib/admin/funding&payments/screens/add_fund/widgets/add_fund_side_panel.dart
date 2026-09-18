@@ -10,6 +10,9 @@ class AddFundSidePanel extends StatelessWidget {
     this.totalAmount,
     this.paidAmount,
     this.remainingAmount,
+    this.dueAmount,
+    this.dueDate,
+    this.dueStatus,
     this.payingNow,
     this.isLoading = false,
     required this.onCancel,
@@ -21,6 +24,9 @@ class AddFundSidePanel extends StatelessWidget {
   final String? totalAmount;
   final String? paidAmount;
   final String? remainingAmount;
+  final String? dueAmount;
+  final String? dueDate;
+  final String? dueStatus;
   final String? payingNow;
   final bool isLoading;
   final VoidCallback onCancel;
@@ -37,6 +43,9 @@ class AddFundSidePanel extends StatelessWidget {
           totalAmount: totalAmount,
           paidAmount: paidAmount,
           remainingAmount: remainingAmount,
+          dueAmount: dueAmount,
+          dueDate: dueDate,
+          dueStatus: dueStatus,
           payingNow: payingNow,
         ),
         const SizedBox(height: 16),
@@ -118,6 +127,9 @@ class _SelectDetailsCard extends StatelessWidget {
     this.totalAmount,
     this.paidAmount,
     this.remainingAmount,
+    this.dueAmount,
+    this.dueDate,
+    this.dueStatus,
     this.payingNow,
   });
 
@@ -126,6 +138,9 @@ class _SelectDetailsCard extends StatelessWidget {
   final String? totalAmount;
   final String? paidAmount;
   final String? remainingAmount;
+  final String? dueAmount;
+  final String? dueDate;
+  final String? dueStatus;
   final String? payingNow;
 
   @override
@@ -182,6 +197,28 @@ class _SelectDetailsCard extends StatelessWidget {
             label: 'Remaining Amount',
             value: remainingAmount ?? 'Not Selected',
             isPlaceholder: remainingAmount == null,
+          ),
+          const SizedBox(height: 12),
+          _DetailRow(
+            icon: Icons.event_note_rounded,
+            iconBg: const Color(0xFFFDECEE),
+            iconColor: const Color(0xFFE06B7A),
+            label: 'Due Amount',
+            value: dueAmount == null
+                ? 'Not Selected'
+                : dueStatus == null
+                    ? dueAmount!
+                    : '$dueAmount · $dueStatus',
+            isPlaceholder: dueAmount == null,
+          ),
+          const SizedBox(height: 12),
+          _DetailRow(
+            icon: Icons.calendar_today_outlined,
+            iconBg: const Color(0xFFEAF1FC),
+            iconColor: const Color(0xFF5B8DEF),
+            label: 'Due Date',
+            value: dueDate ?? 'Not Selected',
+            isPlaceholder: dueDate == null,
           ),
           const SizedBox(height: 12),
           _DetailRow(
@@ -267,10 +304,10 @@ class _NotesCard extends StatelessWidget {
   const _NotesCard();
 
   static const _notes = [
-    'Select an investor to auto-fill type, total, paid, and remaining amounts.',
-    'Paying Now updates Paid and Remaining amounts in real time.',
-    'You cannot pay more than the remaining balance.',
-    'Funding date defaults to today and can be changed if needed.',
+    'Select an investor to auto-fill type, total, paid, remaining, and due details.',
+    'Tap Pay Due to auto-fill the full due amount into Paying Now.',
+    'You can edit Paying Now for a partial payment — cannot exceed the due.',
+    'When the full due is paid, status changes to Completed.',
   ];
 
   @override

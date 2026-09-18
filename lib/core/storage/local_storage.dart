@@ -22,6 +22,8 @@ class LocalStorage {
   static const String _investorCodeKey = 'investor_code';
   static const String _profileImageKey = 'profile_image';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String _fundingTransactionHistoryKey =
+      'funding_transaction_history';
 
   // ── Auth token ────────────────────────────────────────────────────
 
@@ -81,6 +83,17 @@ class LocalStorage {
 
   bool getIsLoggedIn() => _prefs.getBool(_isLoggedInKey) ?? false;
 
+  // ── Funding / payments cache ──────────────────────────────────────
+
+  Future<bool> setFundingTransactionHistoryJson(String json) =>
+      _prefs.setString(_fundingTransactionHistoryKey, json);
+
+  String? getFundingTransactionHistoryJson() =>
+      _prefs.getString(_fundingTransactionHistoryKey);
+
+  Future<bool> clearFundingTransactionHistory() =>
+      _prefs.remove(_fundingTransactionHistoryKey);
+
   /// True when a non-empty auth token is saved (survives app restart).
   bool hasValidSession() {
     final token = getAuthToken();
@@ -132,6 +145,7 @@ class LocalStorage {
       _prefs.remove(_investorCodeKey),
       _prefs.remove(_profileImageKey),
       _prefs.remove(_isLoggedInKey),
+      _prefs.remove(_fundingTransactionHistoryKey),
     ]);
   }
 }

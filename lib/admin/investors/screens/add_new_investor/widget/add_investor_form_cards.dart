@@ -26,6 +26,17 @@ class PaymentScheduleInstallment {
   final String paymentStatus;
 }
 
+/// Payment methods available for advance payment.
+const List<String> kAdvancePaymentModeOptions = [
+  'NEFT',
+  'RTGS',
+  'IMPS',
+  'UPI',
+  'Cash',
+  'Bank Transfer',
+  'Cheque',
+];
+
 /// Left column: Basic Information + Login Credentials + Investment Details +
 /// Additional Information (Bank/KYC + Nominee).
 class AddInvestorFormCards extends StatelessWidget {
@@ -58,6 +69,9 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.customMonthsController,
     required this.intervalController,
     required this.advancePaymentController,
+    required this.paymentModeOptions,
+    required this.selectedPaymentMode,
+    required this.onPaymentModeChanged,
     required this.paymentSchedule,
     required this.formatCurrency,
     required this.aadhaarController,
@@ -106,6 +120,9 @@ class AddInvestorFormCards extends StatelessWidget {
   final TextEditingController customMonthsController;
   final TextEditingController intervalController;
   final TextEditingController advancePaymentController;
+  final List<String> paymentModeOptions;
+  final String? selectedPaymentMode;
+  final ValueChanged<String?> onPaymentModeChanged;
   final List<PaymentScheduleInstallment> paymentSchedule;
   final String Function(double) formatCurrency;
   final TextEditingController aadhaarController;
@@ -165,6 +182,9 @@ class AddInvestorFormCards extends StatelessWidget {
             customMonthsController: customMonthsController,
             intervalController: intervalController,
             advancePaymentController: advancePaymentController,
+            paymentModeOptions: paymentModeOptions,
+            selectedPaymentMode: selectedPaymentMode,
+            onPaymentModeChanged: onPaymentModeChanged,
             paymentSchedule: paymentSchedule,
             formatCurrency: formatCurrency,
           ),
@@ -638,6 +658,9 @@ class _InvestmentDetailsCard extends StatelessWidget {
     required this.customMonthsController,
     required this.intervalController,
     required this.advancePaymentController,
+    required this.paymentModeOptions,
+    required this.selectedPaymentMode,
+    required this.onPaymentModeChanged,
     required this.paymentSchedule,
     required this.formatCurrency,
   });
@@ -655,6 +678,9 @@ class _InvestmentDetailsCard extends StatelessWidget {
   final TextEditingController customMonthsController;
   final TextEditingController intervalController;
   final TextEditingController advancePaymentController;
+  final List<String> paymentModeOptions;
+  final String? selectedPaymentMode;
+  final ValueChanged<String?> onPaymentModeChanged;
   final List<PaymentScheduleInstallment> paymentSchedule;
   final String Function(double) formatCurrency;
 
@@ -844,6 +870,15 @@ class _InvestmentDetailsCard extends StatelessWidget {
                   },
                 ),
               );
+              final paymentModeField = AddInvestorLabeledField(
+                label: 'Payment Mode',
+                child: AddInvestorDropdownInput(
+                  value: selectedPaymentMode,
+                  hint: 'Select payment mode',
+                  items: paymentModeOptions,
+                  onChanged: onPaymentModeChanged,
+                ),
+              );
 
               final fields = <Widget>[
                 frequencyField,
@@ -851,6 +886,7 @@ class _InvestmentDetailsCard extends StatelessWidget {
                 if (selectedMonthOption == 'Custom') customField,
                 if (_needsInterval) intervalField,
                 advanceField,
+                paymentModeField,
               ];
 
               if (!twoCol) {

@@ -36,20 +36,32 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
   final ScrollController _verticalController = ScrollController();
 
   _TransactionTab _selectedTab = _TransactionTab.all;
+  String _query = '';
 
   List<FundingTransaction> get _filteredTransactions {
+    Iterable<FundingTransaction> rows;
     switch (_selectedTab) {
       case _TransactionTab.all:
-        return widget.transactions;
+        rows = widget.transactions;
       case _TransactionTab.received:
-        return widget.transactions
-            .where((t) => t.type.toLowerCase() == 'received')
-            .toList();
+        rows = widget.transactions
+            .where((t) => t.type.toLowerCase() == 'received');
       case _TransactionTab.pending:
-        return widget.transactions
-            .where((t) => t.status.toLowerCase().contains('pending'))
-            .toList();
+        rows = widget.transactions
+            .where((t) => t.status.toLowerCase().contains('pending'));
     }
+
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return rows.toList();
+
+    return rows.where((t) {
+      return t.party.toLowerCase().contains(query) ||
+          t.description.toLowerCase().contains(query) ||
+          t.type.toLowerCase().contains(query) ||
+          t.status.toLowerCase().contains(query) ||
+          t.amount.toLowerCase().contains(query) ||
+          t.date.toLowerCase().contains(query);
+    }).toList();
   }
 
   @override
@@ -167,6 +179,7 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
           _TableToolbar(
             selectedTab: _selectedTab,
             onTabSelected: (tab) => setState(() => _selectedTab = tab),
+            onSearchChanged: (value) => setState(() => _query = value),
           ),
           const SizedBox(height: 14),
           LayoutBuilder(
@@ -216,10 +229,12 @@ class _TableToolbar extends StatelessWidget {
   const _TableToolbar({
     required this.selectedTab,
     required this.onTabSelected,
+    required this.onSearchChanged,
   });
 
   final _TransactionTab selectedTab;
   final ValueChanged<_TransactionTab> onTabSelected;
+  final ValueChanged<String> onSearchChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -249,14 +264,26 @@ class _TableToolbar extends StatelessWidget {
           ],
         );
 
-        final filters = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _DateRangeButton(onTap: () {}),
-            const SizedBox(width: 10),
-            _ExportButton(onTap: () {}),
-          ],
-        );
+        final filters = isCompact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _DateRangeButton(onTap: () {}),
+                  ),
+                  const SizedBox(height: 10),
+                  _ToolbarSearchField(onChanged: onSearchChanged),
+                ],
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _DateRangeButton(onTap: () {}),
+                  const SizedBox(width: 10),
+                  _ToolbarSearchField(onChanged: onSearchChanged),
+                ],
+              );
 
         if (isCompact) {
           return Column(
@@ -267,7 +294,7 @@ class _TableToolbar extends StatelessWidget {
                 child: tabs,
               ),
               const SizedBox(height: 12),
-              Align(alignment: Alignment.centerRight, child: filters),
+              filters,
             ],
           );
         }
@@ -388,47 +415,54 @@ class _DateRangeButton extends StatelessWidget {
   }
 }
 
-class _ExportButton extends StatelessWidget {
-  const _ExportButton({required this.onTap});
+class _ToolbarSearchField extends StatelessWidget {
+  const _ToolbarSearchField({required this.onChanged});
 
-  final VoidCallback onTap;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.accent),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 260),
+      child: TextField(
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: 'Search transactions...',
+          hintStyle: TextStyle(
+            fontSize: 10.sp,
+            color: AppColors.hint,
+            fontWeight: FontWeight.w400,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                ImageConstants.search,
-                width: 15,
-                height: 15,
-                colorFilter: const ColorFilter.mode(
-                  AppColors.accent,
-                  BlendMode.srcIn,
-                ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(12),
+            child: SvgPicture.asset(
+              ImageConstants.search,
+              width: 16,
+              height: 16,
+              colorFilter: const ColorFilter.mode(
+                AppColors.hint,
+                BlendMode.srcIn,
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Export',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.accent,
-                ),
-              ),
-            ],
+            ),
+          ),
+          filled: true,
+          fillColor: AppColors.white,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.accent),
           ),
         ),
       ),

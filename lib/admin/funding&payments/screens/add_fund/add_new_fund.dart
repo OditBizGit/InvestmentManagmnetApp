@@ -9,6 +9,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
@@ -37,6 +38,7 @@ class AddNewFundScreen extends StatelessWidget {
         create: (context) => FundingPaymentsCubit(
           investorsRepository: context.read<InvestorsRepository>(),
           paymentRepository: context.read<InvestorPaymentRepository>(),
+          localStorage: getIt<LocalStorage>(),
         )..fetchInvestors(),
         child: _AddNewFundView(
           onBack: onBack,
@@ -70,13 +72,20 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
   InvestorModel? _selectedInvestor;
   DateTime _fundingDate = DateTime.now();
+  String? _selectedPaymentMethod;
+
+  /// Local UI-only due payment state (no backend).
+  double _dueRemainingAmount = 0;
+  DateTime? _dueDate;
+  String _dueStatus = 'Pending';
 
   double get _totalAmount => _selectedInvestor?.totalInvestmentAmount ?? 0;
   double get _basePaidAmount => _selectedInvestor?.totalPaidAmount ?? 0;
-  double get _remainingBalance {
-    final remaining = _totalAmount - _basePaidAmount;
-    return remaining < 0 ? 0 : remaining;
-  }
+
+  bool get _canPayDue =>
+      _selectedInvestor != null &&
+      _dueRemainingAmount > 0 &&
+      _dueStatus != 'Completed';
 
   @override
   void initState() {
@@ -85,7 +94,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   }
 
   void _onPayingNowChanged() {
-    _syncPaidAndRemainingDisplays();
+    if (!mounted) return;
+    _syncAmountDisplays();
     setState(() {});
   }
 
@@ -96,7 +106,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     return double.tryParse(cleaned);
   }
 
-  void _syncPaidAndRemainingDisplays() {
+  void _syncAmountDisplays() {
     if (_selectedInvestor == null) {
       _totalPaidAmountController.text = '';
       _remainingAmountController.text = '';
@@ -115,6 +125,29 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     );
   }
 
+  void _resetDueState() {
+    _dueRemainingAmount = 0;
+    _dueDate = null;
+    _dueStatus = 'Pending';
+  }
+
+  void _initDueForInvestor(InvestorModel investor) {
+    final remaining =
+        investor.totalInvestmentAmount - investor.totalPaidAmount;
+    final dueAmount = remaining < 0 ? 0.0 : remaining;
+
+    _dueRemainingAmount = dueAmount;
+    _dueDate = DateTime.now().add(const Duration(days: 30));
+    _dueStatus = dueAmount <= 0 ? 'Completed' : 'Pending';
+  }
+
+  String _amountInputText(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    return isWhole
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+  }
+
   String? _validatePayingNow(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter amount paying now';
@@ -130,13 +163,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     if (_selectedInvestor == null) {
       return 'Please select an investor first';
     }
-
-    final remaining = _remainingBalance;
-    if (remaining <= 0) {
-      return 'No remaining balance to pay';
+    if (_dueRemainingAmount <= 0 || _dueStatus == 'Completed') {
+      return 'No remaining due amount to pay';
     }
-    if (amount > remaining) {
-      return 'Cannot exceed remaining balance of ${_formatCurrency(remaining)}';
+    if (amount > _dueRemainingAmount) {
+      return 'Cannot exceed due of ${_formatCurrency(_dueRemainingAmount)}';
     }
     return null;
   }
@@ -153,6 +184,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   }
 
   void _onInvestorChanged(String? name) {
+    if (!mounted) return;
     final investors = context.read<FundingPaymentsCubit>().investors;
     final selected = investors.cast<InvestorModel?>().firstWhere(
           (investor) => investor?.fullName == name,
@@ -162,22 +194,66 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     setState(() {
       _selectedInvestor = selected;
       _payingNowController.clear();
-      _totalAmountController.text = selected == null
-          ? ''
-          : _formatCurrency(selected.totalInvestmentAmount);
-      _syncPaidAndRemainingDisplays();
+      _selectedPaymentMethod = null;
+      if (selected == null) {
+        _resetDueState();
+        _totalAmountController.text = '';
+      } else {
+        _initDueForInvestor(selected);
+        _totalAmountController.text =
+            _formatCurrency(selected.totalInvestmentAmount);
+      }
+      _syncAmountDisplays();
     });
   }
 
+  void _handlePayDue() {
+    if (!mounted) return;
+    if (_selectedInvestor == null) {
+      AppToast.error('Please select an investor', context: context);
+      return;
+    }
+
+    if (_dueRemainingAmount <= 0 || _dueStatus == 'Completed') {
+      AppToast.error('No remaining due amount to pay', context: context);
+      return;
+    }
+
+    setState(() {
+      _payingNowController.text = _amountInputText(_dueRemainingAmount);
+      _syncAmountDisplays();
+    });
+    _formKey.currentState?.validate();
+  }
+
   void _handleBack() {
+    if (!mounted) return;
     if (widget.onBack != null) {
       widget.onBack!();
+      return;
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(false);
       return;
     }
     Navigator.of(context).maybePop();
   }
 
+  void _handleSaveSuccess() {
+    if (!mounted) return;
+    if (widget.onSaveSuccess != null) {
+      widget.onSaveSuccess!();
+      return;
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    _handleBack();
+  }
+
   Future<void> _handleSave() async {
+    if (!mounted) return;
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       setState(() {});
@@ -195,10 +271,9 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    final remaining = _remainingBalance;
-    if (paidAmount > remaining) {
+    if (paidAmount > _dueRemainingAmount) {
       AppToast.error(
-        'Cannot exceed remaining balance of ${_formatCurrency(remaining)}',
+        'Cannot exceed due of ${_formatCurrency(_dueRemainingAmount)}',
         context: context,
       );
       return;
@@ -282,11 +357,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
           AppToast.success(state.message, context: context);
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            if (widget.onSaveSuccess != null) {
-              widget.onSaveSuccess!();
-              return;
-            }
-            _handleBack();
+            _handleSaveSuccess();
           });
         } else if (state is AddPaymentFailure) {
           AppToast.error(state.message, context: context);
@@ -330,8 +401,19 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 totalAmountController: _totalAmountController,
                 totalPaidAmountController: _totalPaidAmountController,
                 remainingAmountController: _remainingAmountController,
+                dueAmountLabel: _selectedInvestor == null
+                    ? null
+                    : _formatCurrency(_dueRemainingAmount),
+                dueDateLabel: _dueDate == null ? null : _formatDate(_dueDate!),
+                dueStatus: _selectedInvestor == null ? null : _dueStatus,
                 payingNowController: _payingNowController,
                 payingNowValidator: _validatePayingNow,
+                onPayDue: _handlePayDue,
+                canPayDue: _canPayDue,
+                paymentMethodOptions: kFundPaymentMethodOptions,
+                selectedPaymentMethod: _selectedPaymentMethod,
+                onPaymentMethodChanged: (value) =>
+                    setState(() => _selectedPaymentMethod = value),
                 fundingDate: _fundingDate,
                 onPickDate: _pickDate,
                 formatDate: _formatDate,
@@ -351,6 +433,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 remainingAmount: _remainingAmountController.text.isEmpty
                     ? null
                     : _remainingAmountController.text,
+                dueAmount: _selectedInvestor == null
+                    ? null
+                    : _formatCurrency(_dueRemainingAmount),
+                dueDate: _dueDate == null ? null : _formatDate(_dueDate!),
+                dueStatus: _selectedInvestor == null ? null : _dueStatus,
                 payingNow: formattedPayingNow ??
                     (payingNowText.isEmpty ? null : payingNowText),
                 isLoading: isSaving,

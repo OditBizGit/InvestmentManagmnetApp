@@ -50,6 +50,7 @@ dependencies:
   pointer_interceptor: ^0.10.1+2
   package_info_plus: ^8.3.0
   shimmer: ^3.0.0
+  cached_network_image: ^4.0.0
 
 dev_dependencies:
   flutter_test:

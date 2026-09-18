@@ -72,7 +72,7 @@ class AdminSideDrawer extends StatelessWidget {
     _DrawerDestination(
       item: AdminDrawerItem.settings,
       label: 'Settings',
-      icon: ImageConstants.investors,
+      icon: ImageConstants.createUpdates,
     ),
   ];
 

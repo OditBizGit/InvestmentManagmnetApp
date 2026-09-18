@@ -16,7 +16,9 @@ class RegisterInvestorRequestModel {
 
   final int investmentSplitMonths;
   final String investmentSplitType;
+  final int investmentSplitGap;
   final double investmentAdvanceAmount;
+  final String paymentMethod;
 
   final String aadhaarNumber;
   final String panCardNumber;
@@ -51,7 +53,9 @@ class RegisterInvestorRequestModel {
     required this.investmentDate,
     required this.investmentSplitMonths,
     required this.investmentSplitType,
+    required this.investmentSplitGap,
     required this.investmentAdvanceAmount,
+    required this.paymentMethod,
     required this.aadhaarNumber,
     required this.panCardNumber,
     required this.accountNumber,
@@ -86,7 +90,9 @@ class RegisterInvestorRequestModel {
 
       'InvestmentSplitMonths': investmentSplitMonths,
       'InvestmentSplitType': investmentSplitType,
+      'InvestmentSplitGap': investmentSplitGap,
       'InvestmentAdvanceAmount': investmentAdvanceAmount,
+      'PaymentMethod': paymentMethod,
 
       'AadhaarNumber': aadhaarNumber,
       'PanCardNumber': panCardNumber,

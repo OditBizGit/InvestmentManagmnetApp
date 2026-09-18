@@ -93,6 +93,22 @@ class InvestorTransactionHistoryModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'transactionId': transactionId,
+      'userId': userId,
+      'investorCode': investorCode,
+      'fullName': fullName,
+      'date': date.toIso8601String(),
+      'entryNo': entryNo,
+      'investmentAmount': investmentAmount,
+      'receivedAmount': receivedAmount,
+      'pendingAmount': pendingAmount,
+      'status': status,
+      'narration': narration,
+    };
+  }
+
   static int _readInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();

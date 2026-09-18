@@ -303,7 +303,7 @@ class _NomineeDetailsCard extends StatelessWidget {
                     value: nomineeDateOfBirth == null
                         ? null
                         : formatDate(nomineeDateOfBirth!),
-                    hint: 'Select date of birth',
+                    hint: 'Select Date',
                     onTap: onPickNomineeDateOfBirth,
                   ),
                 ),

@@ -4,8 +4,8 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
-class FundingPaymentsTopBar extends StatelessWidget {
-  const FundingPaymentsTopBar({
+class ReportsTopBar extends StatelessWidget {
+  const ReportsTopBar({
     super.key,
     this.username = 'Username',
     this.role = 'Admin',

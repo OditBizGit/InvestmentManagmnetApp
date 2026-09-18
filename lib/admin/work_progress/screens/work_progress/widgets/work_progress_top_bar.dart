@@ -4,21 +4,70 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
-class FundingPaymentsTopBar extends StatelessWidget {
-  const FundingPaymentsTopBar({
+class WorkProgressTopBar extends StatelessWidget {
+  const WorkProgressTopBar({
     super.key,
     this.username = 'Username',
     this.role = 'Admin',
+    this.onSearchChanged,
   });
 
   final String username;
   final String role;
+  final ValueChanged<String>? onSearchChanged;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 560;
+
+        final searchField = ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isCompact ? double.infinity : 360,
+          ),
+          child: TextField(
+            onChanged: onSearchChanged,
+            decoration: InputDecoration(
+              hintText: 'Search...',
+              hintStyle: TextStyle(
+                fontSize: 11.sp,
+                color: AppColors.hint,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SvgPicture.asset(
+                  ImageConstants.search,
+                  width: 18,
+                  height: 18,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.hint,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              filled: true,
+              fillColor: AppColors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.accent),
+              ),
+            ),
+          ),
+        );
 
         final actions = Row(
           mainAxisSize: MainAxisSize.min,
@@ -96,9 +145,28 @@ class FundingPaymentsTopBar extends StatelessWidget {
           ],
         );
 
-        return Align(
-          alignment: Alignment.centerRight,
-          child: actions,
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              searchField,
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerRight, child: actions),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: searchField,
+              ),
+            ),
+            const SizedBox(width: 16),
+            actions,
+          ],
         );
       },
     );

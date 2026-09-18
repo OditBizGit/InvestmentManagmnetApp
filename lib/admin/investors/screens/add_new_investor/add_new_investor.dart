@@ -101,6 +101,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   /// Set Due Date / Split Payment is always required.
   String _selectedFrequency = 'Month';
   String? _selectedInstallmentCount = '12';
+  String? _selectedPaymentMode;
   List<PaymentScheduleInstallment> _paymentSchedule = const [];
 
   @override
@@ -176,6 +177,18 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     final interval = int.tryParse(_intervalController.text.trim());
     if (interval == null || interval <= 0) return null;
     return interval;
+  }
+
+  /// Maps to API `InvestmentSplitGap`.
+  ///
+  /// - Week/Day: gap between installments (weeks or days) from the interval field.
+  /// - Month (including Custom month count): always `1` (every month).
+  ///   Custom values like 15 are sent as [investmentSplitMonths], not as gap.
+  int get _resolvedSplitGap {
+    if (_needsInterval) {
+      return _resolvedInterval ?? 0;
+    }
+    return 1;
   }
 
   void _rebuildPaymentSchedule() {
@@ -421,7 +434,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       profileImage: profileImage,
       investmentSplitMonths: count,
       investmentSplitType: _selectedFrequency,
+      investmentSplitGap: _resolvedSplitGap,
       investmentAdvanceAmount: advance,
+      paymentMethod: _selectedPaymentMode ?? '',
       aadhaarNumber: _aadhaarController.text.trim(),
       panCardNumber: _panController.text.trim(),
       accountNumber: _accountNumberController.text.trim(),
@@ -588,6 +603,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 onMonthOptionChanged: _onInstallmentCountChanged,
                 customMonthsController: _customInstallmentController,
                 advancePaymentController: _advancePaymentController,
+                paymentModeOptions: kAdvancePaymentModeOptions,
+                selectedPaymentMode: _selectedPaymentMode,
+                onPaymentModeChanged: (value) =>
+                    setState(() => _selectedPaymentMode = value),
                 paymentSchedule: _paymentSchedule,
                 formatCurrency: _formatCurrency,
                 frequencyOptions: _frequencyOptions,

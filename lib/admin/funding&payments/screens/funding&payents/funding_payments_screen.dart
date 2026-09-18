@@ -9,6 +9,7 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/scree
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 import '../add_fund/add_new_fund.dart';
@@ -32,6 +33,7 @@ class AdminFundingPaymentsScreen extends StatelessWidget {
         create: (context) => FundingPaymentsCubit(
           investorsRepository: context.read<InvestorsRepository>(),
           paymentRepository: context.read<InvestorPaymentRepository>(),
+          localStorage: getIt<LocalStorage>(),
         )..fetchAllInvestorTransactionHistory(),
         child: const _AdminFundingPaymentsView(),
       ),
@@ -65,12 +67,15 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
     });
   }
 
-  void _backToFunding() {
+  void _backToFunding({bool addedSuccessfully = false}) {
+    if (!mounted) return;
     setState(() {
       _selectedTransaction = null;
       _showAddFund = false;
     });
-    context.read<FundingPaymentsCubit>().fetchAllInvestorTransactionHistory();
+    if (addedSuccessfully && mounted) {
+      context.read<FundingPaymentsCubit>().refreshSilently();
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -137,11 +142,8 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
   ) {
     final amountValue =
         item.receivedAmount > 0 ? item.receivedAmount : item.investmentAmount;
-    final description = item.narration.trim().isNotEmpty
-        ? item.narration.trim()
-        : (item.investorCode.trim().isNotEmpty
-            ? item.investorCode.trim()
-            : 'Entry #${item.entryNo}');
+    final description =
+        item.narration.trim().isNotEmpty ? item.narration.trim() : '-';
 
     return FundingTransaction(
       date: _formatDate(item.date),
@@ -155,102 +157,120 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showAddFund) {
-      return AddNewFundScreen(
-        onBack: _backToFunding,
-        onSaveSuccess: _backToFunding,
-      );
-    }
+    // Keep the list BlocConsumer mounted (Offstage) so in-flight cubit emits
+    // after opening Add Fund / details cannot mark a disposed element dirty.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Offstage(
+          offstage: _showAddFund || _selectedTransaction != null,
+          child: BlocConsumer<FundingPaymentsCubit, FundingPaymentsState>(
+            listener: (context, state) {
+              if (state is TransactionHistoryFailure) {
+                final cubit = context.read<FundingPaymentsCubit>();
+                if (!cubit.hasTransactionHistory) {
+                  AppToast.error(state.message, context: context);
+                }
+              }
+            },
+            builder: (context, state) {
+              final cubit = context.read<FundingPaymentsCubit>();
+              final hasCachedOrLoadedData = cubit.hasTransactionHistory ||
+                  state is TransactionHistorySuccess;
 
-    if (_selectedTransaction != null) {
-      return TransactionDetailScreen(
-        transaction: _selectedTransaction!,
-        onBack: _backToFunding,
-      );
-    }
+              final isLoading = (state is TransactionHistoryLoading ||
+                      state is FundingPaymentsInitial) &&
+                  !hasCachedOrLoadedData;
 
-    return BlocConsumer<FundingPaymentsCubit, FundingPaymentsState>(
-      listener: (context, state) {
-        if (state is TransactionHistoryFailure) {
-          AppToast.error(state.message, context: context);
-        }
-      },
-      builder: (context, state) {
-        final cubit = context.read<FundingPaymentsCubit>();
-        final isLoading = state is TransactionHistoryLoading ||
-            state is FundingPaymentsInitial;
-        final errorMessage =
-            state is TransactionHistoryFailure ? state.message : null;
+              final errorMessage = state is TransactionHistoryFailure &&
+                      !hasCachedOrLoadedData
+                  ? state.message
+                  : null;
 
-        final source = state is TransactionHistorySuccess
-            ? state.transactions
-            : cubit.transactionHistory;
+              final source = state is TransactionHistorySuccess
+                  ? state.transactions
+                  : cubit.transactionHistory;
 
-        final transactions = (isLoading || errorMessage != null)
-            ? const <FundingTransaction>[]
-            : source.map(_mapToFundingTransaction).toList();
+              final transactions = (isLoading || errorMessage != null)
+                  ? const <FundingTransaction>[]
+                  : source.map(_mapToFundingTransaction).toList();
 
-        final isEmpty = !isLoading &&
-            errorMessage == null &&
-            (state is TransactionHistoryEmpty || transactions.isEmpty);
+              final isEmpty = !isLoading &&
+                  errorMessage == null &&
+                  (state is TransactionHistoryEmpty ||
+                      (!hasCachedOrLoadedData && transactions.isEmpty));
 
-        return ColoredBox(
-          color: AppColors.screenBg,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final horizontalPadding =
-                  constraints.maxWidth < 600 ? 16.0 : 24.0;
+              return ColoredBox(
+                color: AppColors.screenBg,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final horizontalPadding =
+                        constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      20,
-                      horizontalPadding,
-                      16,
-                    ),
-                    child: const FundingPaymentsTopBar(),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        0,
-                        horizontalPadding,
-                        24,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          FundingOverviewSection(
-                            transactions: isLoading || errorMessage != null
-                                ? const []
-                                : source,
-                            onAddFunding: _openAddFund,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            horizontalPadding,
+                            20,
+                            horizontalPadding,
+                            16,
                           ),
-                          const SizedBox(height: 20),
-                          FundingTransactionsTable(
-                            transactions: transactions,
-                            isLoading: isLoading,
-                            isEmpty: isEmpty,
-                            errorMessage: errorMessage,
-                            onRetry: () => context
-                                .read<FundingPaymentsCubit>()
-                                .fetchAllInvestorTransactionHistory(),
-                            onTransactionTap: _openTransaction,
+                          child: const FundingPaymentsTopBar(),
+                        ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.fromLTRB(
+                              horizontalPadding,
+                              0,
+                              horizontalPadding,
+                              24,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                FundingOverviewSection(
+                                  transactions:
+                                      isLoading || errorMessage != null
+                                          ? const []
+                                          : source,
+                                  onAddFunding: _openAddFund,
+                                ),
+                                const SizedBox(height: 20),
+                                FundingTransactionsTable(
+                                  transactions: transactions,
+                                  isLoading: isLoading,
+                                  isEmpty: isEmpty,
+                                  errorMessage: errorMessage,
+                                  onRetry: () => context
+                                      .read<FundingPaymentsCubit>()
+                                      .fetchAllInvestorTransactionHistory(),
+                                  onTransactionTap: _openTransaction,
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
               );
             },
           ),
-        );
-      },
+        ),
+        if (_showAddFund)
+          AddNewFundScreen(
+            onBack: () => _backToFunding(),
+            onSaveSuccess: () => _backToFunding(addedSuccessfully: true),
+          ),
+        if (_selectedTransaction != null)
+          TransactionDetailScreen(
+            transaction: _selectedTransaction!,
+            onBack: () => _backToFunding(),
+          ),
+      ],
     );
   }
 }

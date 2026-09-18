@@ -4,6 +4,17 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
+/// Payment methods available when recording a fund payment.
+const List<String> kFundPaymentMethodOptions = [
+  'NEFT',
+  'RTGS',
+  'IMPS',
+  'UPI',
+  'Cash',
+  'Bank Transfer',
+  'Cheque',
+];
+
 class AddFundFormCard extends StatelessWidget {
   const AddFundFormCard({
     super.key,
@@ -15,13 +26,21 @@ class AddFundFormCard extends StatelessWidget {
     required this.totalAmountController,
     required this.totalPaidAmountController,
     required this.remainingAmountController,
+    required this.dueAmountLabel,
+    required this.dueDateLabel,
+    required this.dueStatus,
     required this.payingNowController,
     required this.payingNowValidator,
+    required this.onPayDue,
+    required this.paymentMethodOptions,
+    required this.selectedPaymentMethod,
+    required this.onPaymentMethodChanged,
     required this.fundingDate,
     required this.onPickDate,
     required this.formatDate,
     required this.descriptionController,
     this.isLoadingInvestors = false,
+    this.canPayDue = false,
   });
 
   final GlobalKey<FormState> formKey;
@@ -32,13 +51,21 @@ class AddFundFormCard extends StatelessWidget {
   final TextEditingController totalAmountController;
   final TextEditingController totalPaidAmountController;
   final TextEditingController remainingAmountController;
+  final String? dueAmountLabel;
+  final String? dueDateLabel;
+  final String? dueStatus;
   final TextEditingController payingNowController;
   final String? Function(String?) payingNowValidator;
+  final VoidCallback onPayDue;
+  final List<String> paymentMethodOptions;
+  final String? selectedPaymentMethod;
+  final ValueChanged<String?> onPaymentMethodChanged;
   final DateTime fundingDate;
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
   final TextEditingController descriptionController;
   final bool isLoadingInvestors;
+  final bool canPayDue;
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +129,8 @@ class AddFundFormCard extends StatelessWidget {
                               : 'Select investor',
                           items: investorOptions,
                           onChanged: onInvestorChanged,
+                          enableSearch: true,
+                          searchHint: 'Search investor',
                         ),
                 );
                 final typeField = _LabeledField(
@@ -135,15 +164,50 @@ class AddFundFormCard extends StatelessWidget {
                     readOnly: true,
                   ),
                 );
+                final dueAmountField = _LabeledField(
+                  label: 'Due Amount',
+                  child: _DueAmountField(
+                    amount: dueAmountLabel,
+                    status: dueStatus,
+                  ),
+                );
+                final dueDateField = _LabeledField(
+                  label: 'Due Date',
+                  child: _ReadOnlyField(
+                    value: dueDateLabel,
+                    hint: 'Auto-filled after investor selection',
+                  ),
+                );
                 final payingNowField = _LabeledField(
                   label: 'Paying Now',
-                  child: _TextInput(
-                    controller: payingNowController,
-                    hint: 'Enter amount paying now',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: payingNowValidator,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _TextInput(
+                          controller: payingNowController,
+                          hint: 'Enter amount (partial OK)',
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: payingNowValidator,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _PayDueButton(
+                        enabled: canPayDue,
+                        onTap: onPayDue,
+                      ),
+                    ],
+                  ),
+                );
+                final paymentMethodField = _LabeledField(
+                  label: 'Payment Method',
+                  child: _DropdownInput(
+                    value: selectedPaymentMethod,
+                    hint: 'Select payment method',
+                    items: paymentMethodOptions,
+                    onChanged: onPaymentMethodChanged,
                   ),
                 );
                 final dateField = _LabeledField(
@@ -176,7 +240,13 @@ class AddFundFormCard extends StatelessWidget {
                       const SizedBox(height: 14),
                       remainingAmountField,
                       const SizedBox(height: 14),
+                      dueAmountField,
+                      const SizedBox(height: 14),
+                      dueDateField,
+                      const SizedBox(height: 14),
                       payingNowField,
+                      const SizedBox(height: 14),
+                      paymentMethodField,
                       const SizedBox(height: 14),
                       dateField,
                       const SizedBox(height: 14),
@@ -205,16 +275,27 @@ class AddFundFormCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 14),
+                    remainingAmountField,
+                    const SizedBox(height: 14),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: remainingAmountField),
+                        Expanded(child: dueAmountField),
                         const SizedBox(width: 14),
-                        Expanded(child: payingNowField),
+                        Expanded(child: dueDateField),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    dateField,
+                    payingNowField,
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: paymentMethodField),
+                        const SizedBox(width: 14),
+                        Expanded(child: dateField),
+                      ],
+                    ),
                     const SizedBox(height: 14),
                     descriptionField,
                   ],
@@ -253,6 +334,123 @@ class _LabeledField extends StatelessWidget {
         const SizedBox(height: 8),
         child,
       ],
+    );
+  }
+}
+
+class _DueAmountField extends StatelessWidget {
+  const _DueAmountField({
+    required this.amount,
+    required this.status,
+  });
+
+  final String? amount;
+  final String? status;
+
+  Color get _statusColor {
+    switch (status) {
+      case 'Completed':
+        return AppColors.green;
+      case 'Partially Paid':
+        return const Color(0xFFFB8C00);
+      default:
+        return AppColors.accent;
+    }
+  }
+
+  Color get _statusBg {
+    switch (status) {
+      case 'Completed':
+        return const Color(0xFFE6F6EC);
+      case 'Partially Paid':
+        return const Color(0xFFFFF3E0);
+      default:
+        return const Color(0xFFF0EBF6);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F7FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              amount ?? 'Auto-filled after investor selection',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: amount == null ? AppColors.hint : AppColors.textPrimary,
+              ),
+            ),
+          ),
+          if (status != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _statusBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                status!,
+                style: TextStyle(
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w600,
+                  color: _statusColor,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PayDueButton extends StatelessWidget {
+  const _PayDueButton({
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton(
+        onPressed: enabled ? onTap : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.accent,
+          foregroundColor: AppColors.white,
+          disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.45),
+          disabledForegroundColor: AppColors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          'Pay Due',
+          style: TextStyle(
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -335,12 +533,16 @@ class _DropdownInput extends StatefulWidget {
     required this.hint,
     required this.items,
     required this.onChanged,
+    this.enableSearch = false,
+    this.searchHint = 'Search',
   });
 
   final String? value;
   final String hint;
   final List<String> items;
   final ValueChanged<String?> onChanged;
+  final bool enableSearch;
+  final String searchHint;
 
   @override
   State<_DropdownInput> createState() => _DropdownInputState();
@@ -349,6 +551,7 @@ class _DropdownInput extends StatefulWidget {
 class _DropdownInputState extends State<_DropdownInput> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
+  final TextEditingController _searchController = TextEditingController();
 
   bool get _isOpen => _overlayEntry != null;
 
@@ -363,6 +566,7 @@ class _DropdownInputState extends State<_DropdownInput> {
   void _openDropdown() {
     final renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
+    _searchController.clear();
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
@@ -374,66 +578,160 @@ class _DropdownInputState extends State<_DropdownInput> {
             offset: Offset(0, size.height + 6),
             child: Material(
               color: Colors.transparent,
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 220),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.newBorder),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  shrinkWrap: true,
-                  itemCount: widget.items.length,
-                  separatorBuilder: (_, _) =>
-                      const Divider(height: 1, color: AppColors.newBorder),
-                  itemBuilder: (context, index) {
-                    final item = widget.items[index];
-                    final isSelected = item == widget.value;
+              child: StatefulBuilder(
+                builder: (context, setOverlayState) {
+                  final query = _searchController.text.trim().toLowerCase();
+                  final filtered = query.isEmpty
+                      ? widget.items
+                      : widget.items
+                          .where(
+                            (item) => item.toLowerCase().contains(query),
+                          )
+                          .toList();
 
-                    return InkWell(
-                      onTap: () {
-                        widget.onChanged(item);
-                        _closeDropdown();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                  return Container(
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.newBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item,
-                                style: TextStyle(
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.enableSearch) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+                            child: TextField(
+                              controller: _searchController,
+                              autofocus: true,
+                              onChanged: (_) => setOverlayState(() {}),
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: widget.searchHint,
+                                hintStyle: TextStyle(
                                   fontSize: 11.sp,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w500
-                                      : FontWeight.w400,
-                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.hint,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.search_rounded,
+                                  size: 20,
+                                  color: AppColors.textMuted,
+                                ),
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFF8F7FA),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.newBorder,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.accent,
+                                    width: 1.2,
+                                  ),
                                 ),
                               ),
                             ),
-                            if (isSelected)
-                              const Icon(
-                                Icons.check_rounded,
-                                size: 18,
-                                color: AppColors.accent,
-                              ),
-                          ],
+                          ),
+                          const Divider(
+                            height: 1,
+                            color: AppColors.newBorder,
+                          ),
+                        ],
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: filtered.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 18,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'No matches found',
+                                      style: TextStyle(
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.w400,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                  shrinkWrap: true,
+                                  itemCount: filtered.length,
+                                  separatorBuilder: (_, _) => const Divider(
+                                    height: 1,
+                                    color: AppColors.newBorder,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    final item = filtered[index];
+                                    final isSelected = item == widget.value;
+
+                                    return InkWell(
+                                      onTap: () {
+                                        widget.onChanged(item);
+                                        _closeDropdown();
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                item,
+                                                style: TextStyle(
+                                                  fontSize: 11.sp,
+                                                  fontWeight: isSelected
+                                                      ? FontWeight.w500
+                                                      : FontWeight.w400,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isSelected)
+                                              const Icon(
+                                                Icons.check_rounded,
+                                                size: 18,
+                                                color: AppColors.accent,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -442,18 +740,25 @@ class _DropdownInputState extends State<_DropdownInput> {
     );
 
     Overlay.of(context).insert(_overlayEntry!);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
-  void _closeDropdown() {
+  void _closeDropdown({bool notify = true}) {
     _overlayEntry?.remove();
     _overlayEntry = null;
-    if (mounted) setState(() {});
+    if (_searchController.text.isNotEmpty) {
+      _searchController.clear();
+    }
+    if (notify && mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _closeDropdown();
+    // Avoid setState during dispose — it marks a defunct element dirty.
+    _closeDropdown(notify: false);
+    _searchController.dispose();
     super.dispose();
   }
 

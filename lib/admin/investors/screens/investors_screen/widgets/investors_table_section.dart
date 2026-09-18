@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
@@ -295,32 +296,27 @@ class _InvestorRow extends StatelessWidget {
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: imageUrl != null && imageUrl.isNotEmpty
-                          ? Image.network(
-                              imageUrl,
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
                               fit: BoxFit.cover,
-                              headers: const {
+                              httpHeaders: const {
                                 'Accept': 'image/*,*/*',
                               },
-                              errorBuilder: (_, _, _) {
-                                return const Icon(
-                                  Icons.person,
-                                  size: 18,
-                                  color: AppColors.textSecondary,
-                                );
-                              },
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const Center(
-                                  child: SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 1.5,
-                                      color: AppColors.accent,
-                                    ),
+                              placeholder: (context, url) => const Center(
+                                child: SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                    color: AppColors.accent,
                                   ),
-                                );
-                              },
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => const Icon(
+                                Icons.person,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
                             )
                           : const Icon(
                               Icons.person,
