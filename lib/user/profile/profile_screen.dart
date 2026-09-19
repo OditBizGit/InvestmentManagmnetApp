@@ -7,6 +7,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/core/utils/user_logout_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/cubit/profile_cubit.dart';
@@ -53,22 +54,8 @@ class _UserProfileView extends StatelessWidget {
     );
   }
 
-  static String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final digits = parts.first;
-    final withCommas = digits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
+  static String _formatCurrency(double amount) =>
+      CurrencyFormatter.format(amount);
 
   static String _investorCodeLabel(String? code) {
     if (code == null || code.isEmpty) return '—';
@@ -122,7 +109,9 @@ class _UserProfileView extends StatelessWidget {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const PersonalInfoScreen(),
+                            builder: (_) => PersonalInfoScreen(
+                              details: details,
+                            ),
                           ),
                         );
                       },
@@ -131,9 +120,15 @@ class _UserProfileView extends StatelessWidget {
                       iconPath: ImageConstants.investmentDetails,
                       label: 'Investment Details',
                       onTap: () {
+                        final cubit = context.read<ProfileCubit>();
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const InvestmentDetailsScreen(),
+                            builder: (_) => BlocProvider.value(
+                              value: cubit,
+                              child: InvestmentDetailsScreen(
+                                details: details,
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -144,7 +139,9 @@ class _UserProfileView extends StatelessWidget {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const DocumentsScreen(),
+                            builder: (_) => DocumentsScreen(
+                              details: details,
+                            ),
                           ),
                         );
                       },

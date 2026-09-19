@@ -29,6 +29,8 @@ class ImageConstants {
   static const String deliveredDocuments = '$_svgPath/delivered_documents.svg';
   static const String nomineeDetails = '$_svgPath/nominee_details.svg';
   static const String topBadge = '$_svgPath/top_badge.svg';
+  static const String topInvestor = '$_svgPath/top_investor.svg';
+  static const String tick = '$_svgPath/tick.svg';
 
   static const String notification = '$_svgPath/notification.svg';
   static const String print = '$_svgPath/print.svg';

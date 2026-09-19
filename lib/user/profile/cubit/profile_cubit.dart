@@ -17,12 +17,16 @@ class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _repository;
   final LocalStorage _localStorage;
 
-  Future<void> loadProfile() async {
-    emit(const ProfileLoading());
+  Future<void> loadProfile({bool silent = false}) async {
+    if (!silent) {
+      emit(const ProfileLoading());
+    }
 
     final userId = _localStorage.getUserId();
     if (userId == null || userId.isEmpty) {
-      emit(const ProfileFailure('User not logged in'));
+      if (!silent || state is! ProfileSuccess) {
+        emit(const ProfileFailure('User not logged in'));
+      }
       return;
     }
 
@@ -34,6 +38,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           response.message.toLowerCase().contains('success');
 
       if (!looksSuccessful || response.data == null) {
+        if (silent && state is ProfileSuccess) return;
         emit(
           ProfileFailure(
             response.message.isNotEmpty
@@ -46,6 +51,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
       emit(ProfileSuccess(response.data!));
     } on DioException catch (e) {
+      if (silent && state is ProfileSuccess) return;
       final message = e.response?.data is Map
           ? (e.response?.data['message'] as String?)
           : null;
@@ -57,6 +63,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         ),
       );
     } catch (e) {
+      if (silent && state is ProfileSuccess) return;
       emit(
         ProfileFailure(
           e.toString().replaceFirst('Exception: ', ''),

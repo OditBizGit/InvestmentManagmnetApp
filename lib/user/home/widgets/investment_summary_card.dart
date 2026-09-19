@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
@@ -118,22 +119,8 @@ class _InvestmentSummaryBody extends StatelessWidget {
     );
   }
 
-  static String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final digits = parts.first;
-    final withCommas = digits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
+  static String _formatCurrency(double amount) =>
+      CurrencyFormatter.format(amount);
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -307,7 +294,11 @@ class _StatCard extends StatelessWidget {
               heightFactor: 0.82,
             )
           else
-            Text(amount, style: amountStyle),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(amount, maxLines: 1, style: amountStyle),
+            ),
         ],
       ),
     );

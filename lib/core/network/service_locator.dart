@@ -11,6 +11,8 @@ import 'package:maribel_wellness_centre_application/core/constants/api_endpoints
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/home/repository/home_repository.dart';
+import 'package:maribel_wellness_centre_application/user/investments/cubit/investments_cubit.dart';
+import 'package:maribel_wellness_centre_application/user/investments/repository/investments_repository.dart';
 import 'package:maribel_wellness_centre_application/user/profile/cubit/profile_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
 
@@ -139,6 +141,9 @@ Future<void> setupDi() async {
       dio: getIt<Dio>(),
     ),
   );
+  getIt.registerLazySingleton<InvestmentsRepository>(
+    () => InvestmentsRepository(dio: getIt<Dio>()),
+  );
 
   // ── BLoC / Cubit factories ────────────────────────────────────────
   getIt.registerFactory<LoginCubit>(
@@ -167,6 +172,12 @@ Future<void> setupDi() async {
   getIt.registerFactory<ProfileCubit>(
     () => ProfileCubit(
       repository: getIt<ProfileRepository>(),
+      localStorage: getIt<LocalStorage>(),
+    ),
+  );
+  getIt.registerFactory<InvestmentsCubit>(
+    () => InvestmentsCubit(
+      repository: getIt<InvestmentsRepository>(),
       localStorage: getIt<LocalStorage>(),
     ),
   );

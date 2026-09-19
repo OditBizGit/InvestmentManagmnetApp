@@ -137,19 +137,18 @@ class _SplashScreenState extends State<SplashScreen>
                           'Maribel',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 28.sp,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.w700,
                             color: AppColors.accent,
                             letterSpacing: 0.8,
                             height: 1.1,
                           ),
                         ),
-                        SizedBox(height: 0.6.h),
                         Text(
                           'Wellness Centre',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 16.sp,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w500,
                             color: AppColors.textPrimary,
                             letterSpacing: 1.4,

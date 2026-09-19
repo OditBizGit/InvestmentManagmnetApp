@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class WorkProgressCard extends StatefulWidget {
@@ -8,6 +9,157 @@ class WorkProgressCard extends StatefulWidget {
 
   @override
   State<WorkProgressCard> createState() => _WorkProgressCardState();
+}
+
+/// Shimmer matching [WorkProgressCard] padding, chart height, and typography.
+class WorkProgressCardShimmer extends StatelessWidget {
+  const WorkProgressCardShimmer({super.key});
+
+  static const Color _shimmerBase = Color(0xFFE0E0E0);
+  static const Color _shimmerHighlight = Color(0xFFF5F5F5);
+  static const Color _border = Color(0xFFE8E4EE);
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: _shimmerBase,
+      highlightColor: _shimmerHighlight,
+      direction: ShimmerDirection.ltr,
+      period: const Duration(milliseconds: 1400),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Line(
+                        sample: 'Work Progress',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        widthFactor: 0.45,
+                      ),
+                      SizedBox(height: 0.2.h),
+                      _Line(
+                        sample: 'From pending to completed All in one place.',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                        ),
+                        widthFactor: 0.92,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 2.w),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 2.2.w,
+                    vertical: 0.5.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Phase 1',
+                    style: TextStyle(
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.transparent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 2.h),
+            Container(
+              height: 22.h,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            SizedBox(height: 0.8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (final label in const ['01', '02', '03', '04', '05'])
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.transparent,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  const _Line({
+    required this.sample,
+    required this.style,
+    this.widthFactor,
+  });
+
+  final String sample;
+  final TextStyle style;
+  final double? widthFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        sample,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.clip,
+        style: style.copyWith(color: Colors.transparent),
+      ),
+    );
+
+    if (widthFactor == null) return line;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: FractionallySizedBox(
+        widthFactor: widthFactor!.clamp(0.0, 1.0),
+        child: line,
+      ),
+    );
+  }
 }
 
 class _WorkProgressCardState extends State<WorkProgressCard> {

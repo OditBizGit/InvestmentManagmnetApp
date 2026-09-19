@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,8 +32,44 @@ class UserHomeScreen extends StatelessWidget {
   }
 }
 
-class _UserHomeView extends StatelessWidget {
+class _UserHomeView extends StatefulWidget {
   const _UserHomeView();
+
+  @override
+  State<_UserHomeView> createState() => _UserHomeViewState();
+}
+
+class _UserHomeViewState extends State<_UserHomeView> {
+  static const _silentRefreshInterval = Duration(seconds: 5);
+
+  Timer? _silentRefreshTimer;
+  bool _isSilentRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _silentRefreshTimer = Timer.periodic(
+      _silentRefreshInterval,
+      (_) => _silentRefresh(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _silentRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _silentRefresh() async {
+    if (!mounted || _isSilentRefreshing) return;
+
+    _isSilentRefreshing = true;
+    try {
+      await context.read<HomeCubit>().loadHome(silent: true);
+    } finally {
+      _isSilentRefreshing = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +94,11 @@ class _UserHomeView extends StatelessWidget {
             final topInvestors = state is HomeSuccess
                 ? state.topInvestors
                 : const <TopInvestorModel>[];
+            final summaryKey = profile == null
+                ? 'loading'
+                : '${profile.totalCollection}_${profile.totalCommitment}_'
+                    '${profile.displayName}_${profile.investorCode}_'
+                    '${profile.profileImageUrl}';
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,6 +121,7 @@ class _UserHomeView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           InvestmentSummaryCard(
+                            key: ValueKey(summaryKey),
                             isLoading: isLoading,
                             profile: profile,
                           ),
@@ -145,7 +189,7 @@ class _HomeHeader extends StatelessWidget {
               ),
               SizedBox(height: 0.1.h),
               Text(
-                'Here is the latest status of your hospital investment',
+                'Here is the latest status of your investment',
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w400,

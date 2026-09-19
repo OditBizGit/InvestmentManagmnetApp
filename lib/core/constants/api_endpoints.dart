@@ -11,6 +11,7 @@ class ApiEndpoints {
 
   static const String transactionHistory = "/api/Investor/AllInvestorTransactionHistory";
   static const String topInvestors = "/api/Investor/GetTopInvestors";
+  static const String investorTransactionHistory = "/api/Investor/InvestorTransactionHistory/";
 
 
 

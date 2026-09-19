@@ -1,34 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/user/profile/change_request_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:sizer/sizer.dart';
 
 class PersonalInfoScreen extends StatelessWidget {
-  const PersonalInfoScreen({super.key});
+  const PersonalInfoScreen({super.key, this.details});
 
-  static const List<_PersonalInfoItem> _items = [
-    _PersonalInfoItem(
-      label: 'Phone Number 1',
-      value: '+91 7656654367',
-    ),
-    _PersonalInfoItem(
-      label: 'Phone Number 2',
-      value: '+91 8234543254',
-    ),
-    _PersonalInfoItem(
-      label: 'Permanent Address',
-      value:
-          '12, Green Valley Road, Kunnamangalam, Kozhikode, Kerala 673571, India',
-    ),
-    _PersonalInfoItem(
-      label: 'Courier Address',
-      value:
-          'Office 305, Al Faisal Business Center, Olaya Street, Kerala 673571, India',
-    ),
-  ];
+  final InvestorDetailsModel? details;
+
+  static String _displayValue(String? value) {
+    if (value == null || value.trim().isEmpty) return '-------';
+    return value.trim();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final items = [
+      _PersonalInfoItem(
+        label: 'Phone Number',
+        value: _displayValue(details?.phoneNumber),
+      ),
+      _PersonalInfoItem(
+        label: 'Alternate Phone Number',
+        value: _displayValue(details?.alternativeNumber),
+      ),
+      _PersonalInfoItem(
+        label: 'Permanent Address',
+        value: _displayValue(details?.address),
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -80,7 +82,7 @@ class PersonalInfoScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (var i = 0; i < _items.length; i++) ...[
+                      for (var i = 0; i < items.length; i++) ...[
                         if (i > 0)
                           Divider(
                             height: 1,
@@ -89,7 +91,7 @@ class PersonalInfoScreen extends StatelessWidget {
                             indent: 4.w,
                             endIndent: 4.w,
                           ),
-                        _InfoRow(item: _items[i]),
+                        _InfoRow(item: items[i]),
                       ],
                     ],
                   ),

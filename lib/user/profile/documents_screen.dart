@@ -2,11 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/register_complaint_screen.dart';
 import 'package:sizer/sizer.dart';
 
 class DocumentsScreen extends StatelessWidget {
-  const DocumentsScreen({super.key});
+  const DocumentsScreen({super.key, this.details});
+
+  final InvestorDetailsModel? details;
+
+  static bool _hasValue(String? value) =>
+      value != null && value.trim().isNotEmpty;
+
+  static String _displayValue(String? value) =>
+      _hasValue(value) ? value!.trim() : '-------';
+
+  static String _formatAadhaar(String? value) {
+    if (!_hasValue(value)) return '-------';
+    final digits = value!.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 12) {
+      return '${digits.substring(0, 4)} ${digits.substring(4, 8)} ${digits.substring(8)}';
+    }
+    return value.trim();
+  }
+
+  static String _formatDate(DateTime? date) {
+    if (date == null) return '-------';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day-$month-${date.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,28 +130,25 @@ class DocumentsScreen extends StatelessWidget {
                             padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 0.6.h),
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: CircleAvatar(
-                                radius: 7.w,
-                                backgroundImage: const NetworkImage(
-                                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
-                                ),
+                              child: _PhotoAvatar(
+                                imageUrl: details?.profileImageUrl,
                               ),
                             ),
                           ),
                           _VerifiedField(
                             label: 'Aadhaar Card',
-                            value: '5345 6534 8785 9875',
-                            isVerified: true,
+                            value: _formatAadhaar(details?.aadhaarNumber),
+                            isVerified: _hasValue(details?.aadhaarNumber),
                           ),
                           _VerifiedField(
                             label: 'Pan Card',
-                            value: 'BXWPT045T',
-                            isVerified: true,
+                            value: _displayValue(details?.panCardNumber),
+                            isVerified: _hasValue(details?.panCardNumber),
                           ),
                           _VerifiedField(
                             label: 'Email Address',
-                            value: '--------------------',
-                            isVerified: false,
+                            value: _displayValue(details?.email),
+                            isVerified: _hasValue(details?.email),
                           ),
                           SizedBox(height: 0.6.h),
                         ],
@@ -139,16 +161,26 @@ class DocumentsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SizedBox(height: 0.4.h),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 0.4.h),
+                            child: Text(
+                              _displayValue(details?.bankName),
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
                           _VerifiedField(
                             label: 'Account No',
-                            value: '567824447888990',
-                            isVerified: true,
+                            value: _displayValue(details?.accountNumber),
+                            isVerified: _hasValue(details?.accountNumber),
                           ),
                           _VerifiedField(
                             label: 'IFSC Code',
-                            value: 'NBR545780',
-                            isVerified: true,
+                            value: _displayValue(details?.ifscCode),
+                            isVerified: _hasValue(details?.ifscCode),
                           ),
                           SizedBox(height: 0.6.h),
                         ],
@@ -165,38 +197,37 @@ class DocumentsScreen extends StatelessWidget {
                             padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 0.6.h),
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: CircleAvatar(
-                                radius: 7.w,
-                                backgroundImage: const NetworkImage(
-                                  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
-                                ),
+                              child: _PhotoAvatar(
+                                imageUrl: details?.nomineeProfilePhotoUrl,
                               ),
                             ),
                           ),
                           _VerifiedField(
                             label: 'Nominee Full Name',
-                            value: 'Kurien John',
-                            isVerified: true,
+                            value: _displayValue(details?.nomineeName),
+                            isVerified: _hasValue(details?.nomineeName),
                           ),
                           _VerifiedField(
                             label: 'Relationship',
-                            value: 'Son',
-                            isVerified: true,
+                            value: _displayValue(details?.nomineeRelationship),
+                            isVerified: _hasValue(details?.nomineeRelationship),
                           ),
                           _VerifiedField(
                             label: 'Aadhaar Card',
-                            value: '--------------------',
-                            isVerified: false,
+                            value: _formatAadhaar(details?.nomineeAadhaarNumber),
+                            isVerified: _hasValue(details?.nomineeAadhaarNumber),
                           ),
                           _VerifiedField(
                             label: 'Pan Card',
-                            value: 'EXETPO1987E',
-                            isVerified: true,
+                            value: _displayValue(details?.nomineePanCardNumber),
+                            isVerified: _hasValue(
+                              details?.nomineePanCardNumber,
+                            ),
                           ),
                           _VerifiedField(
                             label: 'Date of Birth',
-                            value: '15-12-1997',
-                            isVerified: true,
+                            value: _formatDate(details?.nomineeDateOfBirth),
+                            isVerified: details?.nomineeDateOfBirth != null,
                           ),
                           SizedBox(height: 0.6.h),
                         ],
@@ -240,6 +271,30 @@ class DocumentsScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PhotoAvatar extends StatelessWidget {
+  const _PhotoAvatar({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
+
+    return CircleAvatar(
+      radius: 7.w,
+      backgroundColor: AppColors.cardBg,
+      backgroundImage: hasImage ? NetworkImage(imageUrl!) : null,
+      child: hasImage
+          ? null
+          : Icon(
+              Icons.person_rounded,
+              size: 7.w,
+              color: AppColors.accent,
+            ),
     );
   }
 }

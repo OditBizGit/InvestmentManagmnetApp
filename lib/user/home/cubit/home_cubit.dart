@@ -13,38 +13,69 @@ class HomeCubit extends Cubit<HomeState> {
         super(HomeInitial());
 
   final HomeRepository _repository;
+  bool _isLoading = false;
 
-  Future<void> loadHome() async {
-    emit(HomeLoading());
+  Future<void> loadHome({bool silent = false}) async {
+    if (_isLoading) return;
+    _isLoading = true;
+
+    if (!silent) {
+      emit(HomeLoading());
+    }
+
+    final previous = state is HomeSuccess ? state as HomeSuccess : null;
+
     try {
-      final results = await Future.wait([
-        _repository.getHomeProfile(),
-        _repository.getTopInvestors(),
+      HomeProfileModel? profile;
+      List<TopInvestorModel>? topInvestors;
+      Object? profileError;
+      Object? investorsError;
+
+      await Future.wait([
+        _repository.getHomeProfile().then((value) {
+          profile = value;
+        }).catchError((Object error) {
+          profileError = error;
+        }),
+        _repository.getTopInvestors().then((value) {
+          topInvestors = value;
+        }).catchError((Object error) {
+          investorsError = error;
+        }),
       ]);
 
-      emit(
-        HomeSuccess(
-          profile: results[0] as HomeProfileModel,
-          topInvestors: results[1] as List<TopInvestorModel>,
-        ),
-      );
-    } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
-      emit(
-        HomeFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load home'),
-        ),
-      );
-    } catch (e) {
-      emit(
-        HomeFailure(
-          e.toString().replaceFirst('Exception: ', ''),
-        ),
-      );
+      final nextProfile = profile ?? previous?.profile;
+      final nextInvestors = topInvestors ?? previous?.topInvestors;
+
+      // Prefer emitting updated data even if one of the calls failed.
+      if (nextProfile != null) {
+        emit(
+          HomeSuccess(
+            profile: nextProfile,
+            topInvestors: nextInvestors ?? const [],
+          ),
+        );
+        return;
+      }
+
+      if (silent && previous != null) return;
+
+      final error = profileError ?? investorsError;
+      emit(HomeFailure(_messageFromError(error)));
+    } finally {
+      _isLoading = false;
     }
+  }
+
+  String _messageFromError(Object? error) {
+    if (error is DioException) {
+      final message = error.response?.data is Map
+          ? (error.response?.data['message'] as String?)
+          : null;
+      if (message != null && message.isNotEmpty) return message;
+      return error.message ?? 'Failed to load home';
+    }
+    if (error == null) return 'Failed to load home';
+    return error.toString().replaceFirst('Exception: ', '');
   }
 }

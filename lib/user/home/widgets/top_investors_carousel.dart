@@ -2,7 +2,9 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
@@ -33,40 +35,7 @@ class TopInvestorsCarousel extends StatelessWidget {
         enlargeCenterPage: false,
       );
 
-  static String formatAmount(double amount) {
-    if (amount >= 10000000) {
-      final crore = amount / 10000000;
-      return '${_trimDecimal(crore)} Cr';
-    }
-    if (amount >= 100000) {
-      final lakh = amount / 100000;
-      return '${_trimDecimal(lakh)} Lakh';
-    }
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
-
-  static String _trimDecimal(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    final text = value.toStringAsFixed(1);
-    if (text.endsWith('.0')) {
-      return text.substring(0, text.length - 2);
-    }
-    return text;
-  }
+  static String formatAmount(double amount) => CurrencyFormatter.format(amount);
 
   @override
   Widget build(BuildContext context) {
@@ -194,12 +163,17 @@ class _InvestorCard extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 0.2.h),
-              Text(
-                TopInvestorsCarousel.formatAmount(investor.investmentAmount),
-                style: TextStyle(
-                  fontSize: 13.5.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  TopInvestorsCarousel.formatAmount(investor.investmentAmount),
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
               SizedBox(height: 0.6.h),
@@ -212,13 +186,17 @@ class _InvestorCard extends StatelessWidget {
         ),
         if (showTopBadge)
           Positioned(
-            top: 0.6.h,
-            right: 2.8.w,
+            top: 0.8.h,
+            right: 3.5.w,
             child: SvgPicture.asset(
-              ImageConstants.topBadge,
-              width: 6.w,
-              height: 6.w,
+              ImageConstants.topInvestor,
+              width: 5.w,
+              height: 5.w,
               fit: BoxFit.contain,
+              colorFilter: ColorFilter.mode(
+                AppColors.accentDark,
+                BlendMode.srcIn,
+              ),
             ),
           ),
       ],
@@ -308,7 +286,7 @@ class _InvestorCardShimmer extends StatelessWidget {
             ),
             SizedBox(height: 0.2.h),
             _PlaceholderLine(
-              sample: '25 Lakh',
+              sample: '₹25,00,000',
               style: amountStyle,
               alignment: Alignment.center,
               widthFactor: 0.45,
