@@ -14,6 +14,8 @@ class ApiEndpoints {
   /// funding & payments
   static const String topInvestors = "/api/Investor/GetTopInvestors";
   static const String investorTransactionHistory = "/api/Investor/InvestorTransactionHistory/";
+  static const String createProject = "/api/Project/CreateProject";
+  static const String getProject = "/api/Project/GetProjects";
 
 
 

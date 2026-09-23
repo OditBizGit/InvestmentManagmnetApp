@@ -5,7 +5,7 @@ import 'package:maribel_wellness_centre_application/core/constants/image_constan
 import 'package:sizer/sizer.dart';
 
 enum SettingsOptionType {
-  profile,
+  createProject,
   addAdmin,
   userComplaints,
 }
@@ -20,9 +20,9 @@ class SettingsOptionCards extends StatelessWidget {
 
   static const List<_OptionData> _options = [
     _OptionData(
-      type: SettingsOptionType.profile,
-      title: 'Profile',
-      description: 'Manage your account details and preferences',
+      type: SettingsOptionType.createProject,
+      title: 'Create Project',
+      description: 'Add or update project details',
       icon: ImageConstants.profile,
       iconColor: Color(0xFF9B7EBF),
       iconBg: Color(0xFFF0EBF6),

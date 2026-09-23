@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/investors_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
-import 'package:maribel_wellness_centre_application/admin/reports/screens/reports_screen.dart';
-import 'package:maribel_wellness_centre_application/admin/settings/settings_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/settings_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_footer.dart';
 import 'package:maribel_wellness_centre_application/core/utils/logout_confirm_dialog.dart';
@@ -14,6 +13,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 
 import '../dashboard/dashboard_screen.dart';
 import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
+import '../reports/screens/reports_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
