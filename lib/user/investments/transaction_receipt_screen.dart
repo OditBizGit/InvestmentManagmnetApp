@@ -6,10 +6,10 @@ import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dar
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/user/investments/investments_screen.dart';
 import 'package:maribel_wellness_centre_application/user/investments/model/investor_transaction_item_model.dart';
+import 'package:maribel_wellness_centre_application/user/investments/utils/transaction_receipt_pdf.dart';
 import 'package:sizer/sizer.dart';
 
-
-class TransactionReceiptScreen extends StatelessWidget {
+class TransactionReceiptScreen extends StatefulWidget {
   const TransactionReceiptScreen({
     super.key,
     required this.projectName,
@@ -19,11 +19,80 @@ class TransactionReceiptScreen extends StatelessWidget {
   final String projectName;
   final InvestorTransactionItemModel transaction;
 
+  @override
+  State<TransactionReceiptScreen> createState() =>
+      _TransactionReceiptScreenState();
+}
+
+class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
   static const Color _divider = Color(0xFFE8E4EE);
   static const Color _dashed = Color(0xFFD0CBD8);
 
+  bool _isDownloading = false;
+  bool _isSharing = false;
+
+  bool get _isBusy => _isDownloading || _isSharing;
+
+  /// Keeps the snackbar just above the Share / Download row.
+  EdgeInsets get _snackBarMargin => EdgeInsets.fromLTRB(5.w, 0, 5.w, 9.h);
+
+  void _showSnackBar(String message, {IconData? icon}) {
+    AppSnackBar.show(
+      context,
+      message: message,
+      icon: icon,
+      margin: _snackBarMargin,
+    );
+  }
+
+  Future<void> _shareReceipt() async {
+    if (_isBusy) return;
+
+    setState(() => _isSharing = true);
+    try {
+      await TransactionReceiptPdf.share(
+        projectName: widget.projectName,
+        transaction: widget.transaction,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(
+        'Could not share receipt. Please try again.',
+        icon: Icons.error_outline,
+      );
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
+    }
+  }
+
+  Future<void> _downloadReceipt() async {
+    if (_isBusy) return;
+
+    setState(() => _isDownloading = true);
+    try {
+      await TransactionReceiptPdf.download(
+        projectName: widget.projectName,
+        transaction: widget.transaction,
+      );
+      if (!mounted) return;
+      _showSnackBar(
+        'Receipt downloaded',
+        icon: Icons.download_done_rounded,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(
+        'Could not download receipt. Please try again.',
+        icon: Icons.error_outline,
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final transaction = widget.transaction;
     final amount = transaction.paidAmount > 0
         ? transaction.paidAmount
         : transaction.receivedAmount;
@@ -32,14 +101,15 @@ class TransactionReceiptScreen extends StatelessWidget {
     final dateLabel = UserInvestmentsScreen.formatDate(transaction.date);
     final timeLabel =
         UserInvestmentsScreen.formatTransactionTime(transaction.date);
-    final dateTime = timeLabel.isNotEmpty ? '$dateLabel · $timeLabel' : dateLabel;
+    final dateTime =
+        timeLabel.isNotEmpty ? '$dateLabel · $timeLabel' : dateLabel;
     final paymentMethod = transaction.paymentMethod.trim().isNotEmpty
         ? transaction.paymentMethod
         : (transaction.status.trim().isNotEmpty
             ? transaction.status
             : '—');
-    final displayProject = projectName.trim().isNotEmpty
-        ? projectName.trim()
+    final displayProject = widget.projectName.trim().isNotEmpty
+        ? widget.projectName.trim()
         : 'Investment';
 
     return Scaffold(
@@ -124,8 +194,6 @@ class TransactionReceiptScreen extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      // SizedBox(height: 2.h),
-                      // _DashedDivider(color: _dashed),
                       SizedBox(height: 4.h),
                       Text(
                         amountLabel,
@@ -153,7 +221,10 @@ class TransactionReceiptScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4.5.w),
-                          border: Border.all(color: AppColors.green.withValues(alpha: 0.4), width: 0.1.w),
+                          border: Border.all(
+                            color: AppColors.green.withValues(alpha: 0.4),
+                            width: 0.1.w,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -176,7 +247,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.green,
                               ),
-                            ), 
+                            ),
                             SizedBox(width: 1.w),
                           ],
                         ),
@@ -184,7 +255,10 @@ class TransactionReceiptScreen extends StatelessWidget {
                       SizedBox(height: 2.h),
                       _DashedDivider(color: _dashed),
                       SizedBox(height: 1.5.h),
-                      _ReceiptRow(label: 'Project', value: displayProject.toUpperCase()),
+                      _ReceiptRow(
+                        label: 'Project',
+                        value: displayProject.toUpperCase(),
+                      ),
                       _ReceiptRow(
                         label: 'Entry No',
                         value: '${transaction.entryNo}'.toUpperCase(),
@@ -247,42 +321,54 @@ class TransactionReceiptScreen extends StatelessWidget {
                     child: SizedBox(
                       height: 6.h,
                       child: OutlinedButton(
-                        onPressed: () {
-                          AppSnackBar.show(
-                            context,
-                            message: 'Share coming soon',
-                          );
-                        },
+                        onPressed: _isBusy ? null : _shareReceipt,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.accentDark,
-                          side: const BorderSide(color: AppColors.accentDark),
+                          disabledForegroundColor:
+                              AppColors.accentDark.withValues(alpha: 0.5),
+                          side: BorderSide(
+                            color: _isBusy
+                                ? AppColors.accentDark.withValues(alpha: 0.4)
+                                : AppColors.accentDark,
+                          ),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              ImageConstants.share,
-                              width: 4.5.w,
-                              height: 4.5.w,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.accentDark,
-                                BlendMode.srcIn,
+                        child: _isSharing
+                            ? SizedBox(
+                                width: 5.w,
+                                height: 5.w,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.accentDark,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset(
+                                    ImageConstants.share,
+                                    width: 4.5.w,
+                                    height: 4.5.w,
+                                    colorFilter: const ColorFilter.mode(
+                                      AppColors.accentDark,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  SizedBox(width: 2.w),
+                                  Text(
+                                    'Share',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              'Share',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -291,42 +377,51 @@ class TransactionReceiptScreen extends StatelessWidget {
                     child: SizedBox(
                       height: 6.h,
                       child: ElevatedButton(
-                        onPressed: () {
-                          AppSnackBar.show(
-                            context,
-                            message: 'PDF download coming soon',
-                          );
-                        },
+                        onPressed: _isBusy ? null : _downloadReceipt,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accentDark,
                           foregroundColor: Colors.white,
+                          disabledBackgroundColor:
+                              AppColors.accentDark.withValues(alpha: 0.7),
+                          disabledForegroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              ImageConstants.download,
-                              width: 4.5.w,
-                              height: 4.5.w,
-                              colorFilter: const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
+                        child: _isDownloading
+                            ? SizedBox(
+                                width: 5.w,
+                                height: 5.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset(
+                                    ImageConstants.download,
+                                    width: 4.5.w,
+                                    height: 4.5.w,
+                                    colorFilter: const ColorFilter.mode(
+                                      Colors.white,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  SizedBox(width: 2.w),
+                                  Text(
+                                    'Download',
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              'Download',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),

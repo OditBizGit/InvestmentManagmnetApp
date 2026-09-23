@@ -10,6 +10,7 @@ class AppSnackBar {
     required String message,
     Duration duration = const Duration(seconds: 2),
     IconData? icon,
+    EdgeInsetsGeometry? margin,
   }) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -19,6 +20,7 @@ class AppSnackBar {
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.transparent,
           elevation: 0,
+          margin: margin,
           padding: EdgeInsets.symmetric(horizontal: 1.5.w),
           content: _AppSnackBarContent(
             message: message,

@@ -78,48 +78,48 @@ class DocumentsScreen extends StatelessWidget {
                 padding: EdgeInsets.fromLTRB(5.w, 1.h, 5.w, 2.h),
                 child: Column(
                   children: [
-                    _SectionCard(
-                      iconPath: ImageConstants.deliveredDocuments,
-                      title: 'Delivered documents',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 1.h),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _ReceiptStat(
-                                    label: 'Generate Receipt',
-                                    value: '05',
-                                    valueColor: AppColors.green,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _ReceiptStat(
-                                    label: 'Delivered Receipt',
-                                    value: '03',
-                                    valueColor: AppColors.accent,
-                                    alignment: CrossAxisAlignment.end,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          _StatusRow(label: 'MOU', isVerified: true),
-                          _StatusRow(
-                            label: 'Contribution Agreement',
-                            isVerified: false,
-                          ),
-                          _StatusRow(
-                            label: 'Share Certificate',
-                            isVerified: false,
-                          ),
-                          SizedBox(height: 0.6.h),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 1.8.h),
+                    // _SectionCard(
+                    //   iconPath: ImageConstants.deliveredDocuments,
+                    //   title: 'Delivered documents',
+                    //   child: Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.stretch,
+                    //     children: [
+                    //       Padding(
+                    //         padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 1.h),
+                    //         child: Row(
+                    //           children: [
+                    //             Expanded(
+                    //               child: _ReceiptStat(
+                    //                 label: 'Generate Receipt',
+                    //                 value: '05',
+                    //                 valueColor: AppColors.green,
+                    //               ),
+                    //             ),
+                    //             Expanded(
+                    //               child: _ReceiptStat(
+                    //                 label: 'Delivered Receipt',
+                    //                 value: '03',
+                    //                 valueColor: AppColors.accent,
+                    //                 alignment: CrossAxisAlignment.end,
+                    //               ),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       ),
+                    //       _StatusRow(label: 'MOU', isVerified: true),
+                    //       _StatusRow(
+                    //         label: 'Contribution Agreement',
+                    //         isVerified: false,
+                    //       ),
+                    //       _StatusRow(
+                    //         label: 'Share Certificate',
+                    //         isVerified: false,
+                    //       ),
+                    //       SizedBox(height: 0.6.h),
+                    //     ],
+                    //   ),
+                    // ),
+                    // SizedBox(height: 1.8.h),
                     _SectionCard(
                       iconPath: ImageConstants.username,
                       title: 'Additional information',
