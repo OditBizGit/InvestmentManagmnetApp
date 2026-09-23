@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit/funding_payments_cubit.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_transaction_history_model.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/funding_investor_list_model.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_overview_section.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_payments_top_bar.dart';
@@ -9,7 +9,6 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/scree
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
-import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 import '../add_fund/add_new_fund.dart';
@@ -33,8 +32,7 @@ class AdminFundingPaymentsScreen extends StatelessWidget {
         create: (context) => FundingPaymentsCubit(
           investorsRepository: context.read<InvestorsRepository>(),
           paymentRepository: context.read<InvestorPaymentRepository>(),
-          localStorage: getIt<LocalStorage>(),
-        )..fetchAllInvestorTransactionHistory(),
+        )..fetchFundingInvestors(),
         child: const _AdminFundingPaymentsView(),
       ),
     );
@@ -69,13 +67,17 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
 
   void _backToFunding({bool addedSuccessfully = false}) {
     if (!mounted) return;
+    context.read<FundingPaymentsCubit>().clearInvestorDetails();
     setState(() {
       _selectedTransaction = null;
       _showAddFund = false;
     });
-    if (addedSuccessfully && mounted) {
+    if (!addedSuccessfully) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<FundingPaymentsCubit>().refreshSilently();
-    }
+    });
   }
 
   String _formatDate(DateTime date) {
@@ -126,9 +128,10 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
     return normalized[0].toUpperCase() + normalized.substring(1);
   }
 
-  String _displayType(InvestorTransactionHistoryModel item) {
+  String _displayType(FundingInvestorModel item) {
     final status = item.status.toLowerCase();
-    if (item.receivedAmount > 0 ||
+    if (item.totalPaidAmount > 0 ||
+        item.latestPaymentAmount > 0 ||
         status.contains('complete') ||
         status.contains('received') ||
         status.contains('paid')) {
@@ -138,67 +141,74 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
   }
 
   FundingTransaction _mapToFundingTransaction(
-    InvestorTransactionHistoryModel item,
+    FundingInvestorModel item,
   ) {
-    final amountValue =
-        item.receivedAmount > 0 ? item.receivedAmount : item.investmentAmount;
-    final description =
-        item.narration.trim().isNotEmpty ? item.narration.trim() : '-';
+    final date = item.modifiedDate ?? item.createdDate ?? DateTime.now();
+    final paid = _formatCurrency(item.totalPaidAmount);
+    final email = item.email.trim();
 
     return FundingTransaction(
-      date: _formatDate(item.date),
+      userId: item.userId,
+      date: _formatDate(date),
       type: _displayType(item),
       party: item.fullName.trim().isNotEmpty ? item.fullName.trim() : 'Unknown',
-      description: description,
-      amount: _formatCurrency(amountValue),
+      totalInvestmentAmount: _formatCurrency(item.totalInvestmentAmount),
+      totalPaidAmount: paid,
+      pendingAmount: _formatCurrency(item.totalPendingAmount),
       status: _displayStatus(item.status),
+      description: email.isNotEmpty ? email : '-',
+      amount: paid,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Keep the list BlocConsumer mounted (Offstage) so in-flight cubit emits
-    // after opening Add Fund / details cannot mark a disposed element dirty.
     return Stack(
       fit: StackFit.expand,
       children: [
         Offstage(
           offstage: _showAddFund || _selectedTransaction != null,
           child: BlocConsumer<FundingPaymentsCubit, FundingPaymentsState>(
+            listenWhen: (previous, current) =>
+                current is TransactionHistoryFailure,
+            buildWhen: (previous, current) =>
+                current is FundingPaymentsInitial ||
+                current is TransactionHistoryLoading ||
+                current is TransactionHistorySuccess ||
+                current is TransactionHistoryEmpty ||
+                current is TransactionHistoryFailure,
             listener: (context, state) {
               if (state is TransactionHistoryFailure) {
                 final cubit = context.read<FundingPaymentsCubit>();
-                if (!cubit.hasTransactionHistory) {
+                if (!cubit.hasFundingInvestors) {
                   AppToast.error(state.message, context: context);
                 }
               }
             },
             builder: (context, state) {
               final cubit = context.read<FundingPaymentsCubit>();
-              final hasCachedOrLoadedData = cubit.hasTransactionHistory ||
-                  state is TransactionHistorySuccess;
 
               final isLoading = (state is TransactionHistoryLoading ||
                       state is FundingPaymentsInitial) &&
-                  !hasCachedOrLoadedData;
+                  !cubit.hasFundingInvestors;
 
-              final errorMessage = state is TransactionHistoryFailure &&
-                      !hasCachedOrLoadedData
-                  ? state.message
-                  : null;
+              final errorMessage =
+                  state is TransactionHistoryFailure && !cubit.hasFundingInvestors
+                      ? state.message
+                      : null;
 
               final source = state is TransactionHistorySuccess
-                  ? state.transactions
-                  : cubit.transactionHistory;
+                  ? state.investors
+                  : cubit.fundingInvestors;
 
-              final transactions = (isLoading || errorMessage != null)
+              final transactions = isLoading || errorMessage != null
                   ? const <FundingTransaction>[]
                   : source.map(_mapToFundingTransaction).toList();
 
               final isEmpty = !isLoading &&
                   errorMessage == null &&
                   (state is TransactionHistoryEmpty ||
-                      (!hasCachedOrLoadedData && transactions.isEmpty));
+                      (!cubit.hasFundingInvestors && transactions.isEmpty));
 
               return ColoredBox(
                 color: AppColors.screenBg,
@@ -245,7 +255,7 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
                                   errorMessage: errorMessage,
                                   onRetry: () => context
                                       .read<FundingPaymentsCubit>()
-                                      .fetchAllInvestorTransactionHistory(),
+                                      .fetchFundingInvestors(),
                                   onTransactionTap: _openTransaction,
                                 ),
                               ],

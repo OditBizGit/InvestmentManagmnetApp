@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_transaction_history_model.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/funding_investor_list_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
@@ -12,18 +12,18 @@ class FundingOverviewSection extends StatelessWidget {
     this.onAddFunding,
   });
 
-  final List<InvestorTransactionHistoryModel> transactions;
+  final List<FundingInvestorModel> transactions;
   final VoidCallback? onAddFunding;
 
   List<_StatCardData> get _stats {
     final totalFunding = transactions
-        .map((e) => e.investmentAmount)
-        .fold<double>(0, (max, value) => value > max ? value : max);
+        .map((e) => e.totalInvestmentAmount)
+        .fold<double>(0, (sum, value) => sum + value);
     final amountReceived = transactions
-        .map((e) => e.receivedAmount)
+        .map((e) => e.totalPaidAmount)
         .fold<double>(0, (sum, value) => sum + value);
     final amountPending = transactions
-        .map((e) => e.pendingAmount)
+        .map((e) => e.totalPendingAmount)
         .fold<double>(0, (sum, value) => sum + value);
     final pendingFallback =
         (totalFunding - amountReceived).clamp(0.0, double.infinity).toDouble();

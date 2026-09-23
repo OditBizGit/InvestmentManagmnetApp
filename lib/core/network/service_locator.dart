@@ -161,7 +161,6 @@ Future<void> setupDi() async {
     () => FundingPaymentsCubit(
       investorsRepository: getIt<InvestorsRepository>(),
       paymentRepository: getIt<InvestorPaymentRepository>(),
-      localStorage: getIt<LocalStorage>(),
     ),
   );
   getIt.registerFactory<HomeCubit>(

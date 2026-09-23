@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
@@ -7,55 +8,90 @@ import 'package:sizer/sizer.dart';
 class InvestorProfileOverview extends StatelessWidget {
   const InvestorProfileOverview({
     super.key,
+    required this.details,
+    required this.formatCurrency,
+    required this.formatDate,
     this.onDownloadStatement,
     this.onRecordPayment,
   });
 
+  final InvestorDetailsModel details;
+  final String Function(double amount) formatCurrency;
+  final String Function(DateTime? date) formatDate;
   final VoidCallback? onDownloadStatement;
   final VoidCallback? onRecordPayment;
 
-  static const List<_ProfileStatCardData> _stats = [
-    _ProfileStatCardData(
-      label: 'Total Committed Investment',
-      value: '₹1,20,00,000',
-      icon: ImageConstants.totalFunding,
-      iconColor: Color(0xFF9B7EBF),
-      iconBg: Color(0xFFF0EBF6),
-      badgeLabel: '3 Active Phases',
-      badgeColor: Color(0xFF5B8DEF),
-      badgeBg: Color(0xFFEAF1FC),
-    ),
-    _ProfileStatCardData(
-      label: 'Total Paid Amount',
-      value: '₹80,00,000',
-      icon: ImageConstants.amountReceivable,
-      iconColor: Color(0xFF2CB5A8),
-      iconBg: Color(0xFFE6F7F5),
-      badgeLabel: 'Paid 66.7%',
-      badgeColor: Color(0xFF1BA752),
-      badgeBg: Color(0xFFE6F6EC),
-    ),
-    _ProfileStatCardData(
-      label: 'Pending Balance',
-      value: '₹40,00,000',
-      icon: ImageConstants.amountRemaining,
-      iconColor: Color(0xFFE06B7A),
-      iconBg: Color(0xFFFDECEE),
-      badgeLabel: 'Next Due: 15 Jun, 2026',
-      badgeColor: Color(0xFFE06B7A),
-      badgeBg: Color(0xFFFDECEE),
-    ),
-    _ProfileStatCardData(
-      label: 'Last Payment (03 Jun, 2026)',
-      value: '₹20,00,000',
-      icon: ImageConstants.reports,
-      iconColor: Color(0xFF5B8DEF),
-      iconBg: Color(0xFFEAF1FC),
-      badgeLabel: 'Completed',
-      badgeColor: Color(0xFF1BA752),
-      badgeBg: Color(0xFFE6F6EC),
-    ),
-  ];
+  List<_ProfileStatCardData> get _stats {
+    final committed = details.investmentAmount;
+    final paid = details.totalPaidAmount;
+    final pending = details.totalPendingAmount;
+    final paidPercent = committed > 0 ? (paid / committed) * 100 : 0.0;
+
+    InvestorDueDateModel? nextDue;
+    for (final due in details.dueDates) {
+      final status = due.status.toLowerCase();
+      if (status.contains('pending') ||
+          status.contains('due') ||
+          status.contains('schedul')) {
+        nextDue = due;
+        break;
+      }
+    }
+    nextDue ??= details.dueDates.isNotEmpty ? details.dueDates.first : null;
+
+    final activePhases = details.dueDates
+        .where((d) => !d.status.toLowerCase().contains('complete'))
+        .length;
+
+    return [
+      _ProfileStatCardData(
+        label: 'Total Committed Investment',
+        value: formatCurrency(committed),
+        icon: ImageConstants.totalFunding,
+        iconColor: const Color(0xFF9B7EBF),
+        iconBg: const Color(0xFFF0EBF6),
+        badgeLabel: activePhases > 0
+            ? '$activePhases Active Phase${activePhases == 1 ? '' : 's'}'
+            : 'No active phases',
+        badgeColor: const Color(0xFF5B8DEF),
+        badgeBg: const Color(0xFFEAF1FC),
+      ),
+      _ProfileStatCardData(
+        label: 'Total Paid Amount',
+        value: formatCurrency(paid),
+        icon: ImageConstants.amountReceivable,
+        iconColor: const Color(0xFF2CB5A8),
+        iconBg: const Color(0xFFE6F7F5),
+        badgeLabel: 'Paid ${paidPercent.toStringAsFixed(1)}%',
+        badgeColor: const Color(0xFF1BA752),
+        badgeBg: const Color(0xFFE6F6EC),
+      ),
+      _ProfileStatCardData(
+        label: 'Pending Balance',
+        value: formatCurrency(pending),
+        icon: ImageConstants.amountRemaining,
+        iconColor: const Color(0xFFE06B7A),
+        iconBg: const Color(0xFFFDECEE),
+        badgeLabel: nextDue?.dueDate != null
+            ? 'Next Due: ${formatDate(nextDue!.dueDate)}'
+            : 'No upcoming due',
+        badgeColor: const Color(0xFFE06B7A),
+        badgeBg: const Color(0xFFFDECEE),
+      ),
+      _ProfileStatCardData(
+        label: details.lastPaymentDate != null
+            ? 'Last Payment (${formatDate(details.lastPaymentDate)})'
+            : 'Last Payment',
+        value: formatCurrency(details.lastPaymentAmount),
+        icon: ImageConstants.reports,
+        iconColor: const Color(0xFF5B8DEF),
+        iconBg: const Color(0xFFEAF1FC),
+        badgeLabel: details.lastPaymentAmount > 0 ? 'Completed' : 'No payment',
+        badgeColor: const Color(0xFF1BA752),
+        badgeBg: const Color(0xFFE6F6EC),
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

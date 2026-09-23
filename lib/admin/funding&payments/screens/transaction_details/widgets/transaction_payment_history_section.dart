@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
@@ -7,7 +8,16 @@ import 'package:sizer/sizer.dart';
 enum _HistoryTab { all, completed, pending }
 
 class TransactionPaymentHistorySection extends StatefulWidget {
-  const TransactionPaymentHistorySection({super.key});
+  const TransactionPaymentHistorySection({
+    super.key,
+    this.dueDates = const [],
+    required this.formatCurrency,
+    required this.formatDate,
+  });
+
+  final List<InvestorDueDateModel> dueDates;
+  final String Function(double amount) formatCurrency;
+  final String Function(DateTime? date) formatDate;
 
   @override
   State<TransactionPaymentHistorySection> createState() =>
@@ -25,80 +35,88 @@ class _TransactionPaymentHistorySectionState
   String _query = '';
   int _page = 1;
 
-  static const List<_LedgerTransaction> _transactions = [
-    _LedgerTransaction(
-      id: '#TXN-8901',
-      date: '03 Jun, 2026',
-      title: 'Investment - Phase 2',
-      subtitle: 'Tranche A (Oncology Diagnostics)',
-      paymentMode: 'Wire Transfer / NEFT',
-      paymentModeDetail: '',
-      amount: '₹20,00,000',
-      status: 'Pending',
-    ),
-    _LedgerTransaction(
-      id: '#TXN-8452',
-      date: '18 Apr, 2026',
-      title: 'Investment - Phase 1',
-      subtitle: 'Final Settlement Tranche',
-      paymentMode: 'RTGS (UTR:',
-      paymentModeDetail: 'HDFC9283401)',
-      amount: '₹20,00,000',
-      status: 'Completed',
-    ),
-    _LedgerTransaction(
-      id: '#TXN-7910',
-      date: '02 Mar, 2026',
-      title: 'Investment - Phase 1',
-      subtitle: 'Tranche B (Structural Foundation)',
-      paymentMode: 'Cheque #492810',
-      paymentModeDetail: '(Cleared)',
-      amount: '₹20,00,000',
-      status: 'Completed',
-    ),
-    _LedgerTransaction(
-      id: '#TXN-7104',
-      date: '15 Jan, 2026',
-      title: 'Initial Commitment Advance',
-      subtitle: 'Phase 1 Induction Security',
-      paymentMode: 'RTGS Transfer',
-      paymentModeDetail: '',
-      amount: '₹20,00,000',
-      status: 'Completed',
-    ),
-    _LedgerTransaction(
-      id: '#TXN-6628',
-      date: '10 Dec, 2025',
-      title: 'Investment - Phase 1',
-      subtitle: 'Civil Works Tranche',
-      paymentMode: 'Wire Transfer / NEFT',
-      paymentModeDetail: '',
-      amount: '₹20,00,000',
-      status: 'Completed',
-    ),
-    _LedgerTransaction(
-      id: '#TXN-9012',
-      date: '15 Jul, 2026',
-      title: 'Investment - Phase 2',
-      subtitle: 'Tranche C (Medical Equipment)',
-      paymentMode: 'Scheduled RTGS',
-      paymentModeDetail: '',
-      amount: '₹20,00,000',
-      status: 'Scheduled',
-    ),
-  ];
+  /// Uses the installment status from the backend (e.g. Completed,
+  /// Pending, Partially Completed) instead of collapsing to two values.
+  String _displayStatus(String raw) {
+    final status = raw.trim();
+    if (status.isEmpty) return 'Pending';
+    return status;
+  }
 
-  bool _isPendingOrScheduled(_LedgerTransaction t) =>
-      t.status == 'Pending' || t.status == 'Scheduled';
+  bool _isFullyCompleted(String status) {
+    final lower = status.toLowerCase();
+    if (lower.contains('partial')) return false;
+    return lower.contains('complete') ||
+        lower.contains('paid') ||
+        lower.contains('success') ||
+        lower.contains('received');
+  }
+
+  bool _isPendingLike(String status) {
+    if (_isFullyCompleted(status)) return false;
+    final lower = status.toLowerCase();
+    return lower.contains('pending') ||
+        lower.contains('schedul') ||
+        lower.contains('partial') ||
+        lower.contains('due') ||
+        status == 'Pending' ||
+        status == 'Scheduled';
+  }
+
+  List<_LedgerTransaction> get _transactions {
+    final rows = <_LedgerTransaction>[];
+    for (final due in widget.dueDates) {
+      final displayStatus = _displayStatus(due.status);
+
+      if (due.payments.isNotEmpty) {
+        for (final payment in due.payments) {
+          rows.add(
+            _LedgerTransaction(
+              id: '#INST-${due.installmentNumber}',
+              date: widget.formatDate(due.dueDate),
+              title: 'Installment ${due.installmentNumber}',
+              subtitle: payment.paymentMethod.trim().isNotEmpty
+                  ? payment.paymentMethod
+                  : 'Payment',
+              paymentMode: payment.paymentMethod.trim().isNotEmpty
+                  ? payment.paymentMethod
+                  : '-',
+              paymentModeDetail: '',
+              amount: widget.formatCurrency(payment.amount),
+              status: displayStatus,
+            ),
+          );
+        }
+      } else {
+        rows.add(
+          _LedgerTransaction(
+            id: '#INST-${due.installmentNumber}',
+            date: widget.formatDate(due.dueDate),
+            title: 'Installment ${due.installmentNumber}',
+            subtitle: 'Installment schedule',
+            paymentMode: '-',
+            paymentModeDetail: '',
+            amount: widget.formatCurrency(
+              due.pendingAmount > 0 ? due.pendingAmount : due.installmentAmount,
+            ),
+            status: displayStatus,
+          ),
+        );
+      }
+    }
+    return rows;
+  }
 
   List<_LedgerTransaction> get _tabFiltered {
     switch (_selectedTab) {
       case _HistoryTab.all:
         return _transactions;
       case _HistoryTab.completed:
-        return _transactions.where((t) => t.status == 'Completed').toList();
+        return _transactions
+            .where((t) => _isFullyCompleted(t.status))
+            .toList();
       case _HistoryTab.pending:
-        return _transactions.where(_isPendingOrScheduled).toList();
+        return _transactions.where((t) => _isPendingLike(t.status)).toList();
     }
   }
 
@@ -127,8 +145,9 @@ class _TransactionPaymentHistorySectionState
 
   int get _allCount => _transactions.length;
   int get _completedCount =>
-      _transactions.where((t) => t.status == 'Completed').length;
-  int get _pendingCount => _transactions.where(_isPendingOrScheduled).length;
+      _transactions.where((t) => _isFullyCompleted(t.status)).length;
+  int get _pendingCount =>
+      _transactions.where((t) => _isPendingLike(t.status)).length;
 
   void _selectTab(_HistoryTab tab) {
     if (_selectedTab == tab) return;
@@ -823,10 +842,12 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lower = status.toLowerCase();
-    final isCompleted = lower.contains('complete') ||
-        lower.contains('paid') ||
-        lower.contains('success') ||
-        lower.contains('received');
+    final isPartial = lower.contains('partial');
+    final isCompleted = !isPartial &&
+        (lower.contains('complete') ||
+            lower.contains('paid') ||
+            lower.contains('success') ||
+            lower.contains('received'));
     final isScheduled = lower.contains('schedul');
 
     final Color bg;
@@ -834,6 +855,9 @@ class _StatusBadge extends StatelessWidget {
     if (isCompleted) {
       bg = const Color(0xFFE6F6EC);
       fg = AppColors.green;
+    } else if (isPartial) {
+      bg = const Color(0xFFFFF3E0);
+      fg = const Color(0xFFFB8C00);
     } else if (isScheduled) {
       bg = const Color(0xFFEAF1FC);
       fg = const Color(0xFF5B8DEF);

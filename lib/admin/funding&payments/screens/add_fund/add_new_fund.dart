@@ -9,22 +9,21 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
-import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
 class AddNewFundScreen extends StatelessWidget {
-  const AddNewFundScreen({
-    super.key,
-    this.onBack,
-    this.onSaveSuccess,
-  });
+  const AddNewFundScreen({super.key, this.onBack, this.onSaveSuccess});
 
   final VoidCallback? onBack;
   final VoidCallback? onSaveSuccess;
 
   @override
   Widget build(BuildContext context) {
+    // Reuse the parent [FundingPaymentsCubit] so payment success + silent
+    // refresh update the same list shown on Funding & Payments.
+    final existingCubit = context.read<FundingPaymentsCubit>();
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<InvestorsRepository>.value(
@@ -34,26 +33,16 @@ class AddNewFundScreen extends StatelessWidget {
           value: getIt<InvestorPaymentRepository>(),
         ),
       ],
-      child: BlocProvider(
-        create: (context) => FundingPaymentsCubit(
-          investorsRepository: context.read<InvestorsRepository>(),
-          paymentRepository: context.read<InvestorPaymentRepository>(),
-          localStorage: getIt<LocalStorage>(),
-        )..fetchInvestors(),
-        child: _AddNewFundView(
-          onBack: onBack,
-          onSaveSuccess: onSaveSuccess,
-        ),
+      child: BlocProvider<FundingPaymentsCubit>.value(
+        value: existingCubit,
+        child: _AddNewFundView(onBack: onBack, onSaveSuccess: onSaveSuccess),
       ),
     );
   }
 }
 
 class _AddNewFundView extends StatefulWidget {
-  const _AddNewFundView({
-    this.onBack,
-    this.onSaveSuccess,
-  });
+  const _AddNewFundView({this.onBack, this.onSaveSuccess});
 
   final VoidCallback? onBack;
   final VoidCallback? onSaveSuccess;
@@ -80,6 +69,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   String _dueStatus = 'Pending';
 
   double get _totalAmount => _selectedInvestor?.totalInvestmentAmount ?? 0;
+
   double get _basePaidAmount => _selectedInvestor?.totalPaidAmount ?? 0;
 
   bool get _canPayDue =>
@@ -91,6 +81,10 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   void initState() {
     super.initState();
     _payingNowController.addListener(_onPayingNowChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<FundingPaymentsCubit>().fetchInvestors();
+    });
   }
 
   void _onPayingNowChanged() {
@@ -114,8 +108,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     }
 
     final payingNow = _parseAmount(_payingNowController.text);
-    final addAmount =
-        (payingNow != null && payingNow > 0) ? payingNow : 0.0;
+    final addAmount = (payingNow != null && payingNow > 0) ? payingNow : 0.0;
     final projectedPaid = _basePaidAmount + addAmount;
     final remaining = _totalAmount - projectedPaid;
 
@@ -132,8 +125,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   }
 
   void _initDueForInvestor(InvestorModel investor) {
-    final remaining =
-        investor.totalInvestmentAmount - investor.totalPaidAmount;
+    final remaining = investor.totalInvestmentAmount - investor.totalPaidAmount;
     final dueAmount = remaining < 0 ? 0.0 : remaining;
 
     _dueRemainingAmount = dueAmount;
@@ -143,9 +135,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
   String _amountInputText(double amount) {
     final isWhole = amount == amount.roundToDouble();
-    return isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
+    return isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
   }
 
   String? _validatePayingNow(String? value) {
@@ -187,9 +177,9 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     if (!mounted) return;
     final investors = context.read<FundingPaymentsCubit>().investors;
     final selected = investors.cast<InvestorModel?>().firstWhere(
-          (investor) => investor?.fullName == name,
-          orElse: () => null,
-        );
+      (investor) => investor?.fullName == name,
+      orElse: () => null,
+    );
 
     setState(() {
       _selectedInvestor = selected;
@@ -200,8 +190,9 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
         _totalAmountController.text = '';
       } else {
         _initDueForInvestor(selected);
-        _totalAmountController.text =
-            _formatCurrency(selected.totalInvestmentAmount);
+        _totalAmountController.text = _formatCurrency(
+          selected.totalInvestmentAmount,
+        );
       }
       _syncAmountDisplays();
     });
@@ -276,13 +267,18 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
         'Cannot exceed due of ${_formatCurrency(_dueRemainingAmount)}',
         context: context,
       );
-      return;
+
+      if (_selectedPaymentMethod == null) {
+        AppToast.error('Please select a payment method', context: context);
+        return;
+      }
     }
 
-    final request = AddInvestorPaymentRequestModel(
+     final request = AddInvestorPaymentRequestModel(
       userId: _selectedInvestor!.userId,
       paidAmount: paidAmount,
       narration: _descriptionController.text.trim(),
+      paymentMethod: _selectedPaymentMethod!,
     );
 
     await context.read<FundingPaymentsCubit>().addInvestorPayment(request);
@@ -332,9 +328,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
   String _formatCurrency(double amount) {
     final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
+    final raw = isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
     final parts = raw.split('.');
     final digits = parts.first;
     final withCommas = digits.replaceAllMapped(
@@ -368,7 +362,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
         final investors = state is FundingInvestorsSuccess
             ? state.investors
             : cubit.investors;
-        final isLoadingInvestors = state is FundingInvestorsLoading ||
+        final isLoadingInvestors =
+            state is FundingInvestorsLoading ||
             (state is FundingPaymentsInitial && investors.isEmpty);
         final isSaving = state is AddPaymentLoading;
 
@@ -381,16 +376,17 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
           color: AppColors.screenBg,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final horizontalPadding =
-                  constraints.maxWidth < 600 ? 16.0 : 24.0;
+              final horizontalPadding = constraints.maxWidth < 600
+                  ? 16.0
+                  : 24.0;
               final isNarrow = constraints.maxWidth < 980;
 
               final payingNowText = _payingNowController.text.trim();
               final payingNowAmount = _parseAmount(payingNowText);
               final formattedPayingNow =
                   payingNowAmount != null && payingNowAmount > 0
-                      ? _formatCurrency(payingNowAmount)
-                      : null;
+                  ? _formatCurrency(payingNowAmount)
+                  : null;
 
               final formCard = AddFundFormCard(
                 formKey: _formKey,
@@ -438,7 +434,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                     : _formatCurrency(_dueRemainingAmount),
                 dueDate: _dueDate == null ? null : _formatDate(_dueDate!),
                 dueStatus: _selectedInvestor == null ? null : _dueStatus,
-                payingNow: formattedPayingNow ??
+                payingNow:
+                    formattedPayingNow ??
                     (payingNowText.isEmpty ? null : payingNowText),
                 isLoading: isSaving,
                 onCancel: _handleBack,

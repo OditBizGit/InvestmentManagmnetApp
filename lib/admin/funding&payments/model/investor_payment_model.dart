@@ -2,11 +2,13 @@ class AddInvestorPaymentRequestModel {
   final int userId;
   final double paidAmount;
   final String narration;
+  final String paymentMethod;
 
   AddInvestorPaymentRequestModel({
     required this.userId,
     required this.paidAmount,
     required this.narration,
+    required this.paymentMethod,
   });
 
   Map<String, dynamic> toJson() {
@@ -14,6 +16,7 @@ class AddInvestorPaymentRequestModel {
       'userId': userId,
       'paidAmount': paidAmount,
       'narration': narration,
+      'paymentMethod': paymentMethod,
     };
   }
 }

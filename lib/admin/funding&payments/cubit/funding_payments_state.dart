@@ -39,14 +39,14 @@ final class AddPaymentFailure extends FundingPaymentsState {
 final class TransactionHistoryLoading extends FundingPaymentsState {}
 
 final class TransactionHistorySuccess extends FundingPaymentsState {
-  TransactionHistorySuccess(this.transactions);
+  TransactionHistorySuccess(this.investors);
 
-  final List<InvestorTransactionHistoryModel> transactions;
+  final List<FundingInvestorModel> investors;
 }
 
 final class TransactionHistoryEmpty extends FundingPaymentsState {
   TransactionHistoryEmpty({
-    this.message = 'No transaction history found',
+    this.message = 'No investors found',
   });
 
   final String message;
@@ -54,6 +54,20 @@ final class TransactionHistoryEmpty extends FundingPaymentsState {
 
 final class TransactionHistoryFailure extends FundingPaymentsState {
   TransactionHistoryFailure(this.message);
+
+  final String message;
+}
+
+final class InvestorDetailsLoading extends FundingPaymentsState {}
+
+final class InvestorDetailsSuccess extends FundingPaymentsState {
+  InvestorDetailsSuccess(this.details);
+
+  final InvestorDetailsModel details;
+}
+
+final class InvestorDetailsFailure extends FundingPaymentsState {
+  InvestorDetailsFailure(this.message);
 
   final String message;
 }

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 import 'package:sizer/sizer.dart';
-
-import '../../funding&payents/widgets/funding_transactions_table.dart';
 
 class InvestorProfileDetailsSection extends StatelessWidget {
   const InvestorProfileDetailsSection({
     super.key,
-    required this.transaction,
+    required this.details,
+    required this.formatCurrency,
+    required this.formatDate,
   });
 
-  final FundingTransaction transaction;
+  final InvestorDetailsModel details;
+  final String Function(double amount) formatCurrency;
+  final String Function(DateTime? date) formatDate;
 
   @override
   Widget build(BuildContext context) {
@@ -22,80 +26,68 @@ class InvestorProfileDetailsSection extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _PersonalContactCard(transaction: transaction),
+              _PersonalContactCard(details: details, formatDate: formatDate),
               const SizedBox(height: 14),
-              const _PendingScheduleCard(),
+              _PendingScheduleCard(
+                details: details,
+                formatCurrency: formatCurrency,
+                formatDate: formatDate,
+                listMaxHeight: 260,
+              ),
             ],
           );
         }
 
-        return _EqualHeightRow(
-          leftBuilder: (fillHeight) => _PersonalContactCard(
-            transaction: transaction,
-            fillHeight: fillHeight,
-          ),
-          rightBuilder: (fillHeight) => _PendingScheduleCard(
-            fillHeight: fillHeight,
-          ),
+        return _EqualHeightDetailsPair(
+          details: details,
+          formatCurrency: formatCurrency,
+          formatDate: formatDate,
         );
       },
     );
   }
 }
 
-/// Matches side-by-side card heights without IntrinsicHeight/Spacer crashes.
-class _EqualHeightRow extends StatefulWidget {
-  const _EqualHeightRow({
-    required this.leftBuilder,
-    required this.rightBuilder,
+/// Keeps both cards the same height; dues list scrolls inside its card.
+class _EqualHeightDetailsPair extends StatefulWidget {
+  const _EqualHeightDetailsPair({
+    required this.details,
+    required this.formatCurrency,
+    required this.formatDate,
   });
 
-  final Widget Function(bool fillHeight) leftBuilder;
-  final Widget Function(bool fillHeight) rightBuilder;
+  final InvestorDetailsModel details;
+  final String Function(double amount) formatCurrency;
+  final String Function(DateTime? date) formatDate;
 
   @override
-  State<_EqualHeightRow> createState() => _EqualHeightRowState();
+  State<_EqualHeightDetailsPair> createState() =>
+      _EqualHeightDetailsPairState();
 }
 
-class _EqualHeightRowState extends State<_EqualHeightRow> {
-  final _leftKey = GlobalKey();
-  final _rightKey = GlobalKey();
-  double? _matchedHeight;
-  bool _syncScheduled = false;
+class _EqualHeightDetailsPairState extends State<_EqualHeightDetailsPair> {
+  final GlobalKey _leftKey = GlobalKey();
+  double? _cardHeight;
+  bool _measureScheduled = false;
 
-  void _scheduleHeightSync() {
-    if (_syncScheduled) return;
-    _syncScheduled = true;
-
+  void _scheduleMeasure() {
+    if (_measureScheduled) return;
+    _measureScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncScheduled = false;
+      _measureScheduled = false;
       if (!mounted) return;
-
-      final leftBox =
+      final box =
           _leftKey.currentContext?.findRenderObject() as RenderBox?;
-      final rightBox =
-          _rightKey.currentContext?.findRenderObject() as RenderBox?;
-
-      if (leftBox == null ||
-          rightBox == null ||
-          !leftBox.hasSize ||
-          !rightBox.hasSize) {
-        return;
-      }
-
-      final nextHeight = leftBox.size.height > rightBox.size.height
-          ? leftBox.size.height
-          : rightBox.size.height;
-
-      if (_matchedHeight == nextHeight) return;
-      setState(() => _matchedHeight = nextHeight);
+      if (box == null || !box.hasSize) return;
+      final next = box.size.height;
+      if (_cardHeight != null && (next - _cardHeight!).abs() < 1) return;
+      setState(() => _cardHeight = next);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    _scheduleHeightSync();
-    final fillHeight = _matchedHeight != null;
+    _scheduleMeasure();
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,20 +95,20 @@ class _EqualHeightRowState extends State<_EqualHeightRow> {
         Expanded(
           child: KeyedSubtree(
             key: _leftKey,
-            child: SizedBox(
-              height: _matchedHeight,
-              child: widget.leftBuilder(fillHeight),
+            child: _PersonalContactCard(
+              details: widget.details,
+              formatDate: widget.formatDate,
             ),
           ),
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: KeyedSubtree(
-            key: _rightKey,
-            child: SizedBox(
-              height: _matchedHeight,
-              child: widget.rightBuilder(fillHeight),
-            ),
+          child: _PendingScheduleCard(
+            details: widget.details,
+            formatCurrency: widget.formatCurrency,
+            formatDate: widget.formatDate,
+            height: _cardHeight,
+            listMaxHeight: _cardHeight == null ? 260 : null,
           ),
         ),
       ],
@@ -126,15 +118,15 @@ class _EqualHeightRowState extends State<_EqualHeightRow> {
 
 class _PersonalContactCard extends StatelessWidget {
   const _PersonalContactCard({
-    required this.transaction,
-    this.fillHeight = false,
+    required this.details,
+    required this.formatDate,
   });
 
-  final FundingTransaction transaction;
-  final bool fillHeight;
+  final InvestorDetailsModel details;
+  final String Function(DateTime? date) formatDate;
 
   String get _initials {
-    final parts = transaction.party
+    final parts = details.fullName
         .trim()
         .split(RegExp(r'\s+'))
         .where((p) => p.isNotEmpty)
@@ -146,10 +138,42 @@ class _PersonalContactCard extends StatelessWidget {
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 
+  String get _maskedAccount {
+    final account = details.accountNumber.trim();
+    if (account.isEmpty) return '-';
+    if (account.length <= 4) return account;
+    return '•••• ${account.substring(account.length - 4)}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final imageUrl = resolveMediaUrl(details.profileImage);
+    final email = details.email.trim().isNotEmpty ? details.email.trim() : '-';
+    final phone =
+        details.phoneNumber.trim().isNotEmpty ? details.phoneNumber.trim() : '-';
+    final address =
+        details.address.trim().isNotEmpty ? details.address.trim() : '-';
+    final pan = details.panCardNumber.trim().isNotEmpty
+        ? details.panCardNumber.trim()
+        : '-';
+    final bankName =
+        details.bankName.trim().isNotEmpty ? details.bankName.trim() : '-';
+    final ifsc =
+        details.ifscCode.trim().isNotEmpty ? details.ifscCode.trim() : '-';
+    final org = details.organization.trim().isNotEmpty
+        ? details.organization.trim()
+        : (details.investorType.trim().isNotEmpty
+            ? details.investorType.trim()
+            : '-');
+    final investorCode = details.investorCode.trim().isNotEmpty
+        ? details.investorCode.trim()
+        : '-';
+    final roleLine = [
+      if (details.investorType.trim().isNotEmpty) details.investorType.trim(),
+      if (details.organization.trim().isNotEmpty) details.organization.trim(),
+    ].join(' — ');
+
     return _SectionCard(
-      fillHeight: fillHeight,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -215,16 +239,24 @@ class _PersonalContactCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.accent,
                     borderRadius: BorderRadius.circular(12),
+                    image: imageUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(imageUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    _initials,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
+                  child: imageUrl == null
+                      ? Text(
+                          _initials,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.white,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -237,56 +269,61 @@ class _PersonalContactCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
-                            transaction.party,
+                            details.fullName.trim().isNotEmpty
+                                ? details.fullName.trim()
+                                : 'Unknown',
                             style: TextStyle(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.green.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.check_circle,
-                                  size: 12,
-                                  color: AppColors.green,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'KYC Verified',
-                                  style: TextStyle(
-                                    fontSize: 8.sp,
-                                    fontWeight: FontWeight.w600,
+                          if (details.isActive)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.green.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 12,
                                     color: AppColors.green,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Active',
+                                    style: TextStyle(
+                                      fontSize: 8.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Lead Angel Investor — Phase 2 Oncology Wing',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.accent,
+                      if (roleLine.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          roleLine,
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.accent,
+                          ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
-                        'Investor ID: #INV-2026-094',
+                        'Investor ID: $investorCode',
                         style: TextStyle(
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w400,
@@ -303,67 +340,66 @@ class _PersonalContactCard extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final twoCol = constraints.maxWidth >= 420;
-              final email = _InfoTile(
+              final emailTile = _InfoTile(
                 label: 'EMAIL ADDRESS',
-                value: transaction.description.contains('@')
-                    ? transaction.description
-                    : 'corey@gmail.com',
+                value: email,
                 icon: Icons.mail_outline_rounded,
-                trailing: const Icon(
-                  Icons.check_circle,
-                  size: 16,
-                  color: AppColors.green,
-                ),
+                trailing: email.contains('@')
+                    ? const Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: AppColors.green,
+                      )
+                    : null,
               );
-              const phone = _InfoTile(
+              final phoneTile = _InfoTile(
                 label: 'PHONE NUMBER',
-                value: '+91 98452 33102',
+                value: phone,
                 icon: Icons.phone_outlined,
               );
-              const address = _InfoTile(
+              final addressTile = _InfoTile(
                 label: 'RESIDENTIAL / BUSINESS ADDRESS',
-                value:
-                    '#402, Lotus Heights, Park Road, Bangalore, Karnataka - 560001',
+                value: address,
                 icon: Icons.location_on_outlined,
               );
-              const pan = _InfoTile(
+              final panTile = _InfoTile(
                 label: 'PAN / TAX ID',
-                value: 'AABCH8921K',
+                value: pan,
                 icon: Icons.credit_card_outlined,
               );
-              const bank = _InfoTile(
+              final bankTile = _InfoTile(
                 label: 'BANK ACCOUNT',
-                value: 'HDFC Bank •••• 4910',
-                subValue: 'IFSC: HDFC0001245',
+                value: '$bankName $_maskedAccount',
+                subValue: 'IFSC: $ifsc',
                 icon: Icons.account_balance_outlined,
               );
-              const project = _InfoTile(
-                label: 'ASSOCIATED PROJECT',
-                value: 'Maribel Wellness - Oncology Wing',
+              final projectTile = _InfoTile(
+                label: 'ORGANIZATION / TYPE',
+                value: org,
                 icon: Icons.apartment_outlined,
               );
-              const agreement = _InfoTile(
-                label: 'AGREEMENT EXECUTED',
-                value: '12 Jan, 2026 (Tenure: 36 Mo)',
+              final agreementTile = _InfoTile(
+                label: 'INVESTMENT DATE',
+                value: formatDate(details.investmentDate ?? details.createdDate),
                 icon: Icons.description_outlined,
               );
 
               if (!twoCol) {
                 return Column(
                   children: [
-                    email,
+                    emailTile,
                     const SizedBox(height: 10),
-                    phone,
+                    phoneTile,
                     const SizedBox(height: 10),
-                    address,
+                    addressTile,
                     const SizedBox(height: 10),
-                    pan,
+                    panTile,
                     const SizedBox(height: 10),
-                    bank,
+                    bankTile,
                     const SizedBox(height: 10),
-                    project,
+                    projectTile,
                     const SizedBox(height: 10),
-                    agreement,
+                    agreementTile,
                   ],
                 );
               }
@@ -373,29 +409,29 @@ class _PersonalContactCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: email),
+                      Expanded(child: emailTile),
                       const SizedBox(width: 10),
-                      const Expanded(child: phone),
+                      Expanded(child: phoneTile),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  address,
+                  addressTile,
                   const SizedBox(height: 10),
-                  const Row(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: pan),
-                      SizedBox(width: 10),
-                      Expanded(child: bank),
+                      Expanded(child: panTile),
+                      const SizedBox(width: 10),
+                      Expanded(child: bankTile),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Row(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: project),
-                      SizedBox(width: 10),
-                      Expanded(child: agreement),
+                      Expanded(child: projectTile),
+                      const SizedBox(width: 10),
+                      Expanded(child: agreementTile),
                     ],
                   ),
                 ],
@@ -403,7 +439,6 @@ class _PersonalContactCard extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          if (fillHeight) const Spacer(),
           Row(
             children: [
               const Icon(
@@ -425,7 +460,6 @@ class _PersonalContactCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-
             ],
           ),
         ],
@@ -435,212 +469,282 @@ class _PersonalContactCard extends StatelessWidget {
 }
 
 class _PendingScheduleCard extends StatelessWidget {
-  const _PendingScheduleCard({this.fillHeight = false});
+  const _PendingScheduleCard({
+    required this.details,
+    required this.formatCurrency,
+    required this.formatDate,
+    this.height,
+    this.listMaxHeight,
+  });
 
-  final bool fillHeight;
+  final InvestorDetailsModel details;
+  final String Function(double amount) formatCurrency;
+  final String Function(DateTime? date) formatDate;
+
+  /// When set (side-by-side), card matches the personal-info card height.
+  final double? height;
+
+  /// Fallback scroll viewport when [height] is not yet measured / stacked.
+  final double? listMaxHeight;
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
-      fillHeight: fillHeight,
+    final committed = details.investmentAmount;
+    final paid = details.totalPaidAmount;
+    final progress = committed > 0 ? (paid / committed).clamp(0.0, 1.0) : 0.0;
+    final progressPercent = (progress * 100).toStringAsFixed(1);
+
+    final pendingDues = details.dueDates.where((d) {
+      final status = d.status.toLowerCase();
+      return status.contains('pending') ||
+          status.contains('due') ||
+          status.contains('schedul') ||
+          d.pendingAmount > 0;
+    }).toList();
+
+    final dueSoonCount = pendingDues.length;
+
+    final header = Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.calendar_month_outlined,
+            size: 16,
+            color: AppColors.accent,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Pending Schedule & Dues',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (dueSoonCount > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '$dueSoonCount Due',
+              style: TextStyle(
+                fontSize: 8.5.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.error,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    final progressBlock = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F1F8),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.calendar_month_outlined,
-                  size: 16,
-                  color: AppColors.accent,
-                ),
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Pending Schedule & Dues',
+                  'Fulfillment Progress',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+              Text(
+                '$progressPercent% Complete',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.accent,
                 ),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: const Color(0xFFE4DCEA),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.accent),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
                 child: Text(
-                  '1 Due Soon',
+                  'Collected: ${formatCurrency(paid)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 8.5.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.error,
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Target: ${formatCurrency(committed)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F1F8),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Fulfillment Progress',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '66.7% Complete',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: const LinearProgressIndicator(
-                    value: 0.667,
-                    minHeight: 8,
-                    backgroundColor: Color(0xFFE4DCEA),
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Collected: ₹80,00,000',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Target: ₹1,20,00,000',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _MilestoneItem(
-            title: 'Milestone 3 (Tranche C)',
-            description: 'Medical Equipment Procurement Tranche',
-            amount: '₹20,00,000',
-            amountColor: AppColors.error,
-            badgeLabel: 'Due in 12 Days',
-            badgeColor: AppColors.error,
-            badgeBg: Color(0xFFFDECEE),
-            dueLabel: 'Due: 15 Jul, 2026',
-            metaLabel: 'Invoice #INV-M3-441',
-          ),
-          const SizedBox(height: 10),
-          const _MilestoneItem(
-            title: 'Milestone 4 (Tranche D)',
-            description: 'Final Facility Commissioning & Handover',
-            amount: '₹20,00,000',
-            amountColor: AppColors.textPrimary,
-            badgeLabel: 'Scheduled',
-            badgeColor: Color(0xFF5B8DEF),
-            badgeBg: Color(0xFFEAF1FC),
-            dueLabel: 'Due: 15 Sep, 2026',
-            metaLabel: 'Auto-trigger on Phase 2 Handover',
-          ),
-          if (fillHeight) const Spacer(),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 360;
-              final reminder = _SoftActionButton(
-                label: 'Send Due Reminder',
-                icon: Icons.mail_outline_rounded,
-                background: const Color(0xFFF0EBF6),
-                foreground: AppColors.accent,
-                onTap: () {},
-              );
-              final invoice = _SoftActionButton(
-                label: 'Generate Invoice',
-                icon: Icons.description_outlined,
-                background: const Color(0xFFEAF1FC),
-                foreground: const Color(0xFF3D4F6F),
-                onTap: () {},
-              );
-
-              if (stacked) {
-                return Column(
-                  children: [
-                    reminder,
-                    const SizedBox(height: 10),
-                    invoice,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: reminder),
-                  const SizedBox(width: 10),
-                  Expanded(child: invoice),
-                ],
-              );
-            },
-          ),
         ],
       ),
     );
+
+    Widget duesList({required bool expand}) {
+      if (pendingDues.isEmpty) {
+        return Text(
+          'No pending dues',
+          style: TextStyle(
+            fontSize: 10.sp,
+            color: AppColors.textMuted,
+          ),
+        );
+      }
+
+      final list = ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: pendingDues.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, i) {
+          final due = pendingDues[i];
+          return _MilestoneItem(
+            title: 'Installment ${due.installmentNumber}',
+            description: due.status.trim().isNotEmpty
+                ? due.status
+                : 'Scheduled installment',
+            amount: formatCurrency(
+              due.pendingAmount > 0
+                  ? due.pendingAmount
+                  : due.installmentAmount,
+            ),
+            amountColor: AppColors.error,
+            badgeLabel:
+                due.status.trim().isNotEmpty ? due.status : 'Pending',
+            badgeColor: AppColors.error,
+            badgeBg: const Color(0xFFFDECEE),
+            dueLabel: 'Due: ${formatDate(due.dueDate)}',
+            metaLabel: 'Paid: ${formatCurrency(due.paidAmount)}',
+          );
+        },
+      );
+
+      if (expand) {
+        return Expanded(child: list);
+      }
+      return SizedBox(
+        height: listMaxHeight ?? 260,
+        child: list,
+      );
+    }
+
+    final actions = LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth < 360;
+        final reminder = _SoftActionButton(
+          label: 'Send Due Reminder',
+          icon: Icons.mail_outline_rounded,
+          background: const Color(0xFFF0EBF6),
+          foreground: AppColors.accent,
+          onTap: () {},
+        );
+        final invoice = _SoftActionButton(
+          label: 'Generate Invoice',
+          icon: Icons.description_outlined,
+          background: const Color(0xFFEAF1FC),
+          foreground: const Color(0xFF3D4F6F),
+          onTap: () {},
+        );
+
+        if (stacked) {
+          return Column(
+            children: [
+              reminder,
+              const SizedBox(height: 10),
+              invoice,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: reminder),
+            const SizedBox(width: 10),
+            Expanded(child: invoice),
+          ],
+        );
+      },
+    );
+
+    final useFixedHeight = height != null && height! > 0;
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header,
+        const SizedBox(height: 14),
+        progressBlock,
+        const SizedBox(height: 12),
+        duesList(expand: useFixedHeight),
+        const SizedBox(height: 14),
+        actions,
+      ],
+    );
+
+    final card = _SectionCard(
+      expand: useFixedHeight,
+      child: content,
+    );
+
+    if (useFixedHeight) {
+      return SizedBox(height: height, child: card);
+    }
+    return card;
   }
 }
 
@@ -922,17 +1026,17 @@ class _InfoTile extends StatelessWidget {
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.child,
-    this.fillHeight = false,
+    this.expand = false,
   });
 
   final Widget child;
-  final bool fillHeight;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: fillHeight ? double.infinity : null,
+      height: expand ? double.infinity : null,
       alignment: Alignment.topLeft,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(

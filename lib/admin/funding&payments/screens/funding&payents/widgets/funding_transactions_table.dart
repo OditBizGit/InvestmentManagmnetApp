@@ -4,8 +4,6 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
-enum _TransactionTab { all, received, pending }
-
 class FundingTransactionsTable extends StatefulWidget {
   const FundingTransactionsTable({
     super.key,
@@ -30,36 +28,22 @@ class FundingTransactionsTable extends StatefulWidget {
 }
 
 class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
-  static const double _minTableWidth = 1040;
+  static const double _minTableWidth = 900;
 
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalController = ScrollController();
 
-  _TransactionTab _selectedTab = _TransactionTab.all;
   String _query = '';
 
   List<FundingTransaction> get _filteredTransactions {
-    Iterable<FundingTransaction> rows;
-    switch (_selectedTab) {
-      case _TransactionTab.all:
-        rows = widget.transactions;
-      case _TransactionTab.received:
-        rows = widget.transactions
-            .where((t) => t.type.toLowerCase() == 'received');
-      case _TransactionTab.pending:
-        rows = widget.transactions
-            .where((t) => t.status.toLowerCase().contains('pending'));
-    }
-
     final query = _query.trim().toLowerCase();
-    if (query.isEmpty) return rows.toList();
+    if (query.isEmpty) return widget.transactions;
 
-    return rows.where((t) {
+    return widget.transactions.where((t) {
       return t.party.toLowerCase().contains(query) ||
-          t.description.toLowerCase().contains(query) ||
-          t.type.toLowerCase().contains(query) ||
-          t.status.toLowerCase().contains(query) ||
-          t.amount.toLowerCase().contains(query) ||
+          t.totalInvestmentAmount.toLowerCase().contains(query) ||
+          t.totalPaidAmount.toLowerCase().contains(query) ||
+          t.pendingAmount.toLowerCase().contains(query) ||
           t.date.toLowerCase().contains(query);
     }).toList();
   }
@@ -177,8 +161,6 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _TableToolbar(
-            selectedTab: _selectedTab,
-            onTabSelected: (tab) => setState(() => _selectedTab = tab),
             onSearchChanged: (value) => setState(() => _query = value),
           ),
           const SizedBox(height: 14),
@@ -227,13 +209,9 @@ class _FundingTransactionsTableState extends State<FundingTransactionsTable> {
 
 class _TableToolbar extends StatelessWidget {
   const _TableToolbar({
-    required this.selectedTab,
-    required this.onTabSelected,
     required this.onSearchChanged,
   });
 
-  final _TransactionTab selectedTab;
-  final ValueChanged<_TransactionTab> onTabSelected;
   final ValueChanged<String> onSearchChanged;
 
   @override
@@ -242,26 +220,13 @@ class _TableToolbar extends StatelessWidget {
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 760;
 
-        final tabs = Row(
-          children: [
-            _TabItem(
-              label: 'All Transactions',
-              selected: selectedTab == _TransactionTab.all,
-              onTap: () => onTabSelected(_TransactionTab.all),
-            ),
-            const SizedBox(width: 18),
-            _TabItem(
-              label: 'Received',
-              selected: selectedTab == _TransactionTab.received,
-              onTap: () => onTabSelected(_TransactionTab.received),
-            ),
-            const SizedBox(width: 18),
-            _TabItem(
-              label: 'Pending',
-              selected: selectedTab == _TransactionTab.pending,
-              onTap: () => onTabSelected(_TransactionTab.pending),
-            ),
-          ],
+        final title = Text(
+          'All Transactions',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.accent,
+          ),
         );
 
         final filters = isCompact
@@ -289,10 +254,7 @@ class _TableToolbar extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: tabs,
-              ),
+              title,
               const SizedBox(height: 12),
               filters,
             ],
@@ -301,62 +263,12 @@ class _TableToolbar extends StatelessWidget {
 
         return Row(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: tabs,
-              ),
-            ),
+            Expanded(child: title),
             const SizedBox(width: 12),
             filters,
           ],
         );
       },
-    );
-  }
-}
-
-class _TabItem extends StatelessWidget {
-  const _TabItem({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? AppColors.accent : AppColors.textMuted,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              height: 2.5,
-              width: label.length * 7.2,
-              decoration: BoxDecoration(
-                color: selected ? AppColors.accent : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -486,12 +398,10 @@ class _TableHeader extends StatelessWidget {
         children: [
           _HeaderCell('#', flex: 1),
           _HeaderCell('Date', flex: 3),
-          _HeaderCell('Type', flex: 2),
           _HeaderCell('Investor / Vendor', flex: 4),
-          _HeaderCell('Description', flex: 4),
-          _HeaderCell('Amount', flex: 3),
-          _HeaderCell('Status', flex: 2),
-          _HeaderCell('Action', flex: 1, align: TextAlign.center),
+          _HeaderCell('Total Investment', flex: 3),
+          _HeaderCell('Total Paid', flex: 3),
+          _HeaderCell('Pending', flex: 3),
         ],
       ),
     );
@@ -555,43 +465,10 @@ class _TransactionRow extends StatelessWidget {
               children: [
                 _Cell('${index + 1}', flex: 1),
                 _Cell(transaction.date, flex: 3),
-                Expanded(
-                  flex: 2,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _TypeBadge(type: transaction.type),
-                  ),
-                ),
                 _Cell(transaction.party, flex: 4),
-                _Cell(transaction.description, flex: 4),
-                _Cell(transaction.amount, flex: 3),
-                Expanded(
-                  flex: 2,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _StatusBadge(status: transaction.status),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Center(
-                    child: IconButton(
-                      onPressed: onTap,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 32,
-                        height: 32,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      splashRadius: 16,
-                      icon: const Icon(
-                        Icons.more_horiz,
-                        size: 20,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
+                _Cell(transaction.totalInvestmentAmount, flex: 3),
+                _Cell(transaction.totalPaidAmount, flex: 3),
+                _Cell(transaction.pendingAmount, flex: 3),
               ],
             ),
           ),
@@ -625,82 +502,30 @@ class _Cell extends StatelessWidget {
   }
 }
 
-class _TypeBadge extends StatelessWidget {
-  const _TypeBadge({required this.type});
-
-  final String type;
-
-  @override
-  Widget build(BuildContext context) {
-    final isPayment = type == 'Payment';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isPayment
-            ? AppColors.error.withValues(alpha: 0.10)
-            : AppColors.green.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        type,
-        style: TextStyle(
-          fontSize: 8.5.sp,
-          fontWeight: FontWeight.w600,
-          color: isPayment ? AppColors.error : AppColors.green,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
-
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final lower = status.toLowerCase();
-    final isCompleted = lower.contains('complete') ||
-        lower.contains('paid') ||
-        lower.contains('success') ||
-        lower.contains('received');
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isCompleted
-            ? AppColors.green.withValues(alpha: 0.12)
-            : AppColors.error.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          fontSize: 8.5.sp,
-          fontWeight: FontWeight.w600,
-          color: isCompleted ? AppColors.green : AppColors.error,
-        ),
-      ),
-    );
-  }
-}
-
 class FundingTransaction {
   const FundingTransaction({
+    required this.userId,
     required this.date,
     required this.type,
     required this.party,
-    required this.description,
-    required this.amount,
+    required this.totalInvestmentAmount,
+    required this.totalPaidAmount,
+    required this.pendingAmount,
     required this.status,
+    this.description = '',
+    this.amount = '',
   });
 
+  final int userId;
   final String date;
   final String type;
   final String party;
+  final String totalInvestmentAmount;
+  final String totalPaidAmount;
+  final String pendingAmount;
+  final String status;
+
+  /// Kept for detail screens that still read these fields.
   final String description;
   final String amount;
-  final String status;
 }

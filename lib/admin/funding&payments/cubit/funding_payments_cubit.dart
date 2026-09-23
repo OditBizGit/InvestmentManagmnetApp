@@ -1,13 +1,11 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/funding_investor_list_model.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_payment_model.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_transaction_history_model.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
-import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 
 part 'funding_payments_state.dart';
 
@@ -15,26 +13,30 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
   FundingPaymentsCubit({
     required InvestorsRepository investorsRepository,
     required InvestorPaymentRepository paymentRepository,
-    required LocalStorage localStorage,
   })  : _investorsRepository = investorsRepository,
         _paymentRepository = paymentRepository,
-        _localStorage = localStorage,
         super(FundingPaymentsInitial());
 
   final InvestorsRepository _investorsRepository;
   final InvestorPaymentRepository _paymentRepository;
-  final LocalStorage _localStorage;
 
   List<InvestorModel> _investors = [];
-  List<InvestorTransactionHistoryModel> _transactionHistory = [];
-  bool _isTransactionHistoryRequestInFlight = false;
+  List<FundingInvestorModel> _fundingInvestors = [];
+  InvestorDetailsModel? _investorDetails;
+  bool _isFundingInvestorsRequestInFlight = false;
 
   List<InvestorModel> get investors => _investors;
 
-  List<InvestorTransactionHistoryModel> get transactionHistory =>
-      _transactionHistory;
+  List<FundingInvestorModel> get fundingInvestors => _fundingInvestors;
 
-  bool get hasTransactionHistory => _transactionHistory.isNotEmpty;
+  InvestorDetailsModel? get investorDetails => _investorDetails;
+
+  bool get hasFundingInvestors => _fundingInvestors.isNotEmpty;
+
+  /// Kept for existing UI naming.
+  List<FundingInvestorModel> get transactionHistory => _fundingInvestors;
+
+  bool get hasTransactionHistory => hasFundingInvestors;
 
   Future<void> fetchInvestors() async {
     emit(FundingInvestorsLoading());
@@ -125,64 +127,100 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
     }
   }
 
-  /// First load / explicit reload.
-  /// Shows a full loading state only when no in-memory or cached data exists.
-  Future<void> fetchAllInvestorTransactionHistory() async {
-    if (_transactionHistory.isEmpty) {
-      final cached = _readCachedTransactionHistory();
-      if (cached != null && cached.isNotEmpty) {
-        _transactionHistory = cached;
-        emit(TransactionHistorySuccess(List.unmodifiable(cached)));
-      } else {
-        emit(TransactionHistoryLoading());
-      }
+  /// Investors-style first load: spinner only when memory is empty.
+  Future<void> fetchFundingInvestors() async {
+    if (_fundingInvestors.isEmpty) {
+      emit(TransactionHistoryLoading());
     }
-
-    await _loadTransactionHistory(
-      silent: _transactionHistory.isNotEmpty,
-    );
+    await _loadFundingInvestors(silent: _fundingInvestors.isNotEmpty);
   }
 
-  /// Refreshes from API without emitting [TransactionHistoryLoading],
-  /// so existing list UI stays visible.
+  /// Keeps current rows visible — used after returning from Add Fund.
   Future<void> refreshSilently() async {
-    await _loadTransactionHistory(silent: true);
+    await _loadFundingInvestors(silent: true);
   }
 
-  Future<void> _loadTransactionHistory({required bool silent}) async {
-    if (_isTransactionHistoryRequestInFlight) return;
-    _isTransactionHistoryRequestInFlight = true;
+  Future<void> fetchInvestorDetails(int userId) async {
+    emit(InvestorDetailsLoading());
+    try {
+      final response = await _paymentRepository.getInvestorDetails(
+        userId: userId,
+      );
+
+      final looksSuccessful = response.status ||
+          response.code == 200 ||
+          response.message.toLowerCase().contains('success');
+
+      if (!looksSuccessful || response.data == null) {
+        emit(
+          InvestorDetailsFailure(
+            response.message.isNotEmpty
+                ? response.message
+                : 'Failed to load investor details',
+          ),
+        );
+        return;
+      }
+
+      _investorDetails = response.data;
+      emit(InvestorDetailsSuccess(response.data!));
+    } on DioException catch (e) {
+      final message = e.response?.data is Map
+          ? (e.response?.data['message'] as String?)
+          : null;
+      emit(
+        InvestorDetailsFailure(
+          message?.isNotEmpty == true
+              ? message!
+              : (e.message ?? 'Failed to load investor details'),
+        ),
+      );
+    } catch (e) {
+      emit(
+        InvestorDetailsFailure(
+          e.toString().replaceFirst('Exception: ', ''),
+        ),
+      );
+    }
+  }
+
+  void clearInvestorDetails() {
+    _investorDetails = null;
+  }
+
+  Future<void> _loadFundingInvestors({required bool silent}) async {
+    if (_isFundingInvestorsRequestInFlight) return;
+    _isFundingInvestorsRequestInFlight = true;
 
     try {
-      final response =
-          await _paymentRepository.getAllInvestorTransactionHistory();
+      final response = await _paymentRepository.getFundingInvestors();
 
-      final hasData = response.data.isNotEmpty;
+      final hasData = response.investors.isNotEmpty;
       final looksSuccessful = response.status ||
+          response.code == 200 ||
           response.message.toLowerCase().contains('success');
 
       if (!looksSuccessful && !hasData) {
-        if (!silent || _transactionHistory.isEmpty) {
+        if (!silent || _fundingInvestors.isEmpty) {
           emit(
             TransactionHistoryFailure(
               response.message.isNotEmpty
                   ? response.message
-                  : 'Failed to load transaction history',
+                  : 'Failed to load investors',
             ),
           );
         }
         return;
       }
 
-      _transactionHistory = response.data;
-      await _cacheTransactionHistory(_transactionHistory);
+      _fundingInvestors = List<FundingInvestorModel>.from(response.investors);
 
-      if (_transactionHistory.isEmpty) {
+      if (_fundingInvestors.isEmpty) {
         emit(
           TransactionHistoryEmpty(
             message: response.message.isNotEmpty
                 ? response.message
-                : 'No transaction history found',
+                : 'No investors found',
           ),
         );
         return;
@@ -190,11 +228,11 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
 
       emit(
         TransactionHistorySuccess(
-          List.unmodifiable(_transactionHistory),
+          List<FundingInvestorModel>.unmodifiable(_fundingInvestors),
         ),
       );
     } on DioException catch (e) {
-      if (silent && _transactionHistory.isNotEmpty) return;
+      if (silent && _fundingInvestors.isNotEmpty) return;
 
       final message = e.response?.data is Map
           ? (e.response?.data['message'] as String?)
@@ -203,11 +241,11 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
         TransactionHistoryFailure(
           message?.isNotEmpty == true
               ? message!
-              : (e.message ?? 'Failed to load transaction history'),
+              : (e.message ?? 'Failed to load investors'),
         ),
       );
     } catch (e) {
-      if (silent && _transactionHistory.isNotEmpty) return;
+      if (silent && _fundingInvestors.isNotEmpty) return;
 
       emit(
         TransactionHistoryFailure(
@@ -215,63 +253,7 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
         ),
       );
     } finally {
-      _isTransactionHistoryRequestInFlight = false;
+      _isFundingInvestorsRequestInFlight = false;
     }
-  }
-
-  List<InvestorTransactionHistoryModel>? _readCachedTransactionHistory() {
-    final raw = _localStorage.getFundingTransactionHistoryJson();
-    if (raw == null || raw.trim().isEmpty) return null;
-
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return null;
-
-      final parsed = <InvestorTransactionHistoryModel>[];
-      for (final item in decoded) {
-        if (item is Map) {
-          try {
-            parsed.add(
-              InvestorTransactionHistoryModel.fromJson(
-                Map<String, dynamic>.from(item),
-              ),
-            );
-          } catch (_) {
-            // Skip malformed cache rows.
-          }
-        }
-      }
-      return parsed;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _cacheTransactionHistory(
-    List<InvestorTransactionHistoryModel> transactions,
-  ) async {
-    try {
-      final payload = jsonEncode(
-        transactions.map((item) => item.toJson()).toList(),
-      );
-      await _localStorage.setFundingTransactionHistoryJson(payload);
-    } catch (_) {
-      // Cache write failures should not break the UI flow.
-    }
-  }
-
-  List<InvestorTransactionHistoryModel> transactionsForInvestor({
-    String? fullName,
-    int? userId,
-  }) {
-    final name = fullName?.trim().toLowerCase();
-    return _transactionHistory.where((item) {
-      final matchesName = name == null ||
-          name.isEmpty ||
-          item.fullName.trim().toLowerCase() == name;
-      final matchesUser =
-          userId == null || userId == 0 || item.userId == userId;
-      return matchesName && matchesUser;
-    }).toList();
   }
 }

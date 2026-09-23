@@ -11,7 +11,6 @@ import 'package:maribel_wellness_centre_application/core/utils/logout_confirm_di
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/work_progress_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:sizer/sizer.dart';
 
 import '../dashboard/dashboard_screen.dart';
 import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
@@ -33,24 +32,6 @@ class AdminMainScreen extends StatefulWidget {
 class _AdminMainScreenState extends State<AdminMainScreen> {
   AdminDrawerItem _selectedItem = AdminDrawerItem.dashboard;
   bool _isCollapsed = false;
-
-  static const Map<AdminDrawerItem, String> _titles = {
-    AdminDrawerItem.dashboard: 'Dashboard',
-    AdminDrawerItem.investors: 'Investors',
-    AdminDrawerItem.fundingPayments: 'Funding & Payments',
-    AdminDrawerItem.workProgress: 'Work Progress',
-    AdminDrawerItem.reports: 'Reports',
-    AdminDrawerItem.settings: 'Settings',
-  };
-
-  static const Map<AdminDrawerItem, Widget> _screens = {
-    AdminDrawerItem.dashboard: AdminHomeScreen(),
-    AdminDrawerItem.investors: AdminInvestorsScreen(),
-    AdminDrawerItem.fundingPayments: AdminFundingPaymentsScreen(),
-    AdminDrawerItem.workProgress: AdminWorkProgressScreen(),
-    AdminDrawerItem.reports: AdminReportsScreen(),
-    AdminDrawerItem.settings: AdminSettingsScreen(),
-  };
 
   void _onSelect(AdminDrawerItem item) {
     if (_selectedItem == item) return;
@@ -83,6 +64,23 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       if (!mounted || shouldCollapse == _isCollapsed) return;
       setState(() => _isCollapsed = shouldCollapse);
     });
+  }
+
+  Widget _screenFor(AdminDrawerItem item) {
+    switch (item) {
+      case AdminDrawerItem.dashboard:
+        return const AdminHomeScreen();
+      case AdminDrawerItem.investors:
+        return const AdminInvestorsScreen();
+      case AdminDrawerItem.fundingPayments:
+        return const AdminFundingPaymentsScreen();
+      case AdminDrawerItem.workProgress:
+        return const AdminWorkProgressScreen();
+      case AdminDrawerItem.reports:
+        return const AdminReportsScreen();
+      case AdminDrawerItem.settings:
+        return const AdminSettingsScreen();
+    }
   }
 
   @override
@@ -118,39 +116,11 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (_selectedItem != AdminDrawerItem.dashboard &&
-                            _selectedItem != AdminDrawerItem.investors &&
-                            _selectedItem != AdminDrawerItem.fundingPayments &&
-                            _selectedItem != AdminDrawerItem.workProgress &&
-                            _selectedItem != AdminDrawerItem.reports)
-                          Container(
-                            height: 56,
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            decoration: const BoxDecoration(
-                              color: AppColors.white,
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: AppColors.border,
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              _titles[_selectedItem] ?? '',
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
                         Expanded(
                           child: IndexedStack(
                             index: _selectedItem.index,
                             children: AdminDrawerItem.values
-                                .map((item) => _screens[item])
-                                .whereType<Widget>()
+                                .map(_screenFor)
                                 .toList(growable: false),
                           ),
                         ),
