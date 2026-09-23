@@ -6,8 +6,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/commitment_completed_overlay.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/work_progress_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/notification_screen.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/investment_summary_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/latest_project_updates.dart';
@@ -44,6 +46,8 @@ class _UserHomeViewState extends State<_UserHomeView> {
 
   Timer? _silentRefreshTimer;
   bool _isSilentRefreshing = false;
+  bool _commitmentOverlayShown = false;
+  bool _isShowingCommitmentOverlay = false;
 
   @override
   void initState() {
@@ -71,6 +75,28 @@ class _UserHomeViewState extends State<_UserHomeView> {
     }
   }
 
+  Future<void> _maybeShowCommitmentOverlay({
+    required double totalCollection,
+    required double totalCommitment,
+  }) async {
+    if (_commitmentOverlayShown ||
+        _isShowingCommitmentOverlay ||
+        !isCommitmentFullyCollected(
+          totalCollection: totalCollection,
+          totalCommitment: totalCommitment,
+        )) {
+      return;
+    }
+
+    _isShowingCommitmentOverlay = true;
+    _commitmentOverlayShown = true;
+    try {
+      await showCommitmentCompletedOverlay(context);
+    } finally {
+      _isShowingCommitmentOverlay = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -84,6 +110,17 @@ class _UserHomeViewState extends State<_UserHomeView> {
                 message: state.message,
                 icon: Icons.error_outline_rounded,
               );
+              return;
+            }
+
+            if (state is HomeSuccess) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                _maybeShowCommitmentOverlay(
+                  totalCollection: state.profile.totalCollection,
+                  totalCommitment: state.profile.totalCommitment,
+                );
+              });
             }
           },
           builder: (context, state) {
@@ -94,6 +131,9 @@ class _UserHomeViewState extends State<_UserHomeView> {
             final topInvestors = state is HomeSuccess
                 ? state.topInvestors
                 : const <TopInvestorModel>[];
+            final workProgress = state is HomeSuccess
+                ? state.workProgress
+                : const <WorkProgressItemModel>[];
             final summaryKey = profile == null
                 ? 'loading'
                 : '${profile.totalCollection}_${profile.totalCommitment}_'
@@ -133,7 +173,10 @@ class _UserHomeViewState extends State<_UserHomeView> {
                           SizedBox(height: 2.h),
                           ServiceGalleryCarousel(isLoading: isLoading),
                           SizedBox(height: 2.h),
-                          PhaseProgressCard(isLoading: isLoading),
+                          PhaseProgressCard(
+                            isLoading: isLoading,
+                            items: workProgress,
+                          ),
                           SizedBox(height: 2.5.h),
                           LatestProjectUpdates(isLoading: isLoading),
                           SizedBox(height: 1.h),

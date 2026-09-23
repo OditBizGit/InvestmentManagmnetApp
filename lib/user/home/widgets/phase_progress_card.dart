@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/work_progress_item_model.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -8,21 +9,17 @@ class PhaseProgressCard extends StatelessWidget {
   const PhaseProgressCard({
     super.key,
     this.isLoading = false,
+    this.items = const [],
   });
 
   final bool isLoading;
+  final List<WorkProgressItemModel> items;
 
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _progress = Color(0xFF4DB6AC);
   static const Color _track = Color(0xFFE8E8E8);
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
-
-  static const List<_ProgressItem> _items = [
-    _ProgressItem(label: 'Structure', progress: 0.12),
-    _ProgressItem(label: 'Brick work', progress: 0.48),
-    _ProgressItem(label: 'MEP', progress: 0.68),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +37,17 @@ class PhaseProgressCard extends StatelessWidget {
           ),
         ],
       ),
-      child: isLoading ? const _PhaseProgressShimmer() : const _PhaseProgressBody(),
+      child: isLoading
+          ? const _PhaseProgressShimmer()
+          : _PhaseProgressBody(items: items),
     );
   }
 }
 
 class _PhaseProgressBody extends StatelessWidget {
-  const _PhaseProgressBody();
+  const _PhaseProgressBody({required this.items});
+
+  final List<WorkProgressItemModel> items;
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +65,9 @@ class _PhaseProgressBody extends StatelessWidget {
                 BlendMode.srcIn,
               ),
             ),
-            SizedBox(width: 2.w),
+            SizedBox(width: 1.w),
             Text(
-              'Phase 1 progress',
+              'Work progress',
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
@@ -75,14 +76,32 @@ class _PhaseProgressBody extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 2.h),
-        for (int i = 0; i < PhaseProgressCard._items.length; i++)
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: i == PhaseProgressCard._items.length - 1 ? 0 : 1.6.h,
+        if (items.isEmpty)
+          SizedBox(
+            width: double.infinity,
+            height: 20.h,
+            child: Center(
+              child: Text(
+                'No work progress available',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: PhaseProgressCard._textPrimary.withValues(alpha: 0.55),
+                ),
+              ),
             ),
-            child: _ProgressRow(item: PhaseProgressCard._items[i]),
-          ),
+          )
+        else ...[
+          SizedBox(height: 2.h),
+          for (int i = 0; i < items.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i == items.length - 1 ? 0 : 1.6.h,
+              ),
+              child: _ProgressRow(item: items[i]),
+            ),
+        ],
       ],
     );
   }
@@ -209,38 +228,32 @@ class _PlaceholderLine extends StatelessWidget {
   }
 }
 
-class _ProgressItem {
-  const _ProgressItem({
-    required this.label,
-    required this.progress,
-  });
-
-  final String label;
-  final double progress;
-}
-
 class _ProgressRow extends StatelessWidget {
   const _ProgressRow({required this.item});
 
-  final _ProgressItem item;
+  final WorkProgressItemModel item;
 
   @override
   Widget build(BuildContext context) {
-    final percent = (item.progress * 100).round();
+    final percent = item.progress.round();
 
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              item.label,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w400,
-                color: PhaseProgressCard._textPrimary,
+            Expanded(
+              child: Text(
+                item.stageName,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w400,
+                  color: PhaseProgressCard._textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            SizedBox(width: 2.w),
             Text(
               '$percent%',
               style: TextStyle(
@@ -255,7 +268,7 @@ class _ProgressRow extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
-            value: item.progress,
+            value: item.progressFraction,
             minHeight: 0.9.h,
             backgroundColor: PhaseProgressCard._track,
             valueColor: const AlwaysStoppedAnimation<Color>(

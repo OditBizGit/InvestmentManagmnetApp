@@ -10,10 +10,12 @@ final class HomeSuccess extends HomeState {
   HomeSuccess({
     required this.profile,
     required this.topInvestors,
+    this.workProgress = const [],
   });
 
   final HomeProfileModel profile;
   final List<TopInvestorModel> topInvestors;
+  final List<WorkProgressItemModel> workProgress;
 }
 
 final class HomeFailure extends HomeState {
