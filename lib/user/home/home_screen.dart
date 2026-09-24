@@ -8,6 +8,7 @@ import 'package:maribel_wellness_centre_application/core/network/service_locator
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:maribel_wellness_centre_application/core/utils/commitment_completed_overlay.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/banner_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/work_progress_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/notification_screen.dart';
@@ -134,6 +135,9 @@ class _UserHomeViewState extends State<_UserHomeView> {
             final workProgress = state is HomeSuccess
                 ? state.workProgress
                 : const <WorkProgressItemModel>[];
+            final banners = state is HomeSuccess
+                ? state.banners
+                : const <BannerItemModel>[];
             final summaryKey = profile == null
                 ? 'loading'
                 : '${profile.totalCollection}_${profile.totalCommitment}_'
@@ -171,8 +175,13 @@ class _UserHomeViewState extends State<_UserHomeView> {
                             investors: topInvestors,
                           ),
                           SizedBox(height: 2.h),
-                          ServiceGalleryCarousel(isLoading: isLoading),
-                          SizedBox(height: 2.h),
+                          if (isLoading || banners.isNotEmpty) ...[
+                            ServiceGalleryCarousel(
+                              isLoading: isLoading,
+                              banners: banners,
+                            ),
+                            SizedBox(height: 2.h),
+                          ],
                           PhaseProgressCard(
                             isLoading: isLoading,
                             items: workProgress,

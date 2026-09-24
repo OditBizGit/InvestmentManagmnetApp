@@ -16,7 +16,8 @@ class PhaseProgressCard extends StatelessWidget {
   final List<WorkProgressItemModel> items;
 
   static const Color _textPrimary = Color(0xFF3D3D3D);
-  static const Color _progress = Color(0xFF4DB6AC);
+  static const Color _progress = Color(0xFFA28CC1);
+  static const Color _progressCompleted = Color(0xFF4DB6AC);
   static const Color _track = Color(0xFFE8E8E8);
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
@@ -61,7 +62,7 @@ class _PhaseProgressBody extends StatelessWidget {
               width: 5.w,
               height: 5.w,
               colorFilter: const ColorFilter.mode(
-                PhaseProgressCard._progress,
+                PhaseProgressCard._progressCompleted,
                 BlendMode.srcIn,
               ),
             ),
@@ -233,9 +234,17 @@ class _ProgressRow extends StatelessWidget {
 
   final WorkProgressItemModel item;
 
+  bool get _isCompleted {
+    final status = item.status?.toLowerCase() ?? '';
+    return item.progress >= 100 || status.contains('complet');
+  }
+
   @override
   Widget build(BuildContext context) {
     final percent = item.progress.round();
+    final barColor = _isCompleted
+        ? PhaseProgressCard._progressCompleted
+        : PhaseProgressCard._progress;
 
     return Column(
       children: [
@@ -244,7 +253,12 @@ class _ProgressRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                item.stageName,
+                item.stageName
+                  .split(' ')
+                  .map((word) => word.isEmpty
+                  ? word
+                  : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+                  .join(' '),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w400,
@@ -271,9 +285,7 @@ class _ProgressRow extends StatelessWidget {
             value: item.progressFraction,
             minHeight: 0.9.h,
             backgroundColor: PhaseProgressCard._track,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              PhaseProgressCard._progress,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(barColor),
           ),
         ),
         SizedBox(height: 0.5.h),

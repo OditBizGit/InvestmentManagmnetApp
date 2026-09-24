@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/banner_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/work_progress_item_model.dart';
@@ -30,9 +31,11 @@ class HomeCubit extends Cubit<HomeState> {
       HomeProfileModel? profile;
       List<TopInvestorModel>? topInvestors;
       List<WorkProgressItemModel>? workProgress;
+      List<BannerItemModel>? banners;
       Object? profileError;
       Object? investorsError;
       Object? workProgressError;
+      Object? bannersError;
 
       await Future.wait([
         _repository.getHomeProfile().then((value) {
@@ -50,11 +53,17 @@ class HomeCubit extends Cubit<HomeState> {
         }).catchError((Object error) {
           workProgressError = error;
         }),
+        _repository.getBanners().then((value) {
+          banners = value;
+        }).catchError((Object error) {
+          bannersError = error;
+        }),
       ]);
 
       final nextProfile = profile ?? previous?.profile;
       final nextInvestors = topInvestors ?? previous?.topInvestors;
       final nextWorkProgress = workProgress ?? previous?.workProgress;
+      final nextBanners = banners ?? previous?.banners;
 
       // Prefer emitting updated data even if one of the calls failed.
       if (nextProfile != null) {
@@ -63,6 +72,7 @@ class HomeCubit extends Cubit<HomeState> {
             profile: nextProfile,
             topInvestors: nextInvestors ?? const [],
             workProgress: nextWorkProgress ?? const [],
+            banners: nextBanners ?? const [],
           ),
         );
         return;
@@ -70,7 +80,8 @@ class HomeCubit extends Cubit<HomeState> {
 
       if (silent && previous != null) return;
 
-      final error = profileError ?? investorsError ?? workProgressError;
+      final error =
+          profileError ?? investorsError ?? workProgressError ?? bannersError;
       emit(HomeFailure(_messageFromError(error)));
     } finally {
       _isLoading = false;

@@ -11,11 +11,13 @@ final class HomeSuccess extends HomeState {
     required this.profile,
     required this.topInvestors,
     this.workProgress = const [],
+    this.banners = const [],
   });
 
   final HomeProfileModel profile;
   final List<TopInvestorModel> topInvestors;
   final List<WorkProgressItemModel> workProgress;
+  final List<BannerItemModel> banners;
 }
 
 final class HomeFailure extends HomeState {

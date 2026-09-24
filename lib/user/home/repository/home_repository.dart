@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/banner_item_model.dart';
+import 'package:maribel_wellness_centre_application/user/home/model/banners_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investors_response_model.dart';
@@ -112,6 +114,35 @@ class HomeRepository {
       rethrow;
     } catch (e) {
       log('Get Work Progress Details Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<BannerItemModel>> getBanners() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.getBanners);
+      final parsed = BannersResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+
+      final looksSuccessful = parsed.status ||
+          parsed.code == 200 ||
+          parsed.message.toLowerCase().contains('success');
+
+      if (!looksSuccessful && parsed.data.isEmpty) {
+        throw Exception(
+          parsed.message.isNotEmpty
+              ? parsed.message
+              : 'Failed to load banners',
+        );
+      }
+
+      return parsed.data;
+    } on DioException catch (e) {
+      log('Get Banners Error: ${e.message}');
+      rethrow;
+    } catch (e) {
+      log('Get Banners Error: $e');
       rethrow;
     }
   }
