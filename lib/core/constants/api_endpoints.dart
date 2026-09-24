@@ -14,6 +14,10 @@ class ApiEndpoints {
   static const String investorTransactionHistory = "/api/Investor/InvestorTransactionHistory/";
   static const String createProject = "/api/Project/CreateProject";
   static const String getProject = "/api/Project/GetProjects";
+  static const String addStage = "/api/Project/AddProjectStage";
+  static const String stageList = "/api/Project/ProjectStageList";
+  static const String addOrUpdatePhase = "/api/Project/AddOrUpdateProjectProgress";
+  static const String workPhaseList = "/api/Project/WorkProgressDetails";
 
 
 
