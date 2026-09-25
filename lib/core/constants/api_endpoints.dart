@@ -19,6 +19,10 @@ class ApiEndpoints {
   static const String stageList = "/api/Project/ProjectStageList";
   static const String addOrUpdatePhase = "/api/Project/AddOrUpdateProjectProgress";
   static const String workPhaseList = "/api/Project/WorkProgressDetails";
+  static const String addBanner = "/api/Project/AddBanner";
+  static const String getBanner = "/api/Project/GetBanners";
+  static const String deleteBanner
+  = "/api/Project/DeleteBanner";
 
 
 
