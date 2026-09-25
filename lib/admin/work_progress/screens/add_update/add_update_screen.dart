@@ -1,11 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/models/add_update_models.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/cubit/update_phase_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/update_project_phase_form.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/view_updates_list.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/add _banner/add_banner.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/add_update_option_cards.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/update_construction_media_form.dart';
-import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/update_project_phase_form.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/update_status_stories_form.dart';
-import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/view_updates_list.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
@@ -29,16 +36,7 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
   ProjectPhaseUpdate? _editingProjectPhase;
   MediaUpdate? _editingMedia;
 
-  final List<ProjectPhaseUpdate> _projectPhaseUpdates = [];
   final List<MediaUpdate> _mediaUpdates = [];
-
-  List<SavedUpdateEntry> get _projectPhaseEntries {
-    final entries = _projectPhaseUpdates
-        .map(SavedUpdateEntry.projectPhase)
-        .toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    return entries;
-  }
 
   void _handleBack() {
     if (widget.onBack != null) {
@@ -70,32 +68,18 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
     });
   }
 
-  void _onProjectPhaseEntryTap(SavedUpdateEntry entry) {
+  void _onProjectPhaseTap(WorkPhaseListModel phase) {
     setState(() {
       _projectPhaseMode = _ProjectPhaseMode.add;
-      _editingProjectPhase = entry.projectPhase;
+      _editingProjectPhase = workPhaseToProjectPhaseUpdate(phase);
     });
   }
 
-  void _saveProjectPhase(ProjectPhaseUpdate update) {
-    final wasEditing = _editingProjectPhase != null;
+  void _onProjectPhaseSaveSuccess() {
     setState(() {
-      final index =
-          _projectPhaseUpdates.indexWhere((item) => item.id == update.id);
-      if (index >= 0) {
-        _projectPhaseUpdates[index] = update;
-      } else {
-        _projectPhaseUpdates.insert(0, update);
-      }
       _editingProjectPhase = null;
       _projectPhaseMode = _ProjectPhaseMode.view;
     });
-    AppToast.success(
-      wasEditing
-          ? 'Project phase updated successfully'
-          : 'Project phase added successfully',
-      context: context,
-    );
   }
 
   void _saveMedia(MediaUpdate update) {
@@ -117,37 +101,59 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
     );
   }
 
+  Widget _buildProjectPhaseSection() {
+    return BlocProvider(
+      create: (_) => UpdatePhaseCubit(
+        addPhaseRepository: AddPhaseRepository(dio: getIt<Dio>()),
+      ),
+      child: BlocBuilder<UpdatePhaseCubit, UpdatePhaseState>(
+        buildWhen: (previous, current) =>
+            current is WorkPhaseListSuccess ||
+            current is WorkPhaseListLoading ||
+            current is WorkPhaseListFailure ||
+            current is UpdatePhaseInitial,
+        builder: (context, state) {
+          final cubit = context.read<UpdatePhaseCubit>();
+          final phaseCount = state is WorkPhaseListSuccess
+              ? state.phases.length
+              : cubit.workPhases.length;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ProjectPhaseModeToggle(
+                  mode: _projectPhaseMode,
+                  onChanged: _setProjectPhaseMode,
+                  updateCount: phaseCount,
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (_projectPhaseMode == _ProjectPhaseMode.view)
+                ViewUpdatesList(
+                  onPhaseTap: _onProjectPhaseTap,
+                  title: 'Project Phase Updates',
+                  subtitle:
+                      'Review previously added project phase updates. Tap an item to edit.',
+                )
+              else
+                UpdateProjectPhaseForm(
+                  key: ValueKey(_editingProjectPhase?.id ?? 'new-phase'),
+                  initial: _editingProjectPhase,
+                  onSaveSuccess: _onProjectPhaseSaveSuccess,
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Widget? get _selectedContent {
     switch (_selectedOption) {
       case AddUpdateOptionType.projectPhase:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: _ProjectPhaseModeToggle(
-                mode: _projectPhaseMode,
-                onChanged: _setProjectPhaseMode,
-                updateCount: _projectPhaseUpdates.length,
-              ),
-            ),
-            const SizedBox(height: 14),
-            if (_projectPhaseMode == _ProjectPhaseMode.view)
-              ViewUpdatesList(
-                entries: _projectPhaseEntries,
-                onEntryTap: _onProjectPhaseEntryTap,
-                title: 'Project Phase Updates',
-                subtitle:
-                    'Review previously added project phase updates. Tap an item to edit.',
-              )
-            else
-              UpdateProjectPhaseForm(
-                key: ValueKey(_editingProjectPhase?.id ?? 'new-phase'),
-                initial: _editingProjectPhase,
-                onSave: _saveProjectPhase,
-              ),
-          ],
-        );
+        return _buildProjectPhaseSection();
       case AddUpdateOptionType.statusStories:
         return UpdateStatusStoriesForm(
           key: ValueKey('status-${_editingMedia?.id ?? 'new'}'),
@@ -165,6 +171,8 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
                   : null,
           onSave: _saveMedia,
         );
+      case AddUpdateOptionType.banner:
+        return const AddBanner();
       case null:
         return null;
     }
@@ -361,7 +369,7 @@ class _BreadcrumbHeader extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Select an update type to continue with project phase, social media, or construction media',
+              'Select an update type to continue with project phase, social media, construction media, or banners',
               style: TextStyle(
                 fontSize: 10.5.sp,
                 fontWeight: FontWeight.w400,

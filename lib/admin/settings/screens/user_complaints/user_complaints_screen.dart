@@ -1,15 +1,17 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/cubit/user_complaints_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/model/complaint_ui_model.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/repository/user_complaints_respository.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/widgets/complaint_card.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/widgets/complaints_date_filter.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
-/// User Complaints page shown from Settings.
-/// Keeps the admin side drawer visible (in-shell navigation).
-/// UI-only for now — wire to complaints API later.
-class UserComplaintsScreen extends StatefulWidget {
+class UserComplaintsScreen extends StatelessWidget {
   const UserComplaintsScreen({
     super.key,
     this.onBack,
@@ -18,18 +20,42 @@ class UserComplaintsScreen extends StatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  State<UserComplaintsScreen> createState() => _UserComplaintsScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => UserComplaintsCubit(
+        userComplaintsRepository: UserComplaintsRepository(
+          dio: getIt<Dio>(),
+        ),
+      ),
+      child: _UserComplaintsView(onBack: onBack),
+    );
+  }
 }
 
-class _UserComplaintsScreenState extends State<UserComplaintsScreen> {
-  late List<ComplaintUiModel> _complaints;
-  DateTime? _fromDate;
-  DateTime? _toDate;
+class _UserComplaintsView extends StatefulWidget {
+  const _UserComplaintsView({this.onBack});
+
+  final VoidCallback? onBack;
+
+  @override
+  State<_UserComplaintsView> createState() => _UserComplaintsViewState();
+}
+
+class _UserComplaintsViewState extends State<_UserComplaintsView> {
+  late DateTime _fromDate;
+  late DateTime _toDate;
 
   @override
   void initState() {
     super.initState();
-    _complaints = sampleComplaints();
+    final now = DateTime.now();
+    _toDate = DateTime(now.year, now.month, now.day);
+    _fromDate = _toDate.subtract(const Duration(days: 30));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fetchComplaints();
+    });
   }
 
   void _handleBack() {
@@ -58,11 +84,23 @@ class _UserComplaintsScreenState extends State<UserComplaintsScreen> {
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
   }
 
+  String _apiDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  void _fetchComplaints() {
+    context.read<UserComplaintsCubit>().fetchUserComplaints(
+          fromDate: _apiDate(_fromDate),
+          toDate: _apiDate(_toDate),
+        );
+  }
+
   Future<void> _pickDate({required bool isFrom}) async {
     final now = DateTime.now();
-    final initial = isFrom
-        ? (_fromDate ?? now.subtract(const Duration(days: 30)))
-        : (_toDate ?? now);
+    final initial = isFrom ? _fromDate : _toDate;
 
     final picked = await showDatePicker(
       context: context,
@@ -87,185 +125,222 @@ class _UserComplaintsScreenState extends State<UserComplaintsScreen> {
     setState(() {
       if (isFrom) {
         _fromDate = picked;
-        if (_toDate != null && _toDate!.isBefore(_fromDate!)) {
+        if (_toDate.isBefore(_fromDate)) {
           _toDate = _fromDate;
         }
       } else {
-        _toDate = _fromDate != null && picked.isBefore(_fromDate!)
-            ? _fromDate
-            : picked;
+        _toDate = picked.isBefore(_fromDate) ? _fromDate : picked;
       }
     });
+
+    _fetchComplaints();
   }
 
   void _clearDates() {
+    final now = DateTime.now();
     setState(() {
-      _fromDate = null;
-      _toDate = null;
+      _toDate = DateTime(now.year, now.month, now.day);
+      _fromDate = _toDate.subtract(const Duration(days: 30));
     });
+    _fetchComplaints();
   }
 
-  List<ComplaintUiModel> get _filteredComplaints {
-    return _complaints.where((complaint) {
-      final date = DateTime(
-        complaint.createdAt.year,
-        complaint.createdAt.month,
-        complaint.createdAt.day,
-      );
-
-      if (_fromDate != null) {
-        final from = DateTime(
-          _fromDate!.year,
-          _fromDate!.month,
-          _fromDate!.day,
-        );
-        if (date.isBefore(from)) return false;
-      }
-
-      if (_toDate != null) {
-        final to = DateTime(
-          _toDate!.year,
-          _toDate!.month,
-          _toDate!.day,
-        );
-        if (date.isAfter(to)) return false;
-      }
-
-      return true;
-    }).toList();
-  }
-
-  void _markAsRead(String id) {
-    setState(() {
-      _complaints = _complaints
-          .map(
-            (item) => item.id == id ? item.copyWith(isRead: true) : item,
-          )
-          .toList();
-    });
-    AppToast.success('Complaint marked as read', context: context);
+  void _markAsRead(UserComplaintModel complaint) {
+    if (complaint.isRead) return;
+    context.read<UserComplaintsCubit>().markAsRead(complaint.complaintId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredComplaints;
-    final unreadCount = filtered.where((c) => !c.isRead).length;
+    return BlocConsumer<UserComplaintsCubit, UserComplaintsState>(
+      listenWhen: (previous, current) =>
+          current is UserComplaintsFailure ||
+          current is ViewComplaintSuccess ||
+          current is ViewComplaintFailure,
+      listener: (context, state) {
+        if (state is UserComplaintsFailure) {
+          AppToast.error(state.message, context: context);
+        } else if (state is ViewComplaintSuccess) {
+          AppToast.success(state.message, context: context);
+        } else if (state is ViewComplaintFailure) {
+          AppToast.error(state.message, context: context);
+        }
+      },
+      builder: (context, state) {
+        final cubit = context.read<UserComplaintsCubit>();
+        // Always render from cubit list so mark-as-read updates show immediately.
+        final complaints = cubit.complaints;
+        final isLoading = state is UserComplaintsLoading;
+        final markingComplaintId =
+            state is ViewComplaintLoading ? state.complaintId : null;
+        final unreadCount = complaints.where((c) => !c.isRead).length;
 
-    return ColoredBox(
-      color: AppColors.screenBg,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontalPadding =
-              constraints.maxWidth < 600 ? 16.0 : 24.0;
+        return ColoredBox(
+          color: AppColors.screenBg,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final horizontalPadding =
+                  constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  20,
-                  horizontalPadding,
-                  16,
-                ),
-                child: _BreadcrumbHeader(onBack: _handleBack),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    0,
-                    horizontalPadding,
-                    24,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      20,
+                      horizontalPadding,
+                      16,
+                    ),
+                    child: _BreadcrumbHeader(onBack: _handleBack),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ComplaintsDateFilterBar(
-                        fromDate: _fromDate,
-                        toDate: _toDate,
-                        formatDate: _formatDate,
-                        onPickFrom: () => _pickDate(isFrom: true),
-                        onPickTo: () => _pickDate(isFrom: false),
-                        onClear: _clearDates,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        0,
+                        horizontalPadding,
+                        24,
                       ),
-                      const SizedBox(height: 16),
-                      Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'Complaints',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
+                          ComplaintsDateFilterBar(
+                            fromDate: _fromDate,
+                            toDate: _toDate,
+                            formatDate: _formatDate,
+                            onPickFrom: () => _pickDate(isFrom: true),
+                            onPickTo: () => _pickDate(isFrom: false),
+                            onClear: _clearDates,
                           ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0EBF6),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${filtered.length} total'
-                              '${unreadCount > 0 ? ' · $unreadCount unread' : ''}',
-                              style: TextStyle(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.accent,
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Text(
+                                'Complaints',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      if (filtered.isEmpty)
-                        const ComplaintsEmptyState()
-                      else
-                        LayoutBuilder(
-                          builder: (context, gridConstraints) {
-                            final width = gridConstraints.maxWidth;
-                            final crossAxisCount = width >= 1100
-                                ? 3
-                                : width >= 700
-                                    ? 2
-                                    : 1;
-                            const spacing = 12.0;
-                            final cardWidth = (width -
-                                    (spacing * (crossAxisCount - 1))) /
-                                crossAxisCount;
-
-                            return Wrap(
-                              spacing: spacing,
-                              runSpacing: spacing,
-                              children: [
-                                for (final complaint in filtered)
-                                  SizedBox(
-                                    width: cardWidth,
-                                    height: 210,
-                                    child: ComplaintCard(
-                                      complaint: complaint,
-                                      formatDate: _formatDate,
-                                      onMarkAsRead: () =>
-                                          _markAsRead(complaint.id),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0EBF6),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${complaints.length} total'
+                                  '${unreadCount > 0 ? ' · $unreadCount unread' : ''}',
+                                  style: TextStyle(
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.accent,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (isLoading)
+                                const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.accent,
+                                  ),
+                                )
+                              else
+                                InkWell(
+                                  onTap: _fetchComplaints,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.refresh_rounded,
+                                          size: 16,
+                                          color: AppColors.accent,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Refresh',
+                                          style: TextStyle(
+                                            fontSize: 9.5.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.accent,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                              ],
-                            );
-                          },
-                        ),
-                    ],
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (isLoading && complaints.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 48),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            )
+                          else if (complaints.isEmpty)
+                            const ComplaintsEmptyState()
+                          else
+                            LayoutBuilder(
+                              builder: (context, gridConstraints) {
+                                final width = gridConstraints.maxWidth;
+                                final crossAxisCount = width >= 1100
+                                    ? 3
+                                    : width >= 700
+                                        ? 2
+                                        : 1;
+                                const spacing = 12.0;
+                                final cardWidth = (width -
+                                        (spacing * (crossAxisCount - 1))) /
+                                    crossAxisCount;
+
+                                return Wrap(
+                                  spacing: spacing,
+                                  runSpacing: spacing,
+                                  children: [
+                                    for (final complaint in complaints)
+                                      SizedBox(
+                                        width: cardWidth,
+                                        height: 210,
+                                        child: ComplaintCard(
+                                          complaint: complaint,
+                                          formatDate: _formatDate,
+                                          isMarking: markingComplaintId ==
+                                              complaint.complaintId,
+                                          onMarkAsRead: () =>
+                                              _markAsRead(complaint),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

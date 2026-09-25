@@ -11,15 +11,11 @@ class InvestorProfileOverview extends StatelessWidget {
     required this.details,
     required this.formatCurrency,
     required this.formatDate,
-    this.onDownloadStatement,
-    this.onRecordPayment,
   });
 
   final InvestorDetailsModel details;
   final String Function(double amount) formatCurrency;
   final String Function(DateTime? date) formatDate;
-  final VoidCallback? onDownloadStatement;
-  final VoidCallback? onRecordPayment;
 
   List<_ProfileStatCardData> get _stats {
     final committed = details.investmentAmount;
@@ -98,9 +94,7 @@ class InvestorProfileOverview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ProfileTitleRow(
-          onDownloadStatement: onDownloadStatement,
-          onRecordPayment: onRecordPayment,
+       const _ProfileTitleRow(
         ),
         const SizedBox(height: 20),
         _ProfileStatsGrid(stats: _stats),
@@ -110,168 +104,31 @@ class InvestorProfileOverview extends StatelessWidget {
 }
 
 class _ProfileTitleRow extends StatelessWidget {
-  const _ProfileTitleRow({
-    this.onDownloadStatement,
-    this.onRecordPayment,
-  });
-
-  final VoidCallback? onDownloadStatement;
-  final VoidCallback? onRecordPayment;
+  const _ProfileTitleRow();
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 720;
-
-        final titleBlock = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Investor Profile & History',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Overview of personal details, investment tranches, pending dues, and ledger records',
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ],
-        );
-
-        final actions = Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            _OutlineActionButton(
-              label: 'Download Statement',
-              icon: Icons.cloud_download_outlined,
-              onTap: onDownloadStatement,
-            ),
-            _FilledActionButton(
-              label: 'Record New Payment',
-              icon: Icons.add,
-              onTap: onRecordPayment,
-            ),
-          ],
-        );
-
-        if (isCompact) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              titleBlock,
-              const SizedBox(height: 14),
-              actions,
-            ],
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: titleBlock),
-            const SizedBox(width: 16),
-            actions,
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _OutlineActionButton extends StatelessWidget {
-  const _OutlineActionButton({
-    required this.label,
-    required this.icon,
-    this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: AppColors.textPrimary),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Investor Profile & History',
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _FilledActionButton extends StatelessWidget {
-  const _FilledActionButton({
-    required this.label,
-    required this.icon,
-    this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.accent,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: AppColors.white),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.white,
-                ),
-              ),
-            ],
+        const SizedBox(height: 4),
+        Text(
+          'Overview of personal details, investment tranches, pending dues, and ledger records',
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textMuted,
           ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -125,11 +125,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   }
 
   void _initDueForInvestor(InvestorModel investor) {
-    final remaining = investor.totalInvestmentAmount - investor.totalPaidAmount;
-    final dueAmount = remaining < 0 ? 0.0 : remaining;
+    final dueAmount =
+        investor.nextDueAmount < 0 ? 0.0 : investor.nextDueAmount;
 
     _dueRemainingAmount = dueAmount;
-    _dueDate = DateTime.now().add(const Duration(days: 30));
+    _dueDate = investor.nextDueDate;
     _dueStatus = dueAmount <= 0 ? 'Completed' : 'Pending';
   }
 

@@ -206,20 +206,7 @@ class _PersonalContactCard extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: () {},
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
-                ),
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: AppColors.textMuted,
-                ),
-              ),
+
             ],
           ),
           const SizedBox(height: 14),
@@ -650,7 +637,7 @@ class _PendingScheduleCard extends StatelessWidget {
       final list = ListView.separated(
         padding: EdgeInsets.zero,
         itemCount: pendingDues.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
           final due = pendingDues[i];
           return _MilestoneItem(

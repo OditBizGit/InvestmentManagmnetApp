@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/cubit/work_progress_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/widgets/work_progress_timeline_table.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
@@ -12,46 +16,76 @@ class WorkProgressOverviewSection extends StatelessWidget {
 
   final VoidCallback? onAddUpdate;
 
-  static const List<_StatCardData> _stats = [
-    _StatCardData(
-      label: 'Overall Progress',
-      value: '68%',
-      icon: ImageConstants.workProgress,
-      iconColor: Color(0xFF9B7EBF),
-      iconBg: Color(0xFFF0EBF6),
-    ),
-    _StatCardData(
-      label: 'Completed Tasks',
-      value: '8/12',
-      icon: ImageConstants.active,
-      iconColor: Color(0xFF2CB5A8),
-      iconBg: Color(0xFFE6F7F5),
-    ),
-    _StatCardData(
-      label: 'In Progress',
-      value: '30%',
-      icon: ImageConstants.amountRemaining,
-      iconColor: Color(0xFFE06B7A),
-      iconBg: Color(0xFFFDECEE),
-    ),
-    _StatCardData(
-      label: 'Pending Task',
-      value: '25%',
-      icon: ImageConstants.documents,
-      iconColor: Color(0xFF5B8DEF),
-      iconBg: Color(0xFFEAF1FC),
-    ),
-  ];
+  List<_StatCardData> _buildStats(List<WorkPhaseListModel> phases) {
+    final rows = phases
+        .map(WorkProgressTimelineRow.fromPhase)
+        .toList(growable: false);
+    final total = rows.length;
+    final completed = rows
+        .where((row) => row.status == WorkProgressStageStatus.completed)
+        .length;
+    final inProgress = rows
+        .where((row) => row.status == WorkProgressStageStatus.inProgress)
+        .length;
+    final pending = rows
+        .where((row) => row.status == WorkProgressStageStatus.pending)
+        .length;
+    final overallProgress = total == 0
+        ? 0
+        : (rows.fold<int>(0, (sum, row) => sum + row.progress) / total)
+            .round()
+            .clamp(0, 100);
+
+    return [
+      _StatCardData(
+        label: 'Overall Progress',
+        value: '$overallProgress%',
+        icon: ImageConstants.workProgress,
+        iconColor: const Color(0xFF9B7EBF),
+        iconBg: const Color(0xFFF0EBF6),
+      ),
+      _StatCardData(
+        label: 'Completed Tasks',
+        value: '$completed/$total',
+        icon: ImageConstants.active,
+        iconColor: const Color(0xFF2CB5A8),
+        iconBg: const Color(0xFFE6F7F5),
+      ),
+      _StatCardData(
+        label: 'In Progress',
+        value: '$inProgress',
+        icon: ImageConstants.amountRemaining,
+        iconColor: const Color(0xFFE06B7A),
+        iconBg: const Color(0xFFFDECEE),
+      ),
+      _StatCardData(
+        label: 'Pending Task',
+        value: '$pending',
+        icon: ImageConstants.documents,
+        iconColor: const Color(0xFF5B8DEF),
+        iconBg: const Color(0xFFEAF1FC),
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _WorkProgressTitleRow(onAddUpdate: onAddUpdate),
-        const SizedBox(height: 20),
-        const _StatsGrid(stats: _stats),
-      ],
+    return BlocBuilder<WorkProgressCubit, WorkProgressState>(
+      builder: (context, state) {
+        final cubit = context.read<WorkProgressCubit>();
+        final phases = state is WorkProgressSuccess
+            ? state.phases
+            : cubit.phases;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _WorkProgressTitleRow(onAddUpdate: onAddUpdate),
+            const SizedBox(height: 20),
+            _StatsGrid(stats: _buildStats(phases)),
+          ],
+        );
+      },
     );
   }
 }

@@ -21,8 +21,9 @@ class ApiEndpoints {
   static const String workPhaseList = "/api/Project/WorkProgressDetails";
   static const String addBanner = "/api/Project/AddBanner";
   static const String getBanner = "/api/Project/GetBanners";
-  static const String deleteBanner
-  = "/api/Project/DeleteBanner";
+  static const String deleteBanner = "/api/Project/DeleteBanner";
+  static const String userComplaints = "/api/Investor/GetComplaints";
+  static const String viewComplaint = "/api/Investor/ViewComplaint";
 
 
 

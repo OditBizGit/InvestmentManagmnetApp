@@ -9,11 +9,13 @@ class ComplaintCard extends StatelessWidget {
     required this.complaint,
     required this.formatDate,
     required this.onMarkAsRead,
+    this.isMarking = false,
   });
 
-  final ComplaintUiModel complaint;
+  final UserComplaintModel complaint;
   final String Function(DateTime date) formatDate;
   final VoidCallback onMarkAsRead;
+  final bool isMarking;
 
   @override
   Widget build(BuildContext context) {
@@ -46,14 +48,19 @@ class ComplaintCard extends StatelessWidget {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: const Color(0xFFF0EBF6),
-                child: Text(
-                  _initials(complaint.username),
-                  style: TextStyle(
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.accent,
-                  ),
-                ),
+                backgroundImage: complaint.profileImageUrl != null
+                    ? NetworkImage(complaint.profileImageUrl!)
+                    : null,
+                child: complaint.profileImageUrl == null
+                    ? Text(
+                        _initials(complaint.username),
+                        style: TextStyle(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.accent,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -85,7 +92,7 @@ class ComplaintCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               _MetaChip(
-                label: isRead ? 'Read' : 'Unread',
+                label: isRead ? 'Viewed' : 'Pending',
                 bg: isRead
                     ? const Color(0xFFE6F6EC)
                     : const Color(0xFFFDECEE),
@@ -93,7 +100,9 @@ class ComplaintCard extends StatelessWidget {
               ),
             ],
           ),
+
           const SizedBox(height: 8),
+
           Text(
             complaint.id,
             style: TextStyle(
@@ -102,7 +111,9 @@ class ComplaintCard extends StatelessWidget {
               color: const Color(0xFF5B8DEF),
             ),
           ),
+
           const SizedBox(height: 6),
+
           Expanded(
             child: Text(
               complaint.message,
@@ -116,9 +127,12 @@ class ComplaintCard extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(height: 8),
+
+          // Created date only
           Text(
-            complaint.email,
+            formatDate(complaint.createdAt),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -127,23 +141,14 @@ class ComplaintCard extends StatelessWidget {
               color: AppColors.textMuted,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            '${complaint.mobile}  ·  ${formatDate(complaint.createdAt)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 8.5.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.textMuted,
-            ),
-          ),
+
           const SizedBox(height: 10),
+
           SizedBox(
             width: double.infinity,
             height: 34,
             child: ElevatedButton(
-              onPressed: isRead ? null : onMarkAsRead,
+              onPressed: isRead || isMarking ? null : onMarkAsRead,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.white,
@@ -155,13 +160,22 @@ class ComplaintCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                isRead ? 'Already Read' : 'Mark as Read',
-                style: TextStyle(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: isMarking
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accent,
+                      ),
+                    )
+                  : Text(
+                      isRead ? 'Already Read' : 'Mark as Read',
+                      style: TextStyle(
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -175,10 +189,13 @@ class ComplaintCard extends StatelessWidget {
         .split(RegExp(r'\s+'))
         .where((p) => p.isNotEmpty)
         .toList();
+
     if (parts.isEmpty) return '?';
+
     if (parts.length == 1) {
       return parts.first.substring(0, 1).toUpperCase();
     }
+
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
   }
@@ -191,7 +208,10 @@ class ComplaintsEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      padding: const EdgeInsets.symmetric(
+        vertical: 48,
+        horizontal: 24,
+      ),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
@@ -251,7 +271,10 @@ class _MetaChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),

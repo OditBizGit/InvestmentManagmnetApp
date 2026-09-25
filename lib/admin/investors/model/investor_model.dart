@@ -17,6 +17,8 @@ class InvestorModel {
   final String userRole;
   final double totalInvestmentAmount;
   final double totalPaidAmount;
+  final DateTime? nextDueDate;
+  final double nextDueAmount;
 
   InvestorModel({
     required this.userId,
@@ -35,6 +37,8 @@ class InvestorModel {
     required this.userRole,
     this.totalInvestmentAmount = 0,
     this.totalPaidAmount = 0,
+    this.nextDueDate,
+    this.nextDueAmount = 0,
   });
 
   /// Absolute URL for [profileImage] (handles relative API paths).
@@ -61,6 +65,10 @@ class InvestorModel {
       ),
       totalPaidAmount: _readDouble(
         json['totalPaidAmount'] ?? json['TotalPaidAmount'],
+      ),
+      nextDueDate: _readDate(json['nextDueDate'] ?? json['NextDueDate']),
+      nextDueAmount: _readDouble(
+        json['nextDueAmount'] ?? json['NextDueAmount'],
       ),
     );
   }

@@ -8,6 +8,7 @@ enum AddUpdateOptionType {
   projectPhase,
   statusStories,
   constructionMedia,
+  banner,
 }
 
 class AddUpdateOptionCards extends StatelessWidget {
@@ -48,19 +49,30 @@ class AddUpdateOptionCards extends StatelessWidget {
       iconColor: Color(0xFF5B8DEF),
       iconBg: Color(0xFFEAF1FC),
     ),
+    _OptionData(
+      type: AddUpdateOptionType.banner,
+      title: 'Add Banner',
+      description:
+          'Upload banner images for the app home screen. Preview added banners and remove any you no longer need.',
+      icon: ImageConstants.uploadPhoto,
+      iconColor: Color(0xFFE89A3C),
+      iconBg: Color(0xFFFFF3E8),
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const spacing = 16.0;
+        const spacing = 12.0;
         final width = constraints.maxWidth;
-        final columns = width >= 900
-            ? 3
-            : width >= 560
+        // Prefer a single row of 4 whenever there is room.
+        final columns = width >= 720
+            ? 4
+            : width >= 480
                 ? 2
                 : 1;
+        final compact = columns == 4;
 
         if (columns == 1) {
           return Column(
@@ -70,6 +82,7 @@ class AddUpdateOptionCards extends StatelessWidget {
                 _OptionCard(
                   data: _options[i],
                   selected: selectedOption == _options[i].type,
+                  compact: compact,
                   onTap: () => onOptionSelected(_options[i].type),
                 ),
               ],
@@ -77,7 +90,7 @@ class AddUpdateOptionCards extends StatelessWidget {
           );
         }
 
-        if (columns == 3) {
+        if (columns == 4) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -87,6 +100,7 @@ class AddUpdateOptionCards extends StatelessWidget {
                   child: _OptionCard(
                     data: _options[i],
                     selected: selectedOption == _options[i].type,
+                    compact: compact,
                     onTap: () => onOptionSelected(_options[i].type),
                   ),
                 ),
@@ -95,7 +109,7 @@ class AddUpdateOptionCards extends StatelessWidget {
           );
         }
 
-        final cardWidth = (width - spacing) / 2;
+        final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
@@ -106,6 +120,7 @@ class AddUpdateOptionCards extends StatelessWidget {
                 child: _OptionCard(
                   data: option,
                   selected: selectedOption == option.type,
+                  compact: compact,
                   onTap: () => onOptionSelected(option.type),
                 ),
               ),
@@ -139,26 +154,34 @@ class _OptionCard extends StatelessWidget {
     required this.data,
     required this.selected,
     required this.onTap,
+    this.compact = false,
   });
 
   final _OptionData data;
   final bool selected;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final radius = compact ? 12.0 : 14.0;
+    final padding = compact ? 14.0 : 20.0;
+    final iconSize = compact ? 36.0 : 48.0;
+    final iconAssetSize = compact ? 18.0 : 24.0;
+    final checkSize = compact ? 18.0 : 22.0;
+
     return Material(
       color: AppColors.white,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(radius),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(radius),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(padding),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(radius),
             border: Border.all(
               color: selected ? AppColors.accent : AppColors.border,
               width: selected ? 1.5 : 1,
@@ -168,7 +191,7 @@ class _OptionCard extends StatelessWidget {
                 color: selected
                     ? AppColors.accent.withValues(alpha: 0.12)
                     : Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
+                blurRadius: compact ? 8 : 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -179,17 +202,17 @@ class _OptionCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: iconSize,
+                    height: iconSize,
                     decoration: BoxDecoration(
                       color: data.iconBg,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(compact ? 10 : 12),
                     ),
                     alignment: Alignment.center,
                     child: SvgPicture.asset(
                       data.icon,
-                      width: 24,
-                      height: 24,
+                      width: iconAssetSize,
+                      height: iconAssetSize,
                       colorFilter: ColorFilter.mode(
                         data.iconColor,
                         BlendMode.srcIn,
@@ -199,8 +222,8 @@ class _OptionCard extends StatelessWidget {
                   const Spacer(),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    width: 22,
-                    height: 22,
+                    width: checkSize,
+                    height: checkSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: selected ? AppColors.accent : AppColors.white,
@@ -210,41 +233,46 @@ class _OptionCard extends StatelessWidget {
                       ),
                     ),
                     child: selected
-                        ? const Icon(
+                        ? Icon(
                             Icons.check,
-                            size: 14,
+                            size: compact ? 12 : 14,
                             color: AppColors.white,
                           )
                         : null,
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: compact ? 12 : 18),
               Text(
                 data.title,
+                maxLines: compact ? 2 : null,
+                overflow: compact ? TextOverflow.ellipsis : TextOverflow.clip,
                 style: TextStyle(
-                  fontSize: 12.sp,
+                  fontSize: compact ? 10.sp : 12.sp,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
+                  height: 1.25,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: compact ? 6 : 8),
               Text(
                 data.description,
+                maxLines: compact ? 3 : null,
+                overflow: compact ? TextOverflow.ellipsis : TextOverflow.clip,
                 style: TextStyle(
-                  fontSize: 10.sp,
+                  fontSize: compact ? 8.5.sp : 10.sp,
                   fontWeight: FontWeight.w400,
                   color: AppColors.textMuted,
-                  height: 1.45,
+                  height: 1.4,
                 ),
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: compact ? 12 : 18),
               Row(
                 children: [
                   Text(
                     'Select',
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: compact ? 9.sp : 10.sp,
                       fontWeight: FontWeight.w600,
                       color: selected ? AppColors.accent : AppColors.textMuted,
                     ),
@@ -252,7 +280,7 @@ class _OptionCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Icon(
                     Icons.arrow_forward_rounded,
-                    size: 16,
+                    size: compact ? 14 : 16,
                     color: selected ? AppColors.accent : AppColors.textMuted,
                   ),
                 ],

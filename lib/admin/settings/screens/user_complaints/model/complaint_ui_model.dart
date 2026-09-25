@@ -1,91 +1,114 @@
-class ComplaintUiModel {
-  const ComplaintUiModel({
-    required this.id,
-    required this.userId,
-    required this.username,
-    required this.email,
-    required this.mobile,
-    required this.message,
-    required this.createdAt,
-    this.isRead = false,
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+
+class UserComplaintModel {
+  final int complaintId;
+  final int investorId;
+  final String investorCode;
+  final String investorName;
+  final String profileImage;
+  final String complaint;
+  final String complaintDate;
+  final String status;
+
+  UserComplaintModel({
+    required this.complaintId,
+    required this.investorId,
+    required this.investorCode,
+    required this.investorName,
+    required this.profileImage,
+    required this.complaint,
+    required this.complaintDate,
+    required this.status,
   });
 
-  final String id;
-  final String userId;
-  final String username;
-  final String email;
-  final String mobile;
-  final String message;
-  final DateTime createdAt;
-  final bool isRead;
+  String get id => 'CMP-$complaintId';
 
-  ComplaintUiModel copyWith({
-    String? id,
-    String? userId,
-    String? username,
-    String? email,
-    String? mobile,
-    String? message,
-    DateTime? createdAt,
-    bool? isRead,
+  String get username =>
+      investorName.trim().isEmpty ? 'Unknown investor' : investorName.trim();
+
+  String get userId =>
+      investorCode.trim().isEmpty ? 'ID: $investorId' : investorCode.trim();
+
+  String get message => complaint;
+
+  /// API: `"Viewed"` = already read, `"Pending"` = show Mark as Read.
+  bool get isRead {
+    final normalized = status.trim().toLowerCase();
+    return normalized == 'viewed' || normalized == 'read';
+  }
+
+  bool get isPending {
+    final normalized = status.trim().toLowerCase();
+    return normalized == 'pending' || normalized.isEmpty;
+  }
+
+  String? get profileImageUrl => resolveMediaUrl(profileImage);
+
+  DateTime get createdAt {
+    final raw = complaintDate.trim();
+    if (raw.isEmpty) return DateTime.now();
+
+    final parsed = DateTime.tryParse(raw);
+    if (parsed != null) return parsed;
+
+    // Fallback for formats like dd-MM-yyyy / dd/MM/yyyy
+    final parts = raw.split(RegExp(r'[-/]'));
+    if (parts.length == 3) {
+      final day = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      final year = int.tryParse(parts[2]);
+      if (day != null && month != null && year != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
+    return DateTime.now();
+  }
+
+  UserComplaintModel copyWith({
+    int? complaintId,
+    int? investorId,
+    String? investorCode,
+    String? investorName,
+    String? profileImage,
+    String? complaint,
+    String? complaintDate,
+    String? status,
   }) {
-    return ComplaintUiModel(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      username: username ?? this.username,
-      email: email ?? this.email,
-      mobile: mobile ?? this.mobile,
-      message: message ?? this.message,
-      createdAt: createdAt ?? this.createdAt,
-      isRead: isRead ?? this.isRead,
+    return UserComplaintModel(
+      complaintId: complaintId ?? this.complaintId,
+      investorId: investorId ?? this.investorId,
+      investorCode: investorCode ?? this.investorCode,
+      investorName: investorName ?? this.investorName,
+      profileImage: profileImage ?? this.profileImage,
+      complaint: complaint ?? this.complaint,
+      complaintDate: complaintDate ?? this.complaintDate,
+      status: status ?? this.status,
     );
   }
-}
 
-/// Temporary sample data for UI preview until API is connected.
-List<ComplaintUiModel> sampleComplaints() {
-  final now = DateTime.now();
-  return [
-    ComplaintUiModel(
-      id: 'CMP-1001',
-      userId: 'USR-204',
-      username: 'Anita Sharma',
-      email: 'anita.sharma@email.com',
-      mobile: '+91 98765 43210',
-      message:
-          'I paid my installment two days ago but the pending amount still shows as due. Please check and update my payment status.',
-      createdAt: now.subtract(const Duration(hours: 5)),
-    ),
-    ComplaintUiModel(
-      id: 'CMP-1002',
-      userId: 'USR-318',
-      username: 'Rahul Mehta',
-      email: 'rahul.mehta@email.com',
-      mobile: '+91 91234 56780',
-      message:
-          'Unable to download the transaction receipt from the investments screen. The download button does nothing after tapping.',
-      createdAt: now.subtract(const Duration(days: 1, hours: 2)),
-      isRead: true,
-    ),
-    ComplaintUiModel(
-      id: 'CMP-1003',
-      userId: 'USR-411',
-      username: 'Priya Nair',
-      email: 'priya.nair@email.com',
-      mobile: '+91 99887 66554',
-      message:
-          'My profile photo is not updating after upload. I tried both JPEG and PNG formats under 2 MB.',
-      createdAt: now.subtract(const Duration(days: 3)),
-    ),
-    ComplaintUiModel(
-      id: 'CMP-1004',
-      userId: 'USR-152',
-      username: 'Vikram Patel',
-      email: 'vikram.patel@email.com',
-      mobile: '+91 90123 45678',
-      message:
-          'Need clarification on the next due date for installment 4. The schedule shows a different date than the email reminder.',
-      createdAt: now.subtract(const Duration(days: 6, hours: 8)),
-    ),
-  ];
+  factory UserComplaintModel.fromJson(Map<String, dynamic> json) {
+    return UserComplaintModel(
+      complaintId: _readInt(json['complaintId'] ?? json['ComplaintId']),
+      investorId: _readInt(json['investorId'] ?? json['InvestorId']),
+      investorCode: _readString(json['investorCode'] ?? json['InvestorCode']),
+      investorName: _readString(json['investorName'] ?? json['InvestorName']),
+      profileImage: _readString(json['profileImage'] ?? json['ProfileImage']),
+      complaint: _readString(json['complaint'] ?? json['Complaint']),
+      complaintDate: _readString(json['complaintDate'] ?? json['ComplaintDate']),
+      status: _readString(json['status'] ?? json['Status']),
+    );
+  }
+
+  static String _readString(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  static int _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
 }

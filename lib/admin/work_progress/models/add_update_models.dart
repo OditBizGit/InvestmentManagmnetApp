@@ -10,34 +10,42 @@ class ProjectPhaseUpdate {
     required this.progress,
     required this.status,
     required this.updatedAt,
+    this.stageId,
+    this.description = '',
   });
 
   final String id;
+  final int? stageId;
   final String stage;
   final String assignedTeam;
   final DateTime? startDate;
   final DateTime? dueDate;
   final int progress;
   final String status;
+  final String description;
   final DateTime updatedAt;
 
   ProjectPhaseUpdate copyWith({
+    int? stageId,
     String? stage,
     String? assignedTeam,
     DateTime? startDate,
     DateTime? dueDate,
     int? progress,
     String? status,
+    String? description,
     DateTime? updatedAt,
   }) {
     return ProjectPhaseUpdate(
       id: id,
+      stageId: stageId ?? this.stageId,
       stage: stage ?? this.stage,
       assignedTeam: assignedTeam ?? this.assignedTeam,
       startDate: startDate ?? this.startDate,
       dueDate: dueDate ?? this.dueDate,
       progress: progress ?? this.progress,
       status: status ?? this.status,
+      description: description ?? this.description,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -90,9 +98,12 @@ class SavedUpdateEntry {
     }
     final description = media!.description.trim();
     if (description.isEmpty) {
-      return type == AddUpdateOptionType.statusStories
-          ? 'Status & Stories update'
-          : 'Construction media update';
+      return switch (type) {
+        AddUpdateOptionType.statusStories => 'Status & Stories update',
+        AddUpdateOptionType.constructionMedia => 'Construction media update',
+        AddUpdateOptionType.banner => 'Banner update',
+        AddUpdateOptionType.projectPhase => 'Project phase update',
+      };
     }
     if (description.length <= 48) return description;
     return '${description.substring(0, 48)}...';
@@ -103,9 +114,12 @@ class SavedUpdateEntry {
       final phase = projectPhase!;
       return '${phase.assignedTeam} • ${phase.progress}% • ${phase.status}';
     }
-    return type == AddUpdateOptionType.statusStories
-        ? 'Status & Stories'
-        : 'Construction Photos & Videos';
+    return switch (type) {
+      AddUpdateOptionType.statusStories => 'Status & Stories',
+      AddUpdateOptionType.constructionMedia => 'Construction Photos & Videos',
+      AddUpdateOptionType.banner => 'Banner',
+      AddUpdateOptionType.projectPhase => 'Project Phase',
+    };
   }
 
   DateTime get updatedAt =>
