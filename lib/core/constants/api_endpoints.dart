@@ -9,6 +9,8 @@ class ApiEndpoints {
   static const String transactionHistory = "/api/Investor/AllInvestorTransactionHistory";
   static const String workProgressDetails = "/api/Project/WorkProgressDetails";
   static const String getBanners = "/api/Project/GetBanners";
+  static const String registerComplaint = "/api/Investor/RegisterComplaint";
+  static const String getMyComplaints = "/api/Investor/GetMyComplaints";
 
   /// funding & payments
   static const String topInvestors = "/api/Investor/GetTopInvestors";

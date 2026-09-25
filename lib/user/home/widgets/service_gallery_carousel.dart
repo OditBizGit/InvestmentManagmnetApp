@@ -29,6 +29,7 @@ class ServiceGalleryCarousel extends StatefulWidget {
 class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
   int _currentIndex = 0;
   List<String> _imageUrls = const [];
+  int? _cacheWidth;
 
   @override
   void initState() {
@@ -39,6 +40,7 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _updateCacheSize();
     _precache(_imageUrls);
   }
 
@@ -58,6 +60,12 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
     }
   }
 
+  void _updateCacheSize() {
+    final mq = MediaQuery.of(context);
+    // Width-only resize keeps each image's natural aspect ratio.
+    _cacheWidth = (mq.size.width * mq.devicePixelRatio).round();
+  }
+
   List<String> _resolveUrls(List<BannerItemModel> banners) {
     return banners
         .map((banner) => banner.bannerImageUrl)
@@ -75,9 +83,18 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
     return true;
   }
 
+  ImageProvider _providerFor(String url) {
+    return ResizeImage.resizeIfNeeded(
+      _cacheWidth,
+      null,
+      CachedNetworkImageProvider(url),
+    );
+  }
+
   void _precache(List<String> urls) {
     for (final url in urls) {
-      precacheImage(CachedNetworkImageProvider(url), context).then((_) {
+      precacheImage(_providerFor(url), context).then((_) {
+        if (!mounted) return;
         ServiceGalleryCarousel._warmUrls.add(url);
       });
     }
@@ -102,11 +119,13 @@ class _ServiceGalleryCarouselState extends State<ServiceGalleryCarousel> {
           CarouselSlider.builder(
             itemCount: images.length,
             itemBuilder: (context, index, realIndex) {
+              final url = images[index];
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 0.5.w),
                 child: _GalleryImage(
-                  key: ValueKey(images[index]),
-                  url: images[index],
+                  key: ValueKey(url),
+                  url: url,
+                  imageProvider: _providerFor(url),
                 ),
               );
             },
@@ -179,12 +198,17 @@ class _GalleryShimmer extends StatelessWidget {
 }
 
 class _GalleryImage extends StatelessWidget {
-  const _GalleryImage({super.key, required this.url});
+  const _GalleryImage({
+    super.key,
+    required this.url,
+    required this.imageProvider,
+  });
 
   static const Color _accent = Color(0xFFA28CC1);
   static const Color _cardBg = Color(0xFFF0EBF6);
 
   final String url;
+  final ImageProvider imageProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +217,7 @@ class _GalleryImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Image(
-        image: CachedNetworkImageProvider(url),
+        image: imageProvider,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
@@ -204,7 +228,8 @@ class _GalleryImage extends StatelessWidget {
             return child;
           }
 
-          // Already shown once this session — keep a plain hold, no spinner.
+          // Already shown once — hold the slot without a spinner while
+          // a resized frame is resolved from cache.
           if (isWarm) {
             return const ColoredBox(color: _cardBg);
           }
@@ -212,7 +237,10 @@ class _GalleryImage extends StatelessWidget {
           return const ColoredBox(
             color: _cardBg,
             child: Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _accent,
+              ),
             ),
           );
         },

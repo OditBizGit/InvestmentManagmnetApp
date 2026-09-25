@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
-import 'package:maribel_wellness_centre_application/user/profile/register_complaint_screen.dart';
 import 'package:sizer/sizer.dart';
 
 class DocumentsScreen extends StatelessWidget {
@@ -237,37 +236,37 @@ class DocumentsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(5.w, 1.h, 5.w, 2.5.h),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const RegisterComplaintScreen(),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.accent,
-                    side: const BorderSide(color: AppColors.border),
-                    padding: EdgeInsets.symmetric(vertical: 1.8.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(3.w),
-                    ),
-                  ),
-                  child: Text(
-                    'Complaint Register?',
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: EdgeInsets.fromLTRB(5.w, 1.h, 5.w, 2.5.h),
+            //   child: SizedBox(
+            //     width: double.infinity,
+            //     child: OutlinedButton(
+            //       onPressed: () {
+            //         Navigator.of(context).push(
+            //           MaterialPageRoute<void>(
+            //             builder: (_) => const RegisterComplaintScreen(),
+            //           ),
+            //         );
+            //       },
+            //       style: OutlinedButton.styleFrom(
+            //         foregroundColor: AppColors.accent,
+            //         side: const BorderSide(color: AppColors.border),
+            //         padding: EdgeInsets.symmetric(vertical: 1.8.h),
+            //         shape: RoundedRectangleBorder(
+            //           borderRadius: BorderRadius.circular(3.w),
+            //         ),
+            //       ),
+            //       child: Text(
+            //         'Complaint Register?',
+            //         style: TextStyle(
+            //           fontSize: 15.sp,
+            //           fontWeight: FontWeight.w500,
+            //           color: AppColors.accent,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

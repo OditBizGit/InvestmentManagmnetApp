@@ -15,6 +15,7 @@ import 'package:maribel_wellness_centre_application/user/profile/documents_scree
 import 'package:maribel_wellness_centre_application/user/profile/investment_details_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/personal_info_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/register_complaint_screen.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -102,7 +103,7 @@ class _UserProfileView extends StatelessWidget {
                         formatCurrency: _formatCurrency,
                         investorCodeLabel: _investorCodeLabel,
                       ),
-                    SizedBox(height: 1.5.h),
+                    SizedBox(height: 1.h),
                     _MenuTile(
                       iconPath: ImageConstants.personalInfo,
                       label: 'Personal Info',
@@ -147,6 +148,18 @@ class _UserProfileView extends StatelessWidget {
                       },
                     ),
                     _MenuTile(
+                      iconPath: ImageConstants.complaints,
+                      label: 'Register Complaints',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => RegisterComplaintScreen(
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _MenuTile(
                       iconPath: ImageConstants.logout,
                       label: 'Logout',
                       color: AppColors.error,
@@ -185,7 +198,7 @@ class _ProfileDetailsContent extends StatelessWidget {
               ? details!.fullName
               : 'Investor',
           style: TextStyle(
-            fontSize: 20.sp,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
@@ -276,7 +289,7 @@ class _ProfileDetailsShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nameStyle = TextStyle(
-      fontSize: 20.sp,
+      fontSize: 18.sp,
       fontWeight: FontWeight.w700,
       color: AppColors.textPrimary,
     );
@@ -303,7 +316,7 @@ class _ProfileDetailsShimmer extends StatelessWidget {
                   border: Border.all(color: Colors.white, width: 1.5),
                 ),
                 child: CircleAvatar(
-                  radius: 12.w,
+                  radius: 11.w,
                   backgroundColor: Colors.white,
                 ),
               ),
@@ -419,7 +432,7 @@ class _ProfileAvatar extends StatelessWidget {
         border: Border.all(color: AppColors.accent, width: 1.5),
       ),
       child: CircleAvatar(
-        radius: 12.w,
+        radius: 11.w,
         backgroundColor: AppColors.cardBg,
         backgroundImage: hasImage ? NetworkImage(imageUrl!) : null,
         child: hasImage
@@ -678,7 +691,7 @@ class _MenuTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(2.w),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 1.8.h),
+        padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 1.3.h),
         child: Row(
           children: [
             SvgPicture.asset(

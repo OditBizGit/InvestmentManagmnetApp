@@ -717,7 +717,8 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = profileImageUrl;
+    final hasImage =
+        profileImageUrl != null && profileImageUrl!.isNotEmpty;
     return Row(
       children: [
         Container(
@@ -728,11 +729,16 @@ class _ProfileHeader extends StatelessWidget {
           ),
           child: CircleAvatar(
             radius: 8.w,
-            backgroundImage: NetworkImage(
-              imageUrl != null && imageUrl.isNotEmpty
-                  ? imageUrl
-                  : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
-            ),
+            backgroundColor: AppColors.cardBg,
+            backgroundImage:
+                hasImage ? NetworkImage(profileImageUrl!) : null,
+            child: hasImage
+                ? null
+                : Icon(
+                    Icons.person_rounded,
+                    size: 8.w,
+                    color: AppColors.accent,
+                  ),
           ),
         ),
         SizedBox(width: 3.5.w),
