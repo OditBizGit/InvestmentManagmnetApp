@@ -57,14 +57,18 @@ class TopInvestorsCarousel extends StatelessWidget {
         ),
         SizedBox(height: 1.5.h),
         if (!isLoading && investors.isEmpty)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 2.h),
-            child: Text(
-              'No top investors found',
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w400,
-                color: _textPrimary.withValues(alpha: 0.6),
+          SizedBox(
+            width: double.infinity,
+            height: 10.h,
+            child: Center(
+              child: Text(
+                'No top investors found',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: TopInvestorsCarousel._textPrimary.withValues(alpha: 0.55),
+                ),
               ),
             ),
           )
@@ -110,21 +114,12 @@ class _InvestorCard extends StatelessWidget {
   final TopInvestorModel investor;
   final bool showTopBadge;
 
-  static String _toTitleCase(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return trimmed;
-
-    return trimmed.split(RegExp(r'\s+')).map((word) {
-      if (word.isEmpty) return word;
-      if (word.length == 1) return word.toUpperCase();
-      return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
-    }).join(' ');
-  }
-
   @override
   Widget build(BuildContext context) {
     final imageUrl = investor.profileImageUrl;
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    final displayName =
+        investor.fullName.trim().isNotEmpty ? investor.fullName.trim() : 'Investor';
 
     return Stack(
       clipBehavior: Clip.none,
@@ -149,11 +144,7 @@ class _InvestorCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: _SlidingText(
-                  text: _toTitleCase(
-                    investor.fullName.isNotEmpty
-                        ? investor.fullName
-                        : 'Investor',
-                  ),
+                  text: displayName,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,

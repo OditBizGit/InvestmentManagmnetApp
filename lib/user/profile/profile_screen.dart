@@ -322,7 +322,7 @@ class _ProfileDetailsShimmer extends StatelessWidget {
               ),
               SizedBox(height: 1.h),
               _PlaceholderLine(
-                sample: 'John Mathew',
+                sample: 'Investor',
                 style: nameStyle,
                 alignment: Alignment.center,
                 widthFactor: 0.72,
@@ -338,7 +338,7 @@ class _ProfileDetailsShimmer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4.w),
                 ),
                 child: Text(
-                  'INV - 10254',
+                  'INV - 00000',
                   style: badgeStyle.copyWith(color: Colors.transparent),
                 ),
               ),
@@ -381,14 +381,14 @@ class _ProfileDetailsShimmer extends StatelessWidget {
               _InfoTile(
                 iconPath: ImageConstants.email,
                 label: 'Email Address',
-                value: 'john.mathew@investor.com',
+                value: 'investor@gmail.com',
                 isLoading: true,
               ),
               _InfoTileDivider(),
               _InfoTile(
                 iconPath: ImageConstants.phone,
                 label: 'Phone Number',
-                value: '+91 9876543210',
+                value: '+91 98700XXXXX',
                 isLoading: true,
               ),
             ],

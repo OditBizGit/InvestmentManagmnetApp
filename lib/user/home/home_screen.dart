@@ -14,7 +14,7 @@ import 'package:maribel_wellness_centre_application/user/home/model/work_progres
 import 'package:maribel_wellness_centre_application/user/home/notification_screen.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/investment_summary_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/latest_project_updates.dart';
-import 'package:maribel_wellness_centre_application/user/home/widgets/phase_progress_card.dart';
+import 'package:maribel_wellness_centre_application/user/home/widgets/work_progress_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/service_gallery_carousel.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/top_investors_carousel.dart';
 import 'package:sizer/sizer.dart';
@@ -182,7 +182,7 @@ class _UserHomeViewState extends State<_UserHomeView> {
                             ),
                             SizedBox(height: 2.h),
                           ],
-                          PhaseProgressCard(
+                          WorkProgressCard(
                             isLoading: isLoading,
                             items: workProgress,
                           ),

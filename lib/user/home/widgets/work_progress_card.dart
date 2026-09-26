@@ -5,8 +5,8 @@ import 'package:maribel_wellness_centre_application/user/home/model/work_progres
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
-class PhaseProgressCard extends StatelessWidget {
-  const PhaseProgressCard({
+class WorkProgressCard extends StatelessWidget {
+  const WorkProgressCard({
     super.key,
     this.isLoading = false,
     this.items = const [],
@@ -62,7 +62,7 @@ class _PhaseProgressBody extends StatelessWidget {
               width: 5.w,
               height: 5.w,
               colorFilter: const ColorFilter.mode(
-                PhaseProgressCard._progressCompleted,
+                WorkProgressCard._progressCompleted,
                 BlendMode.srcIn,
               ),
             ),
@@ -72,7 +72,7 @@ class _PhaseProgressBody extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
-                color: PhaseProgressCard._textPrimary,
+                color: WorkProgressCard._textPrimary,
               ),
             ),
           ],
@@ -88,7 +88,7 @@ class _PhaseProgressBody extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
-                  color: PhaseProgressCard._textPrimary.withValues(alpha: 0.55),
+                  color: WorkProgressCard._textPrimary.withValues(alpha: 0.55),
                 ),
               ),
             ),
@@ -116,17 +116,17 @@ class _PhaseProgressShimmer extends StatelessWidget {
     final titleStyle = TextStyle(
       fontSize: 15.sp,
       fontWeight: FontWeight.w600,
-      color: PhaseProgressCard._textPrimary,
+      color: WorkProgressCard._textPrimary,
     );
     final labelStyle = TextStyle(
       fontSize: 14.sp,
       fontWeight: FontWeight.w400,
-      color: PhaseProgressCard._textPrimary,
+      color: WorkProgressCard._textPrimary,
     );
 
     return Shimmer.fromColors(
-      baseColor: PhaseProgressCard._shimmerBase,
-      highlightColor: PhaseProgressCard._shimmerHighlight,
+      baseColor: WorkProgressCard._shimmerBase,
+      highlightColor: WorkProgressCard._shimmerHighlight,
       direction: ShimmerDirection.ltr,
       period: const Duration(milliseconds: 1400),
       child: Column(
@@ -243,8 +243,8 @@ class _ProgressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = item.progress.round();
     final barColor = _isCompleted
-        ? PhaseProgressCard._progressCompleted
-        : PhaseProgressCard._progress;
+        ? WorkProgressCard._progressCompleted
+        : WorkProgressCard._progress;
 
     return Column(
       children: [
@@ -262,7 +262,7 @@ class _ProgressRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w400,
-                  color: PhaseProgressCard._textPrimary,
+                  color: WorkProgressCard._textPrimary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -273,7 +273,7 @@ class _ProgressRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
-                color: PhaseProgressCard._textPrimary,
+                color: WorkProgressCard._textPrimary,
               ),
             ),
           ],
@@ -284,7 +284,7 @@ class _ProgressRow extends StatelessWidget {
           child: LinearProgressIndicator(
             value: item.progressFraction,
             minHeight: 0.9.h,
-            backgroundColor: PhaseProgressCard._track,
+            backgroundColor: WorkProgressCard._track,
             valueColor: AlwaysStoppedAnimation<Color>(barColor),
           ),
         ),
