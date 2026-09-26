@@ -16,6 +16,8 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
   final UserComplaintsRepository userComplaintsRepository;
 
   List<UserComplaintModel> _complaints = [];
+  int? _solvingComplaintId;
+  int? _viewingComplaintId;
 
   List<UserComplaintModel> get complaints => List.unmodifiable(_complaints);
 
@@ -67,7 +69,14 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
       return;
     }
 
+    if (_viewingComplaintId != null) return;
+
+    final viewIndex =
+        _complaints.indexWhere((item) => item.complaintId == complaintId);
+    if (viewIndex >= 0 && _complaints[viewIndex].isRead) return;
+
     try {
+      _viewingComplaintId = complaintId;
       emit(ViewComplaintLoading(complaintId: complaintId));
       log('UserComplaintsCubit: Marking complaint $complaintId as read...');
 
@@ -76,7 +85,6 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
       );
 
       if (result != null && result.apiStatus != false) {
-        // Always flip local UI to Read after a successful mark API call.
         _complaints = _complaints
             .map(
               (item) => item.complaintId == complaintId
@@ -118,6 +126,83 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
           message: e.toString().replaceFirst('Exception: ', ''),
         ),
       );
+    } finally {
+      _viewingComplaintId = null;
+    }
+  }
+
+  Future<void> solveComplaint(int complaintId) async {
+    if (complaintId <= 0) {
+      emit(
+        const SolveComplaintFailure(
+          message: 'Invalid complaint selected.',
+        ),
+      );
+      return;
+    }
+
+    // Prevent duplicate in-flight solve requests.
+    if (_solvingComplaintId != null) return;
+
+    final solveIndex =
+        _complaints.indexWhere((item) => item.complaintId == complaintId);
+    if (solveIndex >= 0 && _complaints[solveIndex].isSolved) return;
+
+    try {
+      _solvingComplaintId = complaintId;
+      emit(SolveComplaintLoading(complaintId: complaintId));
+      log('UserComplaintsCubit: Solving complaint $complaintId...');
+
+      final result = await userComplaintsRepository.solveComplaint(
+        complaintId: complaintId,
+      );
+
+      if (result != null &&
+          result.apiStatus != false &&
+          result.isSolved) {
+        _complaints = _complaints
+            .map(
+              (item) => item.complaintId == complaintId
+                  ? item.copyWith(status: 'Solved')
+                  : item,
+            )
+            .toList(growable: false);
+
+        final message = (result.message?.trim().isNotEmpty ?? false)
+            ? result.message!.trim()
+            : 'Complaint marked as solved';
+
+        log('UserComplaintsCubit: Complaint $complaintId solved.');
+        emit(
+          SolveComplaintSuccess(
+            complaintId: complaintId,
+            message: message,
+          ),
+        );
+        emit(
+          UserComplaintsSuccess(
+            complaints: List.unmodifiable(_complaints),
+          ),
+        );
+      } else {
+        final message = (result?.message?.trim().isNotEmpty ?? false)
+            ? result!.message!.trim()
+            : 'Failed to mark complaint as solved. Please try again.';
+        log('UserComplaintsCubit: Solve complaint failed.');
+        emit(SolveComplaintFailure(message: message));
+      }
+    } catch (e, stackTrace) {
+      log(
+        'UserComplaintsCubit Solve Complaint Error: $e',
+        stackTrace: stackTrace,
+      );
+      emit(
+        SolveComplaintFailure(
+          message: e.toString().replaceFirst('Exception: ', ''),
+        ),
+      );
+    } finally {
+      _solvingComplaintId = null;
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import '../model/complaint_ui_model.dart';
+import '../model/solve_complaint_model.dart';
 import '../model/view_complaint_model.dart';
 
 class UserComplaintsRepository {
@@ -86,4 +87,35 @@ class UserComplaintsRepository {
     }
   }
 
+  Future<SolveComplaintModel?> solveComplaint({
+    required int complaintId,
+  }) async {
+    try {
+      log('Solving complaint...');
+      log('Complaint ID: $complaintId');
+
+      final response = await dio.post(
+        ApiEndpoints.solveComplaint,
+        data: {
+          'complaintId': complaintId,
+        },
+      );
+
+      log('Solve Complaint Response: ${response.data}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        return SolveComplaintModel.fromJson(response.data);
+      }
+
+      log('Solve Complaint failed: ${response.statusCode}');
+      return null;
+    } on DioException catch (e) {
+      log('Solve Complaint Dio Error: ${e.message}');
+      log('Solve Complaint Response: ${e.response?.data}');
+      return null;
+    } catch (e) {
+      log('Solve Complaint Error: $e');
+      return null;
+    }
+  }
 }

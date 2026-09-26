@@ -31,11 +31,15 @@ class UserComplaintModel {
 
   String get message => complaint;
 
-  /// API: `"Viewed"` = already read, `"Pending"` = show Mark as Read.
+  /// API: `"Viewed"` / `"Solved"` = already read, `"Pending"` = show Mark as Read.
   bool get isRead {
     final normalized = status.trim().toLowerCase();
-    return normalized == 'viewed' || normalized == 'read';
+    return normalized == 'viewed' ||
+        normalized == 'read' ||
+        normalized == 'solved';
   }
+
+  bool get isSolved => status.trim().toLowerCase() == 'solved';
 
   bool get isPending {
     final normalized = status.trim().toLowerCase();

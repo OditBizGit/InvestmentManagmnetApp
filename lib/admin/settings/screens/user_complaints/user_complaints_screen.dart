@@ -150,13 +150,20 @@ class _UserComplaintsViewState extends State<_UserComplaintsView> {
     context.read<UserComplaintsCubit>().markAsRead(complaint.complaintId);
   }
 
+  void _markAsSolved(UserComplaintModel complaint) {
+    if (complaint.isSolved) return;
+    context.read<UserComplaintsCubit>().solveComplaint(complaint.complaintId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<UserComplaintsCubit, UserComplaintsState>(
       listenWhen: (previous, current) =>
           current is UserComplaintsFailure ||
           current is ViewComplaintSuccess ||
-          current is ViewComplaintFailure,
+          current is ViewComplaintFailure ||
+          current is SolveComplaintSuccess ||
+          current is SolveComplaintFailure,
       listener: (context, state) {
         if (state is UserComplaintsFailure) {
           AppToast.error(state.message, context: context);
@@ -164,15 +171,21 @@ class _UserComplaintsViewState extends State<_UserComplaintsView> {
           AppToast.success(state.message, context: context);
         } else if (state is ViewComplaintFailure) {
           AppToast.error(state.message, context: context);
+        } else if (state is SolveComplaintSuccess) {
+          AppToast.success(state.message, context: context);
+        } else if (state is SolveComplaintFailure) {
+          AppToast.error(state.message, context: context);
         }
       },
       builder: (context, state) {
         final cubit = context.read<UserComplaintsCubit>();
-        // Always render from cubit list so mark-as-read updates show immediately.
+        // Always render from cubit list so mark-as-read/solve updates show immediately.
         final complaints = cubit.complaints;
         final isLoading = state is UserComplaintsLoading;
         final markingComplaintId =
             state is ViewComplaintLoading ? state.complaintId : null;
+        final solvingComplaintId =
+            state is SolveComplaintLoading ? state.complaintId : null;
         final unreadCount = complaints.where((c) => !c.isRead).length;
 
         return ColoredBox(
@@ -317,14 +330,18 @@ class _UserComplaintsViewState extends State<_UserComplaintsView> {
                                     for (final complaint in complaints)
                                       SizedBox(
                                         width: cardWidth,
-                                        height: 210,
+                                        height: 230,
                                         child: ComplaintCard(
                                           complaint: complaint,
                                           formatDate: _formatDate,
                                           isMarking: markingComplaintId ==
                                               complaint.complaintId,
+                                          isSolving: solvingComplaintId ==
+                                              complaint.complaintId,
                                           onMarkAsRead: () =>
                                               _markAsRead(complaint),
+                                          onMarkAsSolved: () =>
+                                              _markAsSolved(complaint),
                                         ),
                                       ),
                                   ],

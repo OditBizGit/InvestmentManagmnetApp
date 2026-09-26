@@ -26,6 +26,7 @@ class ApiEndpoints {
   static const String deleteBanner = "/api/Project/DeleteBanner";
   static const String userComplaints = "/api/Investor/GetComplaints";
   static const String viewComplaint = "/api/Investor/ViewComplaint";
+  static const String solveComplaint = "/api/Investor/SolveComplaint";
 
 
 

@@ -9,17 +9,31 @@ class ComplaintCard extends StatelessWidget {
     required this.complaint,
     required this.formatDate,
     required this.onMarkAsRead,
+    required this.onMarkAsSolved,
     this.isMarking = false,
+    this.isSolving = false,
   });
 
   final UserComplaintModel complaint;
   final String Function(DateTime date) formatDate;
   final VoidCallback onMarkAsRead;
+  final VoidCallback onMarkAsSolved;
   final bool isMarking;
+  final bool isSolving;
+
+  String get _statusLabel {
+    final normalized = complaint.status.trim().toLowerCase();
+    if (normalized == 'solved') return 'Solved';
+    if (normalized == 'viewed' || normalized == 'read') return 'Viewed';
+    return 'Pending';
+  }
 
   @override
   Widget build(BuildContext context) {
     final isRead = complaint.isRead;
+    final isSolved = complaint.isSolved;
+    final statusLabel = _statusLabel;
+    final canSolve = !isSolved && !isSolving;
 
     return Container(
       width: double.infinity,
@@ -44,6 +58,7 @@ class ComplaintCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
                 radius: 16,
@@ -90,13 +105,63 @@ class ComplaintCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
-              _MetaChip(
-                label: isRead ? 'Viewed' : 'Pending',
-                bg: isRead
-                    ? const Color(0xFFE6F6EC)
-                    : const Color(0xFFFDECEE),
-                fg: isRead ? AppColors.green : const Color(0xFFE06B7A),
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: canSolve ? onMarkAsSolved : null,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSolving)
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Padding(
+                            padding: EdgeInsets.all(2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.green,
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Checkbox(
+                            value: isSolved,
+                            onChanged: canSolve
+                                ? (_) => onMarkAsSolved()
+                                : null,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                            side: const BorderSide(
+                              color: AppColors.border,
+                              width: 1.4,
+                            ),
+                            activeColor: AppColors.green,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 2),
+                      Text(
+                        isSolved ? 'Solved' : 'Mark as Solved',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w600,
+                          color: isSolved
+                              ? AppColors.green
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -130,16 +195,34 @@ class ComplaintCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Created date only
-          Text(
-            formatDate(complaint.createdAt),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 8.5.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.textMuted,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  formatDate(complaint.createdAt),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 8.5.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              _MetaChip(
+                label: statusLabel,
+                bg: isSolved
+                    ? const Color(0xFFE6F6EC)
+                    : isRead
+                        ? const Color(0xFFEAF1FC)
+                        : const Color(0xFFFDECEE),
+                fg: isSolved
+                    ? AppColors.green
+                    : isRead
+                        ? const Color(0xFF5B8DEF)
+                        : const Color(0xFFE06B7A),
+              ),
+            ],
           ),
 
           const SizedBox(height: 10),

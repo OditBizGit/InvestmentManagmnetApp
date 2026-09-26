@@ -50,3 +50,25 @@ final class ViewComplaintFailure extends UserComplaintsState {
 
   final String message;
 }
+
+final class SolveComplaintLoading extends UserComplaintsState {
+  const SolveComplaintLoading({required this.complaintId});
+
+  final int complaintId;
+}
+
+final class SolveComplaintSuccess extends UserComplaintsState {
+  const SolveComplaintSuccess({
+    required this.complaintId,
+    required this.message,
+  });
+
+  final int complaintId;
+  final String message;
+}
+
+final class SolveComplaintFailure extends UserComplaintsState {
+  const SolveComplaintFailure({required this.message});
+
+  final String message;
+}
