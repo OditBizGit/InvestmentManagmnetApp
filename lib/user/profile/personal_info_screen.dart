@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/user/profile/change_request_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:sizer/sizer.dart';
 
@@ -17,6 +16,14 @@ class PersonalInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
+      _PersonalInfoItem(
+        label: 'Name',
+        value: _displayValue(details?.fullName),
+      ),
+      _PersonalInfoItem(
+        label: 'Email Address',
+        value: _displayValue(details?.email),
+      ),
       _PersonalInfoItem(
         label: 'Phone Number',
         value: _displayValue(details?.phoneNumber),
@@ -98,37 +105,37 @@ class PersonalInfoScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(5.w, 1.h, 5.w, 2.5.h),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const ChangeRequestScreen(),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.accent,
-                    side: const BorderSide(color: AppColors.border),
-                    padding: EdgeInsets.symmetric(vertical: 1.8.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(3.w),
-                    ),
-                  ),
-                  child: Text(
-                    'Change Request?',
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: EdgeInsets.fromLTRB(5.w, 1.h, 5.w, 2.5.h),
+            //   child: SizedBox(
+            //     width: double.infinity,
+            //     child: OutlinedButton(
+            //       onPressed: () {
+            //         Navigator.of(context).push(
+            //           MaterialPageRoute<void>(
+            //             builder: (_) => const ChangeRequestScreen(),
+            //           ),
+            //         );
+            //       },
+            //       style: OutlinedButton.styleFrom(
+            //         foregroundColor: AppColors.accent,
+            //         side: const BorderSide(color: AppColors.border),
+            //         padding: EdgeInsets.symmetric(vertical: 1.8.h),
+            //         shape: RoundedRectangleBorder(
+            //           borderRadius: BorderRadius.circular(3.w),
+            //         ),
+            //       ),
+            //       child: Text(
+            //         'Change Request?',
+            //         style: TextStyle(
+            //           fontSize: 15.sp,
+            //           fontWeight: FontWeight.w500,
+            //           color: AppColors.accent,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

@@ -131,6 +131,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _textSecondary = Color(0xFF8A8A8A);
   static const Color _accent = Color(0xFFA28CC1);
+  static const Color _complete = Color(0xFF4DB6AC);
   static const Color _border = Color(0xFFE8E4EE);
 
   bool _isLoadingStages = true;
@@ -199,13 +200,16 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
       if (!mounted || _graphRequestId != requestId) return;
 
       setState(() {
-        _graphPoints = List.unmodifiable(
-          [...points]..sort((a, b) {
-            final aDate = a.date ?? DateTime.fromMillisecondsSinceEpoch(0);
-            final bDate = b.date ?? DateTime.fromMillisecondsSinceEpoch(0);
-            return aDate.compareTo(bDate);
-          }),
-        );
+        final sorted = [...points]..sort((a, b) {
+          final aDate = a.date ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bDate = b.date ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return aDate.compareTo(bDate);
+        });
+        // X-axis shows at most the latest 6 dates.
+        final latest = sorted.length > 6
+            ? sorted.sublist(sorted.length - 6)
+            : sorted;
+        _graphPoints = List.unmodifiable(latest);
         _isLoadingGraph = false;
       });
     } catch (_) {
@@ -320,7 +324,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      padding: EdgeInsets.fromLTRB(4.w, 2.h, 5.w, 2.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -408,6 +412,16 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
                                         ? selectedOffsets[
                                             _selectedPointIndex!]
                                         : null;
+                                final selectedIsComplete =
+                                    _selectedPointIndex != null &&
+                                        _selectedPointIndex! >= 0 &&
+                                        _selectedPointIndex! <
+                                            chartValues.length &&
+                                        chartValues[_selectedPointIndex!] >=
+                                            1.0;
+                                final selectedColor = selectedIsComplete
+                                    ? _complete
+                                    : _accent;
 
                                 return GestureDetector(
                                   behavior: HitTestBehavior.opaque,
@@ -426,6 +440,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
                                             ),
                                             selectedIndex:
                                                 _selectedPointIndex,
+                                            selectedColor: selectedColor,
                                           ),
                                         ),
                                       ),
@@ -435,6 +450,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
                                           offset: selectedOffset,
                                           label: selectedLabel,
                                           chartSize: chartSize,
+                                          color: selectedColor,
                                         ),
                                     ],
                                   ),
@@ -453,21 +469,40 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
               children: [
                 SizedBox(width: _ChartPercentAxis.width + 1.w),
                 Expanded(
-                  child: Row(
-                    mainAxisAlignment: chartLabels.length == 1
-                        ? MainAxisAlignment.end
-                        : MainAxisAlignment.spaceBetween,
-                    children: [
-                      for (final label in chartLabels)
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w400,
-                            color: _textSecondary,
-                          ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final style = TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                        color: _textSecondary,
+                      );
+                      return SizedBox(
+                        height: (style.fontSize ?? 13) * 1.35,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            for (var i = 0; i < chartLabels.length; i++)
+                              Positioned(
+                                left: _WorkProgressChartPainter.xAt(
+                                  i,
+                                  chartLabels.length,
+                                  width,
+                                ),
+                                top: 0,
+                                child: FractionalTranslation(
+                                  translation: const Offset(-0.5, 0),
+                                  child: Text(
+                                    chartLabels[i],
+                                    softWrap: false,
+                                    style: style,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -566,37 +601,62 @@ class _WorkProgressGraphFooterShimmer extends StatelessWidget {
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
 
+  /// Matches [_WorkProgressGraphShimmer] placeholder point count.
+  static const List<String> _placeholderLabels = [
+    '01-JAN',
+    '02-JAN',
+    '03-JAN',
+    '04-JAN',
+    '05-JAN',
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontSize: 12.sp,
+      fontWeight: FontWeight.w400,
+      color: Colors.transparent,
+    );
+
     final child = Row(
       children: [
         SizedBox(width: _ChartPercentAxis.width + 1.w),
         Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (final label in const [
-                '01-JAN',
-                '02-JAN',
-                '03-JAN',
-                '04-JAN',
-                '05-JAN',
-              ])
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.transparent,
-                    ),
-                  ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              return SizedBox(
+                height: (style.fontSize ?? 12) * 1.35,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    for (var i = 0; i < _placeholderLabels.length; i++)
+                      Positioned(
+                        left: _WorkProgressChartPainter.xAt(
+                          i,
+                          _placeholderLabels.length,
+                          width,
+                        ),
+                        top: 0,
+                        child: FractionalTranslation(
+                          translation: const Offset(-0.5, 0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(
+                              _placeholderLabels[i],
+                              softWrap: false,
+                              style: style,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -621,7 +681,7 @@ class _ChartPercentAxis extends StatelessWidget {
   static const List<String> _labels = ['100%', '75%', '50%', '25%', '0%'];
 
   /// Fixed width so day labels can align under the chart area.
-  static double get width => 7.w;
+  static double get width => 8.w;
 
   @override
   Widget build(BuildContext context) {
@@ -652,13 +712,13 @@ class _ChartPercentTooltip extends StatelessWidget {
     required this.offset,
     required this.label,
     required this.chartSize,
+    required this.color,
   });
 
   final Offset offset;
   final String label;
   final Size chartSize;
-
-  static const Color _accent = Color(0xFFA28CC1);
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -683,7 +743,7 @@ class _ChartPercentTooltip extends StatelessWidget {
           height: tooltipHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _accent,
+            color: color,
             borderRadius: BorderRadius.circular(4),
             boxShadow: [
               BoxShadow(
@@ -1010,26 +1070,28 @@ class _WorkProgressChartPainter extends CustomPainter {
     required this.lineColor,
     required this.fillColor,
     this.selectedIndex,
+    this.selectedColor,
   });
 
   final List<double> values;
   final Color lineColor;
   final Color fillColor;
   final int? selectedIndex;
+  final Color? selectedColor;
+
+  /// X position shared by chart points, guide line, and date label centers.
+  static double xAt(int index, int count, double width) {
+    if (count <= 1) return width;
+    return width * (index / (count - 1));
+  }
 
   static List<Offset> pointOffsets(List<double> values, Size size) {
     if (values.isEmpty) return const [];
 
-    if (values.length == 1) {
-      // Single date: place the real point on the right (matches footer).
-      final y = size.height * (1 - values.first.clamp(0.0, 1.0));
-      return [Offset(size.width, y)];
-    }
-
     return [
       for (var i = 0; i < values.length; i++)
         Offset(
-          size.width * (i / (values.length - 1)),
+          xAt(i, values.length, size.width),
           size.height * (1 - values[i].clamp(0.0, 1.0)),
         ),
     ];
@@ -1092,29 +1154,20 @@ class _WorkProgressChartPainter extends CustomPainter {
 
     canvas.drawPath(path, linePaint);
 
-    final dotFill = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    final dotStroke = Paint()
-      ..color = lineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+    final index = selectedIndex;
+    if (index != null && index >= 0 && index < points.length) {
+      final point = points[index];
+      final guidePaint = Paint()
+        ..color = selectedColor ?? lineColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5
+        ..strokeCap = StrokeCap.round;
 
-    for (var i = 0; i < points.length; i++) {
-      final isSelected = selectedIndex == i;
-      final radius = isSelected ? 6.0 : 4.0;
-      canvas.drawCircle(points[i], radius, dotFill);
-      canvas.drawCircle(points[i], radius, dotStroke);
-
-      if (isSelected) {
-        canvas.drawCircle(
-          points[i],
-          10,
-          Paint()
-            ..color = lineColor.withValues(alpha: 0.18)
-            ..style = PaintingStyle.fill,
-        );
-      }
+      canvas.drawLine(
+        Offset(point.dx, size.height),
+        point,
+        guidePaint,
+      );
     }
   }
 
@@ -1123,6 +1176,7 @@ class _WorkProgressChartPainter extends CustomPainter {
     return oldDelegate.values != values ||
         oldDelegate.lineColor != lineColor ||
         oldDelegate.fillColor != fillColor ||
-        oldDelegate.selectedIndex != selectedIndex;
+        oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.selectedColor != selectedColor;
   }
 }

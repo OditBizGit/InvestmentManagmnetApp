@@ -1,4 +1,5 @@
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
+import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investment_due_date_model.dart';
 
 class InvestorDetailsModel {
@@ -91,8 +92,12 @@ class InvestorDetailsModel {
   factory InvestorDetailsModel.fromJson(Map<String, dynamic> json) {
     return InvestorDetailsModel(
       userId: _readInt(json['userId'] ?? json['UserId']),
-      username: (json['username'] ?? json['Username'] ?? '').toString(),
-      fullName: (json['fullName'] ?? json['FullName'] ?? '').toString(),
+      username: (json['username'] ?? json['Username'] ?? '')
+          .toString()
+          .toTitleCase,
+      fullName: (json['fullName'] ?? json['FullName'] ?? '')
+          .toString()
+          .toTitleCase,
       email: (json['email'] ?? json['Email'] ?? '').toString(),
       phoneNumber: _readString(json['phoneNumber'] ?? json['PhoneNumber']),
       alternativeNumber: _readString(

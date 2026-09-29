@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
+import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/banner_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/banners_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
@@ -49,7 +50,7 @@ class HomeRepository {
     final investorCode = details.investorCode?.trim();
 
     return HomeProfileModel(
-      displayName: displayName,
+      displayName: displayName.toTitleCase,
       investorCode: (investorCode != null && investorCode.isNotEmpty)
           ? investorCode
           : localProfile.investorCode,
@@ -157,7 +158,7 @@ class HomeRepository {
     final investorCode = _localStorage.getInvestorCode()?.trim();
 
     return HomeProfileModel(
-      displayName: displayName,
+      displayName: displayName.toTitleCase,
       investorCode:
           (investorCode != null && investorCode.isNotEmpty) ? investorCode : null,
       profileImageUrl: resolveMediaUrl(_localStorage.getProfileImage()),

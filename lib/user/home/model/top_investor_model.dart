@@ -1,4 +1,5 @@
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
+import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
 
 class TopInvestorModel {
   const TopInvestorModel({
@@ -30,7 +31,9 @@ class TopInvestorModel {
   factory TopInvestorModel.fromJson(Map<String, dynamic> json) {
     return TopInvestorModel(
       userId: _readInt(json['userId'] ?? json['UserId']),
-      fullName: (json['fullName'] ?? json['FullName'] ?? '').toString(),
+      fullName: (json['fullName'] ?? json['FullName'] ?? '')
+          .toString()
+          .toTitleCase,
       investorCode: _readString(json['investorCode'] ?? json['InvestorCode']),
       profileImage: _readString(json['profileImage'] ?? json['ProfileImage']),
       investorType: _readString(json['investorType'] ?? json['InvestorType']),

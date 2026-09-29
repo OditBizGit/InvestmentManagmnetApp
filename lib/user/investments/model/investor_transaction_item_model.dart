@@ -1,3 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
+
 class InvestorTransactionItemModel {
   final int transactionId;
   final int userId;
@@ -35,7 +37,9 @@ class InvestorTransactionItemModel {
       userId: _readInt(json['userId'] ?? json['UserId']),
       investorCode:
           (json['investorCode'] ?? json['InvestorCode'] ?? '').toString(),
-      fullName: (json['fullName'] ?? json['FullName'] ?? '').toString(),
+      fullName: (json['fullName'] ?? json['FullName'] ?? '')
+          .toString()
+          .toTitleCase,
       date: _readDate(json['date'] ?? json['Date']),
       entryNo: _readInt(json['entryNo'] ?? json['EntryNo']),
       investmentAmount: _readDouble(

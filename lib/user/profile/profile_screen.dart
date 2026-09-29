@@ -41,7 +41,20 @@ class _UserProfileView extends StatelessWidget {
     final confirmed = await showUserLogoutConfirmDialog(context);
     if (!confirmed || !context.mounted) return;
 
-    await context.read<LoginCubit>().logout();
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.accent,
+        ),
+      ),
+    );
+
+    await Future.wait([
+      Future<void>.delayed(const Duration(seconds: 1)),
+      context.read<LoginCubit>().logout(),
+    ]);
     if (!context.mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(

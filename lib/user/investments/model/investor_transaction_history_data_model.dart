@@ -1,4 +1,5 @@
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
+import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
 import 'package:maribel_wellness_centre_application/user/investments/model/investor_transaction_item_model.dart';
 
 class InvestorTransactionHistoryDataModel {
@@ -45,8 +46,9 @@ class InvestorTransactionHistoryDataModel {
       userId: _readInt(json['userId'] ?? json['UserId']),
       investorCode:
           (json['investorCode'] ?? json['InvestorCode'] ?? '').toString(),
-      fullName: (json['fullName'] ?? json['FullName'] ?? '').toString(),
-      profileImage: _readString(json['profileImage'] ?? json['ProfileImage']),
+      fullName: (json['fullName'] ?? json['FullName'] ?? '')
+          .toString()
+          .toTitleCase,
       projectId: _readInt(json['projectId'] ?? json['ProjectId']),
       projectName: (json['projectName'] ?? json['ProjectName'] ?? '').toString(),
       projectDescription:
