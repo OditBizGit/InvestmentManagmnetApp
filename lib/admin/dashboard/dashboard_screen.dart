@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dashboard_overview.dart';
-import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dashboard_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -37,7 +37,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   horizontalPadding,
                   16,
                 ),
-                child: const DashboardTopBar(),
+                child: const AdminTopBar(),
               ),
               Expanded(
                 child: Scrollbar(

@@ -241,8 +241,7 @@ class AddPhaseRepository {
         final responseData = response.data;
 
         if (responseData is! Map) {
-          log('Work Phase List Error: Response is not a Map');
-          return [];
+          throw Exception('Invalid work phase list response');
         }
 
         final map = Map<String, dynamic>.from(responseData);
@@ -255,46 +254,43 @@ class AddPhaseRepository {
             status?.toString().toLowerCase() == 'success';
 
         if (!isSuccess) {
-          log(
-            'Work Phase List API Error: '
-                '${map['message'] ?? map['Message'] ?? 'Something went wrong'}',
-          );
-          return [];
+          final message = (map['message'] ??
+                  map['Message'] ??
+                  'Failed to load work progress')
+              .toString();
+          throw Exception(message);
         }
 
         final data = map['data'] ?? map['Data'];
 
+        if (data == null) return [];
         if (data is! List) {
-          log('Work Phase List Error: Data is not a List');
-          return [];
+          throw Exception('Invalid work phase list data');
         }
 
         return data
             .whereType<Map>()
             .map(
               (item) => WorkPhaseListModel.fromJson(
-            Map<String, dynamic>.from(item),
-          ),
-        )
+                Map<String, dynamic>.from(item),
+              ),
+            )
             .toList();
       }
 
-      log(
-        'Work Phase List API failed with status code: '
-            '${response.statusCode}',
+      throw Exception(
+        'Failed to load work progress (status ${response.statusCode})',
       );
-
-      return [];
     } on DioException catch (e) {
       log('Work Phase List Dio Error: ${e.message}');
       log('Work Phase List Dio Response: ${e.response?.data}');
-      return [];
+      rethrow;
     } catch (e, stackTrace) {
       log(
         'Work Phase List Error: $e',
         stackTrace: stackTrace,
       );
-      return [];
+      rethrow;
     }
   }
 }

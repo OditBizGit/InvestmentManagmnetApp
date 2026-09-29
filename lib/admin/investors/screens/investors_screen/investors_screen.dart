@@ -6,8 +6,8 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_overview_section.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_table_section.dart';
-import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:maribel_wellness_centre_application/core/utils/success_screen.dart';
@@ -102,7 +102,7 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
                       horizontalPadding,
                       16,
                     ),
-                    child: const InvestorsTopBar(),
+                    child: const AdminTopBar(),
                   ),
                   Expanded(
                     child: RefreshIndicator(

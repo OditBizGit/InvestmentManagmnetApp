@@ -4,18 +4,24 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/funding_investor_list_model.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_overview_section.dart';
-import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_payments_top_bar.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_transactions_table.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 import '../add_fund/add_new_fund.dart';
 import '../transaction_details/transaction_detail_screen.dart';
 
 class AdminFundingPaymentsScreen extends StatelessWidget {
-  const AdminFundingPaymentsScreen({super.key});
+  const AdminFundingPaymentsScreen({
+    super.key,
+    this.isActive = false,
+  });
+
+  /// When true, this tab is visible in the admin [IndexedStack].
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -33,14 +39,16 @@ class AdminFundingPaymentsScreen extends StatelessWidget {
           investorsRepository: context.read<InvestorsRepository>(),
           paymentRepository: context.read<InvestorPaymentRepository>(),
         )..fetchFundingInvestors(),
-        child: const _AdminFundingPaymentsView(),
+        child: _AdminFundingPaymentsView(isActive: isActive),
       ),
     );
   }
 }
 
 class _AdminFundingPaymentsView extends StatefulWidget {
-  const _AdminFundingPaymentsView();
+  const _AdminFundingPaymentsView({required this.isActive});
+
+  final bool isActive;
 
   @override
   State<_AdminFundingPaymentsView> createState() =>
@@ -50,6 +58,15 @@ class _AdminFundingPaymentsView extends StatefulWidget {
 class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
   FundingTransaction? _selectedTransaction;
   bool _showAddFund = false;
+
+  @override
+  void didUpdateWidget(covariant _AdminFundingPaymentsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // IndexedStack keeps this screen alive — refresh when the tab is opened again.
+    if (widget.isActive && !oldWidget.isActive) {
+      context.read<FundingPaymentsCubit>().fetchFundingInvestors();
+    }
+  }
 
   void _openTransaction(FundingTransaction transaction) {
     setState(() {
@@ -227,7 +244,7 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
                             horizontalPadding,
                             16,
                           ),
-                          child: const FundingPaymentsTopBar(),
+                          child: const AdminTopBar(),
                         ),
                         Expanded(
                           child: SingleChildScrollView(

@@ -229,26 +229,9 @@ class _TableToolbar extends StatelessWidget {
           ),
         );
 
-        final filters = isCompact
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: _DateRangeButton(onTap: () {}),
-                  ),
-                  const SizedBox(height: 10),
-                  _ToolbarSearchField(onChanged: onSearchChanged),
-                ],
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _DateRangeButton(onTap: () {}),
-                  const SizedBox(width: 10),
-                  _ToolbarSearchField(onChanged: onSearchChanged),
-                ],
-              );
+        final searchField = _ToolbarSearchField(
+          onChanged: onSearchChanged,
+        );
 
         if (isCompact) {
           return Column(
@@ -256,7 +239,10 @@ class _TableToolbar extends StatelessWidget {
             children: [
               title,
               const SizedBox(height: 12),
-              filters,
+              Align(
+                alignment: Alignment.centerLeft,
+                child: searchField,
+              ),
             ],
           );
         }
@@ -265,7 +251,7 @@ class _TableToolbar extends StatelessWidget {
           children: [
             Expanded(child: title),
             const SizedBox(width: 12),
-            filters,
+            searchField,
           ],
         );
       },
@@ -273,59 +259,6 @@ class _TableToolbar extends StatelessWidget {
   }
 }
 
-class _DateRangeButton extends StatelessWidget {
-  const _DateRangeButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                ImageConstants.calender,
-                width: 16,
-                height: 16,
-                colorFilter: const ColorFilter.mode(
-                  AppColors.textMuted,
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '01 Jan, 2026–30 Jun, 2026',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                color: AppColors.textMuted,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _ToolbarSearchField extends StatelessWidget {
   const _ToolbarSearchField({required this.onChanged});

@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:sizer/sizer.dart';
 
-class WorkProgressTopBar extends StatelessWidget {
-  const WorkProgressTopBar({
-    super.key,
-    this.username = 'Username',
-    this.role = 'Admin',
-  });
+class AdminTopBar extends StatelessWidget {
+  const AdminTopBar({super.key});
 
-  final String username;
-  final String role;
+  String _displayName(LocalStorage storage) {
+    final fullName = storage.getFullName()?.trim();
+    if (fullName != null && fullName.isNotEmpty) return fullName;
+
+    final username = storage.getUsername()?.trim();
+    if (username != null && username.isNotEmpty) return username;
+
+    return 'Admin';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final storage = getIt<LocalStorage>();
+    final username = _displayName(storage);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 560;
@@ -68,6 +76,14 @@ class WorkProgressTopBar extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
+                              'Welcome back',
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                            Text(
                               username,
                               style: TextStyle(
                                 fontSize: 12.sp,
@@ -75,22 +91,14 @@ class WorkProgressTopBar extends StatelessWidget {
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            Text(
-                              role,
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.accent,
-                              ),
-                            ),
                           ],
                         ),
                         const SizedBox(width: 6),
-                        const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: AppColors.textMuted,
-                          size: 20,
-                        ),
+                        // const Icon(
+                        //   Icons.keyboard_arrow_down_rounded,
+                        //   color: AppColors.textMuted,
+                        //   size: 20,
+                        // ),
                       ],
                     ],
                   ),

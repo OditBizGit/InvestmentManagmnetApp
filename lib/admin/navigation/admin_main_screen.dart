@@ -73,11 +73,15 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       case AdminDrawerItem.investors:
         return const AdminInvestorsScreen();
       case AdminDrawerItem.fundingPayments:
-        return const AdminFundingPaymentsScreen();
+        return AdminFundingPaymentsScreen(
+          isActive: _selectedItem == AdminDrawerItem.fundingPayments,
+        );
       case AdminDrawerItem.workProgress:
         return const AdminWorkProgressScreen();
       case AdminDrawerItem.reports:
-        return const AdminReportsScreen();
+        return AdminReportsScreen(
+          isActive: _selectedItem == AdminDrawerItem.reports,
+        );
       case AdminDrawerItem.settings:
         return const AdminSettingsScreen();
     }

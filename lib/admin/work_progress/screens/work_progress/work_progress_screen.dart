@@ -5,8 +5,8 @@ import 'package:maribel_wellness_centre_application/admin/work_progress/screens/
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/widgets/work_progress_overview_section.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/widgets/work_progress_timeline_table.dart';
-import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/widgets/work_progress_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
@@ -66,7 +66,7 @@ class _AdminWorkProgressScreenState extends State<AdminWorkProgressScreen> {
                         horizontalPadding,
                         16,
                       ),
-                      child: const WorkProgressTopBar(),
+                      child: const AdminTopBar(),
                     ),
                     Expanded(
                       child: SingleChildScrollView(

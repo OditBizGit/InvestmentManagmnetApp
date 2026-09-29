@@ -1,10 +1,17 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/reports/model/funding_payment_overview_model.dart';
+import 'package:maribel_wellness_centre_application/admin/reports/model/investor_type_count_model.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
+
+import '../../cubit/report__cubit.dart';
 
 class ReportsDetailsSection extends StatelessWidget {
   const ReportsDetailsSection({
@@ -112,20 +119,20 @@ class _FundingPaymentsOverviewCard extends StatefulWidget {
 
 class _FundingPaymentsOverviewCardState
     extends State<_FundingPaymentsOverviewCard> {
-  static const _months = [
-    'Jan 2026',
-    'Feb 2026',
-    'Mar 2026',
-    'Apr 2026',
-    'May 2026',
-    'Jun 2026',
-  ];
+  late DateTime _fromDate;
+  late DateTime _toDate;
 
-  static const _funding = [9.0, 11.5, 13.5, 15.5, 17.5, 19.0];
-  static const _payments = [5.5, 7.0, 8.5, 10.0, 11.5, 13.0];
-
-  DateTime _fromDate = DateTime(2026, 1, 1);
-  DateTime _toDate = DateTime(2026, 6, 30);
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _toDate = DateTime(now.year, now.month, now.day);
+    _fromDate = DateTime(now.year, now.month - 5, 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fetchOverview();
+    });
+  }
 
   String _formatDate(DateTime date) {
     const months = [
@@ -145,13 +152,60 @@ class _FundingPaymentsOverviewCardState
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
   }
 
+  String _apiDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  static const int _maxRangeMonths = 12;
+
+  DateTime _shiftMonths(DateTime date, int months) {
+    final totalMonths = date.year * 12 + (date.month - 1) + months;
+    final year = totalMonths ~/ 12;
+    final month = totalMonths % 12 + 1;
+    final lastDay = DateTime(year, month + 1, 0).day;
+    final day = date.day > lastDay ? lastDay : date.day;
+    return DateTime(year, month, day);
+  }
+
+  bool _isWithinTwelveMonths(DateTime from, DateTime to) {
+    final maxTo = _shiftMonths(from, _maxRangeMonths);
+    return !to.isAfter(maxTo);
+  }
+
+  void _fetchOverview() {
+    context.read<ReportCubit>().fetchFundingPaymentOverview(
+          fromDate: _apiDate(_fromDate),
+          toDate: _apiDate(_toDate),
+        );
+  }
+
   Future<void> _pickDate({required bool isFrom}) async {
-    final initial = isFrom ? _fromDate : _toDate;
+    // Calendar is limited so From–To span is at most 12 months.
+    final DateTime firstDate;
+    final DateTime lastDate;
+    if (isFrom) {
+      firstDate = _shiftMonths(_toDate, -_maxRangeMonths);
+      lastDate = _toDate;
+    } else {
+      firstDate = _fromDate;
+      lastDate = _shiftMonths(_fromDate, _maxRangeMonths);
+    }
+
+    var initial = isFrom ? _fromDate : _toDate;
+    if (initial.isBefore(firstDate)) initial = firstDate;
+    if (initial.isAfter(lastDate)) initial = lastDate;
+
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(DateTime.now().year + 10),
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: isFrom
+          ? 'Select from date (max 12 months range)'
+          : 'Select to date (max 12 months range)',
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -167,25 +221,66 @@ class _FundingPaymentsOverviewCardState
     );
     if (picked == null || !mounted) return;
 
-    setState(() {
-      if (isFrom) {
-        _fromDate = picked;
-        if (_toDate.isBefore(_fromDate)) {
-          _toDate = _fromDate;
-        }
-      } else {
-        _toDate = picked.isBefore(_fromDate) ? _fromDate : picked;
+    var nextFrom = _fromDate;
+    var nextTo = _toDate;
+
+    if (isFrom) {
+      nextFrom = picked;
+      if (nextTo.isBefore(nextFrom)) {
+        nextTo = nextFrom;
+      } else if (!_isWithinTwelveMonths(nextFrom, nextTo)) {
+        nextTo = _shiftMonths(nextFrom, _maxRangeMonths);
+        AppToast.info(
+          'Date range limited to 12 months',
+          title: 'Funding & Payments Overview',
+          context: context,
+        );
       }
+    } else {
+      nextTo = picked;
+      if (nextTo.isBefore(nextFrom)) {
+        nextFrom = nextTo;
+      } else if (!_isWithinTwelveMonths(nextFrom, nextTo)) {
+        nextFrom = _shiftMonths(nextTo, -_maxRangeMonths);
+        AppToast.info(
+          'Date range limited to 12 months',
+          title: 'Funding & Payments Overview',
+          context: context,
+        );
+      }
+    }
+
+    setState(() {
+      _fromDate = nextFrom;
+      _toDate = nextTo;
     });
+    _fetchOverview();
+  }
+
+  String _monthLabel(FundingPaymentMonthModel item) {
+    final month = item.month.trim();
+    if (month.isNotEmpty) return month;
+    final parsed = DateTime.tryParse(item.monthDate);
+    if (parsed == null) return '-';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[parsed.month - 1]} ${parsed.year}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final maxY = [
-      ..._funding,
-      ..._payments,
-    ].fold<double>(0, (max, value) => value > max ? value : max);
-
     return _PanelCard(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       child: Column(
@@ -212,7 +307,7 @@ class _FundingPaymentsOverviewCardState
                   SizedBox(width: 16),
                   _LegendDot(
                     color: Color(0xFF9EC5F0),
-                    label: 'Payments',
+                    label: 'Pending Amount',
                   ),
                 ],
               );
@@ -265,11 +360,96 @@ class _FundingPaymentsOverviewCardState
           const SizedBox(height: 14),
           SizedBox(
             height: 190,
-            child: _GroupedBarLineChart(
-              months: _months,
-              funding: _funding,
-              payments: _payments,
-              maxY: maxY <= 0 ? 1 : maxY * 1.18,
+            child: BlocBuilder<ReportCubit, ReportState>(
+              buildWhen: (previous, current) =>
+                  previous.fundingOverviewLoading !=
+                      current.fundingOverviewLoading ||
+                  previous.fundingOverviewError !=
+                      current.fundingOverviewError ||
+                  previous.fundingOverview != current.fundingOverview,
+              builder: (context, state) {
+                final monthsData = state.fundingOverviewMonths;
+
+                if (state.fundingOverviewLoading && monthsData.isEmpty) {
+                  return const Center(
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  );
+                }
+
+                final error = state.fundingOverviewError;
+                if (error != null && monthsData.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            error,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.error,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _fetchOverview,
+                            child: Text(
+                              'Retry',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (monthsData.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No data found',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                }
+
+                final months = monthsData.map(_monthLabel).toList();
+                final funding = monthsData
+                    .map((item) => item.fundingReceived)
+                    .toList();
+                final payments = monthsData
+                    .map((item) => item.pendingAmount)
+                    .toList();
+                final maxY = [
+                  ...funding,
+                  ...payments,
+                ].fold<double>(0, (max, value) => value > max ? value : max);
+
+                return _GroupedBarLineChart(
+                  months: months,
+                  funding: funding,
+                  payments: payments,
+                  maxY: maxY <= 0 ? 1 : maxY * 1.18,
+                );
+              },
             ),
           ),
         ],
@@ -474,10 +654,18 @@ class _GroupedBarLinePainter extends CustomPainter {
   static const _gridColor = Color(0xFFEDEDED);
   static const _topLabelSpace = 22.0;
 
-  static String _formatCr(double value) {
+  static String _formatAmount(double value) {
     final isWhole = value == value.roundToDouble();
-    final raw = isWhole ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
-    return '$raw Cr';
+    final raw = isWhole ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
   }
 
   @override
@@ -538,7 +726,7 @@ class _GroupedBarLinePainter extends CustomPainter {
       _drawValueLabel(
         canvas,
         chartWidth: size.width,
-        text: _formatCr(funding[i]),
+        text: _formatAmount(funding[i]),
         centerX: fundingLeft + barWidth / 2,
         barTop: fundingTop,
         style: baseStyle.copyWith(color: _fundingColor),
@@ -546,7 +734,7 @@ class _GroupedBarLinePainter extends CustomPainter {
       _drawValueLabel(
         canvas,
         chartWidth: size.width,
-        text: _formatCr(payments[i]),
+        text: _formatAmount(payments[i]),
         centerX: paymentsLeft + barWidth / 2,
         barTop: paymentsTop,
         style: baseStyle.copyWith(color: const Color(0xFF5B8DEF)),
@@ -624,14 +812,29 @@ class _WorkProgressReportCard extends StatelessWidget {
   final VoidCallback? onViewDetails;
   final bool fillHeight;
 
-  static const _items = [
-    _ProgressItem(label: 'Foundation', percent: 100, color: Color(0xFF1BA752)),
-    _ProgressItem(label: 'Structure', percent: 85, color: Color(0xFF1BA752)),
-    _ProgressItem(label: 'Electrical', percent: 60, color: Color(0xFFE8A03D)),
-    _ProgressItem(label: 'Plumbing', percent: 45, color: Color(0xFFE06B7A)),
-    _ProgressItem(label: 'Interior', percent: 20, color: Color(0xFFE06B7A)),
-    _ProgressItem(label: 'External Works', percent: 0, color: Color(0xFFE06B7A)),
-  ];
+  Color _progressColor(int percent, String status) {
+    final normalized = status.trim().toLowerCase();
+    if (normalized.contains('complete') || percent >= 100) {
+      return const Color(0xFF1BA752);
+    }
+    if (normalized.contains('progress') || percent >= 50) {
+      return const Color(0xFFE8A03D);
+    }
+    return const Color(0xFFE06B7A);
+  }
+
+  List<_ProgressItem> _mapPhases(List<WorkPhaseListModel> phases) {
+    return phases.map((phase) {
+      final percent = phase.progress.clamp(0, 100);
+      return _ProgressItem(
+        label: phase.stageName.trim().isEmpty
+            ? 'Untitled stage'
+            : phase.stageName.trim(),
+        percent: percent,
+        color: _progressColor(percent, phase.status),
+      );
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -650,16 +853,6 @@ class _WorkProgressReportCard extends StatelessWidget {
       ],
     );
 
-    final body = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < _items.length; i++) ...[
-          if (i > 0) const SizedBox(height: 22),
-          _InlineProgressRow(item: _items[i]),
-        ],
-      ],
-    );
-
     return _PanelCard(
       fillHeight: fillHeight,
       child: Column(
@@ -668,12 +861,114 @@ class _WorkProgressReportCard extends StatelessWidget {
           header,
           const SizedBox(height: 18),
           if (fillHeight)
-            Expanded(child: SingleChildScrollView(child: body))
+            Expanded(
+              child: BlocBuilder<ReportCubit, ReportState>(
+                buildWhen: (previous, current) =>
+                    previous.workProgressLoading !=
+                        current.workProgressLoading ||
+                    previous.workProgressError != current.workProgressError ||
+                    previous.phases != current.phases,
+                builder: (context, state) =>
+                    _buildBody(context, state, scrollable: true),
+              ),
+            )
           else
-            body,
+            BlocBuilder<ReportCubit, ReportState>(
+              buildWhen: (previous, current) =>
+                  previous.workProgressLoading != current.workProgressLoading ||
+                  previous.workProgressError != current.workProgressError ||
+                  previous.phases != current.phases,
+              builder: (context, state) =>
+                  _buildBody(context, state, scrollable: false),
+            ),
         ],
       ),
     );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    ReportState state, {
+    required bool scrollable,
+  }) {
+    if (state.workProgressLoading && state.phases.isEmpty) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: AppColors.accent,
+          ),
+        ),
+      );
+    }
+
+    final error = state.workProgressError;
+    if (error != null && state.phases.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10.5.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () =>
+                    context.read<ReportCubit>().fetchWorkPhaseList(),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final items = _mapPhases(state.phases);
+
+    if (items.isEmpty) {
+      return Center(
+        child: Text(
+          'No work progress data',
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+    }
+
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(height: 22),
+          _InlineProgressRow(item: items[i]),
+        ],
+      ],
+    );
+
+    if (scrollable) {
+      return SingleChildScrollView(child: body);
+    }
+    return body;
   }
 }
 
@@ -682,11 +977,13 @@ class _ProgressItem {
     required this.label,
     required this.percent,
     required this.color,
+    this.trailing,
   });
 
   final String label;
   final int percent;
   final Color color;
+  final String? trailing;
 }
 
 class _InlineProgressRow extends StatelessWidget {
@@ -726,7 +1023,7 @@ class _InlineProgressRow extends StatelessWidget {
         SizedBox(
           width: 40,
           child: Text(
-            '${item.percent}%',
+            '${item.percent}',
             textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 10.sp,
@@ -753,32 +1050,14 @@ class _InvestorSummaryCard extends StatelessWidget {
   final VoidCallback? onViewAll;
   final bool fillHeight;
 
-  static const _statusItems = [
-    _ProgressItem(
-      label: 'Individual Investors',
-      percent: 45,
-      color: Color(0xFFA28CC1),
-    ),
-    _ProgressItem(
-      label: 'Corporate Investors',
-      percent: 30,
-      color: Color(0xFF9EC5F0),
-    ),
-    _ProgressItem(
-      label: 'Institutional Investors',
-      percent: 15,
-      color: Color(0xFF1BA752),
-    ),
-    _ProgressItem(
-      label: 'Angel Investors',
-      percent: 8,
-      color: Color(0xFFE06B7A),
-    ),
-    _ProgressItem(
-      label: 'Other',
-      percent: 2,
-      color: Color(0xFF7B8CDE),
-    ),
+  static const _typeColors = [
+    Color(0xFFA28CC1),
+    Color(0xFF9EC5F0),
+    Color(0xFF1BA752),
+    Color(0xFFE06B7A),
+    Color(0xFF7B8CDE),
+    Color(0xFFE0A86B),
+    Color(0xFF5B9A9A),
   ];
 
   @override
@@ -795,9 +1074,114 @@ class _InvestorSummaryCard extends StatelessWidget {
             ),
           ),
         ),
-
       ],
     );
+
+    return _PanelCard(
+      fillHeight: fillHeight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          header,
+          const SizedBox(height: 16),
+          if (fillHeight)
+            Expanded(
+              child: BlocBuilder<ReportCubit, ReportState>(
+                buildWhen: (previous, current) =>
+                    previous.investorTypeCountLoading !=
+                        current.investorTypeCountLoading ||
+                    previous.investorTypeCountError !=
+                        current.investorTypeCountError ||
+                    previous.investorTypeCount != current.investorTypeCount,
+                builder: (context, state) =>
+                    _buildBody(context, state, scrollable: true),
+              ),
+            )
+          else
+            BlocBuilder<ReportCubit, ReportState>(
+              buildWhen: (previous, current) =>
+                  previous.investorTypeCountLoading !=
+                      current.investorTypeCountLoading ||
+                  previous.investorTypeCountError !=
+                      current.investorTypeCountError ||
+                  previous.investorTypeCount != current.investorTypeCount,
+              builder: (context, state) =>
+                  _buildBody(context, state, scrollable: false),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    ReportState state, {
+    required bool scrollable,
+  }) {
+    if (state.investorTypeCountLoading && state.investorTypeCount == null) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: AppColors.accent,
+          ),
+        ),
+      );
+    }
+
+    final error = state.investorTypeCountError;
+    if (error != null && state.investorTypeCount == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10.5.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () =>
+                    context.read<ReportCubit>().fetchInvestorTypeCount(),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (!state.hasInvestorTypeCountData) {
+      return Center(
+        child: Text(
+          'No data found',
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+    }
+
+    final data = state.investorTypeCount!;
+    final statusItems = _mapInvestorTypes(data);
 
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -805,27 +1189,13 @@ class _InvestorSummaryCard extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final stack = constraints.maxWidth < 420;
-            final cards = const [
+            final cards = [
               _InvestorStatChip(
                 label: 'Active Investors',
-                value: '92',
+                value: '${data.totalInvestors}',
                 icon: Icons.groups_outlined,
-                iconColor: Color(0xFF1BA752),
-                background: Color(0xFFE8F7EE),
-              ),
-              _InvestorStatChip(
-                label: 'Pending Payments',
-                value: '12',
-                icon: Icons.access_time_rounded,
-                iconColor: Color(0xFFE8A03D),
-                background: Color(0xFFFFF3E8),
-              ),
-              _InvestorStatChip(
-                label: 'Completed Payments',
-                value: '35',
-                icon: Icons.check_circle_outline_rounded,
-                iconColor: Color(0xFF5B8DEF),
-                background: Color(0xFFEAF1FC),
+                iconColor: const Color(0xFF1BA752),
+                background: const Color(0xFFE8F7EE),
               ),
             ];
 
@@ -860,27 +1230,46 @@ class _InvestorSummaryCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        for (var i = 0; i < _statusItems.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          _StatusBreakdownRow(item: _statusItems[i]),
-        ],
+        if (statusItems.isEmpty)
+          Text(
+            'No data found',
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
+          )
+        else
+          for (var i = 0; i < statusItems.length; i++) ...[
+            if (i > 0) const SizedBox(height: 12),
+            _StatusBreakdownRow(item: statusItems[i]),
+          ],
       ],
     );
 
-    return _PanelCard(
-      fillHeight: fillHeight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          header,
-          const SizedBox(height: 16),
-          if (fillHeight)
-            Expanded(child: SingleChildScrollView(child: body))
-          else
-            body,
-        ],
-      ),
-    );
+    if (scrollable) {
+      return SingleChildScrollView(child: body);
+    }
+    return body;
+  }
+
+  List<_ProgressItem> _mapInvestorTypes(InvestorTypeCountModel data) {
+    final total = data.totalInvestors;
+    final types = data.investorTypes;
+
+    return [
+      for (var i = 0; i < types.length; i++)
+        _ProgressItem(
+          label: types[i].investorType.isNotEmpty
+              ? types[i].investorType
+              : 'Other',
+          percent: total > 0
+              ? ((types[i].count / total) * 100).round().clamp(0, 100)
+              : 0,
+          color: _typeColors[i % _typeColors.length],
+          trailing: '${types[i].count}',
+        ),
+    ];
   }
 }
 
@@ -968,7 +1357,7 @@ class _StatusBreakdownRow extends StatelessWidget {
               ),
             ),
             Text(
-              '${item.percent}%',
+              item.trailing ?? '${item.percent}',
               style: TextStyle(
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w600,

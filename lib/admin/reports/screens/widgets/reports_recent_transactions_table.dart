@@ -1,47 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_transaction_history_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:sizer/sizer.dart';
+
+import '../../cubit/report__cubit.dart';
 
 class ReportsRecentTransactionsTable extends StatelessWidget {
   const ReportsRecentTransactionsTable({super.key});
 
-  static const _transactions = [
-    _RecentTransaction(
-      date: '03 Jun, 2026',
-      type: 'Received',
-      party: 'Corey Heriwitz',
-      description: 'Foundation work - Phase 1',
-      amount: '₹20,00,000',
-    ),
-    _RecentTransaction(
-      date: '03 Jun, 2026',
-      type: 'Received',
-      party: 'ABC Constructions',
-      description: 'Investment - Phase 2',
-      amount: '₹20,00,000',
-    ),
-    _RecentTransaction(
-      date: '01 Jun, 2026',
-      type: 'Received',
-      party: 'Alferdo Curtise',
-      description: 'Electrical work payment',
-      amount: '₹15,00,000',
-    ),
-    _RecentTransaction(
-      date: '28 May, 2026',
-      type: 'Received',
-      party: 'Talan Baptista',
-      description: 'Investment received',
-      amount: '₹25,00,000',
-    ),
-    _RecentTransaction(
-      date: '25 May, 2026',
-      type: 'Received',
-      party: 'Alfonso Herwitz',
-      description: 'Plumbing materials',
-      amount: '₹8,50,000',
-    ),
-  ];
+  static String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
+  }
+
+  static _RecentTransaction _mapTransaction(
+    InvestorTransactionHistoryModel item,
+  ) {
+    final received = item.receivedAmount;
+    final amount = received > 0 ? received : item.investmentAmount;
+    final description = item.narration.trim().isNotEmpty
+        ? item.narration.trim()
+        : (item.investorCode.trim().isNotEmpty
+            ? item.investorCode.trim()
+            : '-');
+
+    return _RecentTransaction(
+      date: _formatDate(item.date),
+      party: item.fullName.trim().isNotEmpty ? item.fullName.trim() : 'Unknown',
+      description: description,
+      amount: CurrencyFormatter.format(amount),
+      status: item.status.trim().isNotEmpty ? item.status.trim() : 'Completed',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,43 +76,124 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const minTableWidth = 900.0;
-              final tableWidth = constraints.maxWidth < minTableWidth
-                  ? minTableWidth
-                  : constraints.maxWidth;
-
-              final table = SizedBox(
-                width: tableWidth,
-                child: Column(
-                  children: [
-                    const _TableHeader(),
-                    const SizedBox(height: 4),
-                    for (var i = 0; i < _transactions.length; i++) ...[
-                      if (i > 0)
-                        const Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.border,
-                        ),
-                      _TransactionRow(
-                        index: i,
-                        transaction: _transactions[i],
+          BlocBuilder<ReportCubit, ReportState>(
+            buildWhen: (previous, current) =>
+                previous.transactionsLoading != current.transactionsLoading ||
+                previous.transactionsError != current.transactionsError ||
+                previous.transactions != current.transactions,
+            builder: (context, state) {
+              if (state.transactionsLoading && state.transactions.isEmpty) {
+                return const SizedBox(
+                  height: 160,
+                  child: Center(
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.accent,
                       ),
-                    ],
-                  ],
-                ),
-              );
-
-              if (constraints.maxWidth < minTableWidth) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: table,
+                    ),
+                  ),
                 );
               }
 
-              return table;
+              final error = state.transactionsError;
+              if (error != null && state.transactions.isEmpty) {
+                return SizedBox(
+                  height: 160,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            error,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.error,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () => context
+                                .read<ReportCubit>()
+                                .fetchRecentTransactions(),
+                            child: Text(
+                              'Retry',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final rows = state.transactions.map(_mapTransaction).toList();
+              if (rows.isEmpty) {
+                return SizedBox(
+                  height: 140,
+                  child: Center(
+                    child: Text(
+                      'No recent transactions',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const minTableWidth = 900.0;
+                  final tableWidth = constraints.maxWidth < minTableWidth
+                      ? minTableWidth
+                      : constraints.maxWidth;
+
+                  final table = SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      children: [
+                        const _TableHeader(),
+                        const SizedBox(height: 4),
+                        for (var i = 0; i < rows.length; i++) ...[
+                          if (i > 0)
+                            const Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: AppColors.border,
+                            ),
+                          _TransactionRow(
+                            index: i,
+                            transaction: rows[i],
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+
+                  if (constraints.maxWidth < minTableWidth) {
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: table,
+                    );
+                  }
+
+                  return table;
+                },
+              );
             },
           ),
         ],
@@ -119,17 +205,17 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
 class _RecentTransaction {
   const _RecentTransaction({
     required this.date,
-    required this.type,
     required this.party,
     required this.description,
     required this.amount,
+    required this.status,
   });
 
   final String date;
-  final String type;
   final String party;
   final String description;
   final String amount;
+  final String status;
 }
 
 class _TableHeader extends StatelessWidget {
@@ -148,11 +234,10 @@ class _TableHeader extends StatelessWidget {
         children: [
           _HeaderCell('#', flex: 1),
           _HeaderCell('Date', flex: 3),
-          _HeaderCell('Type', flex: 2),
-          _HeaderCell('Investor / Vendor', flex: 4),
+          _HeaderCell('Investor / Vendor', flex: 3),
           _HeaderCell('Description', flex: 4),
+          // SizedBox(width: 1,),
           _HeaderCell('Amount', flex: 3),
-          _HeaderCell('Status', flex: 2),
         ],
       ),
     );
@@ -205,23 +290,9 @@ class _TransactionRow extends StatelessWidget {
           children: [
             _Cell('${index + 1}', flex: 1),
             _Cell(transaction.date, flex: 3),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _TypeBadge(type: transaction.type),
-              ),
-            ),
-            _Cell(transaction.party, flex: 4),
+            _Cell(transaction.party, flex: 3),
             _Cell(transaction.description, flex: 4),
             _Cell(transaction.amount, flex: 3),
-            const Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _StatusBadge(),
-              ),
-            ),
           ],
         ),
       ),
@@ -256,54 +327,3 @@ class _Cell extends StatelessWidget {
   }
 }
 
-class _TypeBadge extends StatelessWidget {
-  const _TypeBadge({required this.type});
-
-  final String type;
-
-  @override
-  Widget build(BuildContext context) {
-    final isPayment = type.toLowerCase() == 'payment';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: isPayment
-            ? const Color(0xFFFDECEE)
-            : const Color(0xFFE8F7EE),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        type,
-        style: TextStyle(
-          fontSize: 9.sp,
-          fontWeight: FontWeight.w600,
-          color: isPayment ? AppColors.error : AppColors.green,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F7EE),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        'Completed',
-        style: TextStyle(
-          fontSize: 9.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.green,
-        ),
-      ),
-    );
-  }
-}

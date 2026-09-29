@@ -137,7 +137,6 @@ class _RecentPaymentsCard extends StatelessWidget {
         children: [
           const _SectionHeader(
             title: 'Recent Payments',
-            actionLabel: 'View All',
           ),
           const SizedBox(height: 8),
           for (var i = 0; i < _payments.length; i++) ...[
@@ -280,7 +279,6 @@ class _RecentUpdatesCard extends StatelessWidget {
         children: [
           const _SectionHeader(
             title: 'Recent Updates',
-            actionLabel: 'View All',
           ),
           const SizedBox(height: 10),
           for (var i = 0; i < _updates.length; i++) ...[

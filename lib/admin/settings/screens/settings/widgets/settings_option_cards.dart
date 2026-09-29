@@ -107,7 +107,7 @@ class _OptionData {
   final bool usePersonAddIcon;
 }
 
-class _OptionTile extends StatefulWidget {
+class _OptionTile extends StatelessWidget {
   const _OptionTile({
     required this.data,
     required this.onTap,
@@ -121,94 +121,82 @@ class _OptionTile extends StatefulWidget {
   final bool isLast;
 
   @override
-  State<_OptionTile> createState() => _OptionTileState();
-}
-
-class _OptionTileState extends State<_OptionTile> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    final data = widget.data;
     final radius = BorderRadius.vertical(
-      top: widget.isFirst ? const Radius.circular(16) : Radius.zero,
-      bottom: widget.isLast ? const Radius.circular(16) : Radius.zero,
+      top: isFirst ? const Radius.circular(16) : Radius.zero,
+      bottom: isLast ? const Radius.circular(16) : Radius.zero,
     );
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: Material(
-        color: _hovered
-            ? AppColors.accent.withValues(alpha: 0.04)
-            : Colors.transparent,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: radius,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: data.iconBg,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  alignment: Alignment.center,
-                  child: data.usePersonAddIcon
-                      ? Icon(
-                          Icons.person_add_alt_1_rounded,
-                          size: 22,
-                          color: data.iconColor,
-                        )
-                      : SvgPicture.asset(
-                          data.icon,
-                          width: 22,
-                          height: 22,
-                          colorFilter: ColorFilter.mode(
-                            data.iconColor,
-                            BlendMode.srcIn,
-                          ),
-                        ),
+        hoverColor: AppColors.accent.withValues(alpha: 0.04),
+        splashColor: AppColors.accent.withValues(alpha: 0.08),
+        highlightColor: AppColors.accent.withValues(alpha: 0.04),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: data.iconBg,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        data.title,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                alignment: Alignment.center,
+                child: data.usePersonAddIcon
+                    ? Icon(
+                        Icons.person_add_alt_1_rounded,
+                        size: 22,
+                        color: data.iconColor,
+                      )
+                    : SvgPicture.asset(
+                        data.icon,
+                        width: 22,
+                        height: 22,
+                        colorFilter: ColorFilter.mode(
+                          data.iconColor,
+                          BlendMode.srcIn,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        data.description,
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
-                          height: 1.35,
-                        ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.title,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      data.description,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textMuted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 22,
-                  color: _hovered ? AppColors.accent : AppColors.hint,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppColors.hint,
+              ),
+            ],
           ),
         ),
       ),

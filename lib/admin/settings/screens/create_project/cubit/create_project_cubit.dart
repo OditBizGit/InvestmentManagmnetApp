@@ -1,15 +1,15 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:maribel_wellness_centre_application/admin/settings/repository/settings_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/model/projcet_model.dart';
+
+import '../repository/create_project_repository.dart';
 
 part 'create_project_state.dart';
 
 class CreateProjectCubit extends Cubit<CreateProjectState> {
   CreateProjectCubit({
-    required ProjectRepository repository,
-  })  : _repository = repository,
-        super(CreateProjectInitial());
+    required this._repository,
+  })  : super(CreateProjectInitial());
 
   final ProjectRepository _repository;
 

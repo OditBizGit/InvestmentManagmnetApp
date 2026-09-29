@@ -365,23 +365,7 @@ class _TopRatedInvestorsCard extends StatelessWidget {
                   ),
                 ),
               ),
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: AppColors.accent,
-                ),
-                child: Text(
-                  'View All',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
+
             ],
           ),
           const SizedBox(height: 8),

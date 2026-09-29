@@ -38,14 +38,14 @@ class InvestorsOverviewSection extends StatelessWidget {
         iconBg: const Color(0xFFE6F7F5),
       ),
       _StatCardData(
-        label: 'Total Project Investment',
+        label: 'Total Investment By Investors',
         value: _formatCurrency(totalProjectInvestment),
         icon: ImageConstants.totalFunding,
         iconColor: const Color(0xFFE06B7A),
         iconBg: const Color(0xFFFDECEE),
       ),
       _StatCardData(
-        label: 'Total Paid Amount',
+        label: 'Total Paid Amount By Investors',
         value: _formatCurrency(totalPaidAmount),
         icon: ImageConstants.totalCollection,
         iconColor: const Color(0xFFE89A3C),

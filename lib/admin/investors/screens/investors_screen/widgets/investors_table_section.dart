@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
 class InvestorsTableSection extends StatefulWidget {
@@ -23,11 +25,32 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
 
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+
+  String _query = '';
+
+  List<InvestorModel> get _filteredInvestors {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return widget.investors;
+
+    return widget.investors.where((investor) {
+      final status = investor.isActive ? 'active' : 'inactive';
+      return investor.fullName.toLowerCase().contains(query) ||
+          investor.email.toLowerCase().contains(query) ||
+          (investor.phoneNumber?.toLowerCase().contains(query) ?? false) ||
+          (investor.investorType?.toLowerCase().contains(query) ?? false) ||
+          (investor.investorCode?.toLowerCase().contains(query) ?? false) ||
+          (investor.organization?.toLowerCase().contains(query) ?? false) ||
+          investor.username.toLowerCase().contains(query) ||
+          status.contains(query);
+    }).toList();
+  }
 
   @override
   void dispose() {
     _horizontalController.dispose();
     _verticalController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -69,6 +92,8 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
 
   @override
   Widget build(BuildContext context) {
+    final investors = _filteredInvestors;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
@@ -84,100 +109,229 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final tableWidth = constraints.maxWidth < _minTableWidth
-              ? _minTableWidth
-              : constraints.maxWidth;
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _TableToolbar(
+            searchController: _searchController,
+            onSearchChanged: (value) => setState(() => _query = value),
+            onClearSearch: () {
+              _searchController.clear();
+              setState(() => _query = '');
+            },
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final tableWidth = constraints.maxWidth < _minTableWidth
+                  ? _minTableWidth
+                  : constraints.maxWidth;
 
-          return Scrollbar(
-            controller: _horizontalController,
-            thumbVisibility: tableWidth > constraints.maxWidth,
-            child: SingleChildScrollView(
-              controller: _horizontalController,
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: tableWidth,
-                child: Column(
-                  children: [
-                    const _TableHeader(),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.screenBg,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.cardBg),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: SizedBox(
-                        height: 540,
-                        child: widget.isLoading
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.accent,
-                                ),
-                              )
-                            : widget.investors.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'No investors found',
-                                      style: TextStyle(
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textMuted,
-                                      ),
+              return Scrollbar(
+                controller: _horizontalController,
+                thumbVisibility: tableWidth > constraints.maxWidth,
+                child: SingleChildScrollView(
+                  controller: _horizontalController,
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      children: [
+                        const _TableHeader(),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.screenBg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.cardBg),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: SizedBox(
+                            height: 540,
+                            child: widget.isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.accent,
                                     ),
                                   )
-                                : Scrollbar(
-                                    controller: _verticalController,
-                                    thumbVisibility: true,
-                                    child: ListView.separated(
-                                      controller: _verticalController,
-                                      padding: EdgeInsets.zero,
-                                      itemCount: widget.investors.length,
-                                      separatorBuilder: (_, _) =>
-                                          const Divider(
-                                        height: 1,
-                                        thickness: 1,
-                                        color: AppColors.cardBg,
+                                : investors.isEmpty
+                                    ? Center(
+                                        child: Text(
+                                          _query.trim().isEmpty
+                                              ? 'No investors found'
+                                              : 'No investors match your search',
+                                          style: TextStyle(
+                                            fontSize: 11.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                      )
+                                    : Scrollbar(
+                                        controller: _verticalController,
+                                        thumbVisibility: true,
+                                        child: ListView.separated(
+                                          controller: _verticalController,
+                                          padding: EdgeInsets.zero,
+                                          itemCount: investors.length,
+                                          separatorBuilder: (_, _) =>
+                                              const Divider(
+                                            height: 1,
+                                            thickness: 1,
+                                            color: AppColors.cardBg,
+                                          ),
+                                          itemBuilder: (context, index) {
+                                            final investor = investors[index];
+                                            return _InvestorRow(
+                                              index: index,
+                                              name: investor.fullName,
+                                              type:
+                                                  investor.investorType ?? '-',
+                                              mobile:
+                                                  investor.phoneNumber ?? '-',
+                                              email: investor.email,
+                                              investAmount: _formatAmount(
+                                                investor.totalInvestmentAmount,
+                                              ),
+                                              paidAmount: _formatAmount(
+                                                investor.totalPaidAmount,
+                                              ),
+                                              status: investor.isActive
+                                                  ? 'Active'
+                                                  : 'Inactive',
+                                              joinedDate: _formatDate(
+                                                investor.createdDate,
+                                              ),
+                                              profileImage:
+                                                  investor.profileImageUrl,
+                                            );
+                                          },
+                                        ),
                                       ),
-                                      itemBuilder: (context, index) {
-                                        final investor =
-                                            widget.investors[index];
-                                        return _InvestorRow(
-                                          index: index,
-                                          name: investor.fullName,
-                                          type: investor.investorType ?? '-',
-                                          mobile:
-                                              investor.phoneNumber ?? '-',
-                                          email: investor.email,
-                                          investAmount: _formatAmount(
-                                            investor.totalInvestmentAmount,
-                                          ),
-                                          paidAmount: _formatAmount(
-                                            investor.totalPaidAmount,
-                                          ),
-                                          status: investor.isActive
-                                              ? 'Active'
-                                              : 'Inactive',
-                                          joinedDate: _formatDate(
-                                            investor.createdDate,
-                                          ),
-                                          profileImage:
-                                              investor.profileImageUrl,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TableToolbar extends StatelessWidget {
+  const _TableToolbar({
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+  });
+
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 700;
+
+        final title = Text(
+          'All Investors',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.accent,
+          ),
+        );
+
+        final searchField = ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isCompact ? double.infinity : 280,
+          ),
+          child: TextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Search by name, mobile, email...',
+              hintStyle: TextStyle(
+                fontSize: 10.sp,
+                color: AppColors.hint,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SvgPicture.asset(
+                  ImageConstants.search,
+                  width: 16,
+                  height: 16,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.hint,
+                    BlendMode.srcIn,
+                  ),
                 ),
               ),
+              suffixIcon: searchController.text.isEmpty
+                  ? null
+                  : IconButton(
+                      onPressed: onClearSearch,
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+              filled: true,
+              fillColor: AppColors.white,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.accent),
+              ),
             ),
+          ),
+        );
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              title,
+              const SizedBox(height: 12),
+              searchField,
+            ],
           );
-        },
-      ),
+        }
+
+        return Row(
+          children: [
+            Expanded(child: title),
+            const SizedBox(width: 12),
+            searchField,
+          ],
+        );
+      },
     );
   }
 }
@@ -204,7 +358,6 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('Paid Amt', flex: 2),
           _HeaderCell('Status', flex: 2),
           _HeaderCell('Joined Date', flex: 2),
-          _HeaderCell('Action', flex: 1, align: TextAlign.center),
         ],
       ),
     );
@@ -368,26 +521,6 @@ class _InvestorRow extends StatelessWidget {
                 ),
               ),
               _Cell(joinedDate, flex: 2),
-              Expanded(
-                flex: 1,
-                child: Center(
-                  child: IconButton(
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 32,
-                      height: 32,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    splashRadius: 16,
-                    icon: const Icon(
-                      Icons.more_horiz,
-                      size: 20,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

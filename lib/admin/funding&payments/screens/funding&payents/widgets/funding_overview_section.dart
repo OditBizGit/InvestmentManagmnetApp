@@ -31,28 +31,28 @@ class FundingOverviewSection extends StatelessWidget {
 
     return [
       _StatCardData(
-        label: 'Total Funding',
+        label: 'Total Investment By Investors',
         value: _formatCurrency(totalFunding),
         icon: ImageConstants.totalFunding,
         iconColor: const Color(0xFF9B7EBF),
         iconBg: const Color(0xFFF0EBF6),
       ),
       _StatCardData(
-        label: 'Amount Received',
+        label: 'Amount Received from Investors',
         value: _formatCurrency(amountReceived),
         icon: ImageConstants.amountReceivable,
         iconColor: const Color(0xFF2CB5A8),
         iconBg: const Color(0xFFE6F7F5),
       ),
       _StatCardData(
-        label: 'Amount Pending',
+        label: 'Amount Pending from Investors',
         value: _formatCurrency(pending),
         icon: ImageConstants.amountRemaining,
         iconColor: const Color(0xFFE06B7A),
         iconBg: const Color(0xFFFDECEE),
       ),
       _StatCardData(
-        label: 'Total Payments',
+        label: 'Total Investors',
         value: '${transactions.length}',
         icon: ImageConstants.reports,
         iconColor: const Color(0xFF5B8DEF),

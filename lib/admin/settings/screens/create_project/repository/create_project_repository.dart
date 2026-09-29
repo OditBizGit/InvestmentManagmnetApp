@@ -3,7 +3,8 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
-import '../screens/create_project/model/projcet_model.dart';
+import '../model/projcet_model.dart';
+
 
 class ProjectRepository {
   final Dio dio;

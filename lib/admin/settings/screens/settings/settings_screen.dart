@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/screen/create_admin_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/create_project_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/widgets/settings_option_cards.dart';
-import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/widgets/settings_top_bar.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/user_complaints_screen.dart';
-import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -18,25 +19,56 @@ class AdminSettingsScreen extends StatefulWidget {
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _showCreateProject = false;
   bool _showUserComplaints = false;
+  bool _showCreateAdmin = false;
+
+  /// Defer tree swaps until after pointer/hover tracking finishes (Windows/desktop).
+  void _navigate(VoidCallback action) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      Future<void>.delayed(Duration.zero, () {
+        if (!mounted) return;
+        action();
+      });
+    });
+  }
 
   void _openCreateProject() {
-    setState(() {
-      _showCreateProject = true;
-      _showUserComplaints = false;
+    _navigate(() {
+      setState(() {
+        _showCreateProject = true;
+        _showUserComplaints = false;
+        _showCreateAdmin = false;
+      });
     });
   }
 
   void _openUserComplaints() {
-    setState(() {
-      _showUserComplaints = true;
-      _showCreateProject = false;
+    _navigate(() {
+      setState(() {
+        _showUserComplaints = true;
+        _showCreateProject = false;
+        _showCreateAdmin = false;
+      });
+    });
+  }
+
+  void _openCreateAdmin() {
+    _navigate(() {
+      setState(() {
+        _showCreateAdmin = true;
+        _showCreateProject = false;
+        _showUserComplaints = false;
+      });
     });
   }
 
   void _backToSettings() {
-    setState(() {
-      _showCreateProject = false;
-      _showUserComplaints = false;
+    _navigate(() {
+      setState(() {
+        _showCreateProject = false;
+        _showUserComplaints = false;
+        _showCreateAdmin = false;
+      });
     });
   }
 
@@ -49,18 +81,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       _openUserComplaints();
       return;
     }
-
-    final label = switch (option) {
-      SettingsOptionType.createProject => 'Create Project',
-      SettingsOptionType.addAdmin => 'Add New Admin',
-      SettingsOptionType.userComplaints => 'User Complaints',
-    };
-
-    AppToast.info(
-      '$label coming soon',
-      title: 'Settings',
-      context: context,
-    );
+    if (option == SettingsOptionType.addAdmin) {
+      _openCreateAdmin();
+      return;
+    }
   }
 
   @override
@@ -74,6 +98,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
     if (_showUserComplaints) {
       return UserComplaintsScreen(onBack: _backToSettings);
+    }
+
+    if (_showCreateAdmin) {
+      return CreateAdminScreen(onBack: _backToSettings);
     }
 
     return ColoredBox(
@@ -93,7 +121,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   horizontalPadding,
                   16,
                 ),
-                child: const SettingsTopBar(),
+                child: const AdminTopBar(),
               ),
               Expanded(
                 child: SingleChildScrollView(
