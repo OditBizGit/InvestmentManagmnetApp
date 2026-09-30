@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/models/add_update_models.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_construction_photos_videos/update_construction_toggle.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/cubit/update_phase_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
@@ -9,7 +10,6 @@ import 'package:maribel_wellness_centre_application/admin/work_progress/screens/
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/view_updates_list.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/add _banner/add_banner.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/add_update_option_cards.dart';
-import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/update_construction_media_form.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/update_status_stories_form.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -101,6 +101,19 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
     );
   }
 
+  /// Used by construction media form — toast is already shown by the form.
+  void _saveConstructionMedia(MediaUpdate update) {
+    setState(() {
+      final index = _mediaUpdates.indexWhere((item) => item.id == update.id);
+      if (index >= 0) {
+        _mediaUpdates[index] = update;
+      } else {
+        _mediaUpdates.insert(0, update);
+      }
+      _editingMedia = null;
+    });
+  }
+
   Widget _buildProjectPhaseSection() {
     return BlocProvider(
       create: (_) => UpdatePhaseCubit(
@@ -163,13 +176,13 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
           onSave: _saveMedia,
         );
       case AddUpdateOptionType.constructionMedia:
-        return UpdateConstructionMediaForm(
+        return UpdateConstructionMedia(
           key: ValueKey('construction-${_editingMedia?.id ?? 'new'}'),
           initial:
               _editingMedia?.type == AddUpdateOptionType.constructionMedia
                   ? _editingMedia
                   : null,
-          onSave: _saveMedia,
+          onSave: _saveConstructionMedia,
         );
       case AddUpdateOptionType.banner:
         return const AddBanner();

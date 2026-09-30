@@ -32,6 +32,8 @@ class ApiEndpoints {
   static const String createAdmin = "/api/User/CreateAdmin";
   static const String fundingPaymentOverview = "/api/Investor/FundingPaymentOverview";
   static const String investorTypeCount = "/api/Investor/InvestorTypeCount";
+  static const String workUpdate = "/api/Project/AddWorkUpdate";
+  static const String deleteWorkUpdate = "/api/Project/DeleteWorkUpdate/";
 
 
 
