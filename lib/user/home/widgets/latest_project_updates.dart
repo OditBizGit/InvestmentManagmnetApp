@@ -1,6 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_bottom_nav.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
+import 'package:maribel_wellness_centre_application/user/updates/model/work_update_model.dart';
+import 'package:maribel_wellness_centre_application/user/updates/utils/work_update_media_cache.dart';
+import 'package:maribel_wellness_centre_application/user/updates/widgets/work_update_fullscreen_image.dart';
+import 'package:maribel_wellness_centre_application/user/updates/widgets/work_update_inline_video.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -8,9 +15,14 @@ class LatestProjectUpdates extends StatelessWidget {
   const LatestProjectUpdates({
     super.key,
     this.isLoading = false,
+    this.isActive = false,
+    this.latestUpdate,
   });
 
   final bool isLoading;
+  /// When false (e.g. home tab not visible), skip initializing the video player.
+  final bool isActive;
+  final WorkUpdateModel? latestUpdate;
 
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _textSecondary = Color(0xFF8A8A8A);
@@ -23,6 +35,14 @@ class LatestProjectUpdates extends StatelessWidget {
     if (isLoading) {
       return const _LatestProjectUpdatesShimmer();
     }
+
+    final update = latestUpdate;
+    if (update == null) {
+      return const SizedBox.shrink();
+    }
+
+    final description = update.description.trim();
+    final mediaUrl = update.resolvedFileUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,51 +60,32 @@ class LatestProjectUpdates extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: AspectRatio(
             aspectRatio: 16 / 9,
-            child: Image.network(
-              'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=450&fit=crop',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFFF0EBF6),
-                child: Icon(
-                  Icons.apartment_outlined,
-                  color: _button,
-                  size: 10.w,
-                ),
-              ),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) {
-                  return child;
-                }
-                return Container(
-                  color: const Color(0xFFF0EBF6),
-                  child: const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                );
-              },
-            ),
+            child: _buildMedia(context, mediaUrl, update),
           ),
         ),
         SizedBox(height: 1.5.h),
         Text(
-          'Second Floor Structural Work Completed',
+          update.title,
           style: TextStyle(
             fontSize: 14.5.sp,
             fontWeight: FontWeight.w700,
             color: _textPrimary,
           ),
         ),
-        SizedBox(height: 0.4.h),
-        Text(
-          'The main load-bearing walls and celling structures for the secondary patient wing are now fully cured and approved by site inspectors',
-          style: TextStyle(
-            fontSize: 13.5.sp,
-            fontWeight: FontWeight.w400,
-            color: _textSecondary,
-            height: 1.45,
+        if (description.isNotEmpty) ...[
+          SizedBox(height: 0.4.h),
+          Text(
+            description,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13.5.sp,
+              fontWeight: FontWeight.w400,
+              color: _textSecondary,
+              height: 1.45,
+            ),
           ),
-        ),
+        ],
         SizedBox(height: 1.8.h),
         Align(
           alignment: Alignment.centerLeft,
@@ -125,6 +126,98 @@ class LatestProjectUpdates extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMedia(
+    BuildContext context,
+    String? mediaUrl,
+    WorkUpdateModel update,
+  ) {
+    if (update.isVideo && mediaUrl != null) {
+      if (!isActive) {
+        return ColoredBox(
+          color: const Color(0xFFF0EBF6),
+          child: Center(
+            child: Icon(
+              Icons.videocam_rounded,
+              color: _button.withValues(alpha: 0.7),
+              size: 12.w,
+            ),
+          ),
+        );
+      }
+
+      return WorkUpdateInlineVideo(
+        key: ValueKey('latest-update-video-${update.workUpdateId}'),
+        videoUrl: mediaUrl,
+        title: update.title,
+      );
+    }
+
+    if (mediaUrl != null && update.isImage) {
+      return GestureDetector(
+        onTap: () => openWorkUpdateFullscreenImage(
+          context,
+          imageUrl: mediaUrl,
+          title: update.title,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: mediaUrl,
+              cacheManager: WorkUpdateMediaCache.manager,
+              httpHeaders: WorkUpdateMediaCache.authHeaders(),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              placeholder: (context, url) => Shimmer.fromColors(
+                baseColor: _shimmerBase,
+                highlightColor: _shimmerHighlight,
+                direction: ShimmerDirection.ltr,
+                child: const ColoredBox(color: _shimmerBase),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: const Color(0xFFF0EBF6),
+                child: Icon(
+                  Icons.apartment_outlined,
+                  color: _button,
+                  size: 10.w,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 2.w,
+              bottom: 1.2.h,
+              child: Container(
+                padding: EdgeInsets.all(1.5.w),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  shape: BoxShape.circle,
+                ),
+                child: SvgPicture.asset(
+                  ImageConstants.view,
+                  width: 4.5.w,
+                  height: 4.5.w,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      color: const Color(0xFFF0EBF6),
+      child: Icon(
+        Icons.apartment_outlined,
+        color: _button,
+        size: 10.w,
+      ),
     );
   }
 }
@@ -188,22 +281,9 @@ class _LatestProjectUpdatesShimmer extends StatelessWidget {
           ),
           SizedBox(height: 0.4.h),
           _PlaceholderLine(
-            sample:
-                'The main load-bearing walls and celling structures for the',
+            sample: 'The main load-bearing walls and ceiling structures',
             style: bodyStyle,
             widthFactor: 1,
-          ),
-          SizedBox(height: 0.35.h),
-          _PlaceholderLine(
-            sample: 'secondary patient wing are now fully cured',
-            style: bodyStyle,
-            widthFactor: 0.9,
-          ),
-          SizedBox(height: 0.35.h),
-          _PlaceholderLine(
-            sample: 'and approved by site inspectors',
-            style: bodyStyle,
-            widthFactor: 0.65,
           ),
           SizedBox(height: 1.8.h),
           _PlaceholderLine(

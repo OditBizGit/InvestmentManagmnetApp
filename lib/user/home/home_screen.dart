@@ -20,7 +20,13 @@ import 'package:maribel_wellness_centre_application/user/home/widgets/top_invest
 import 'package:sizer/sizer.dart';
 
 class UserHomeScreen extends StatelessWidget {
-  const UserHomeScreen({super.key});
+  const UserHomeScreen({
+    super.key,
+    this.isActive = false,
+  });
+
+  /// When true, this tab is visible in the user [IndexedStack].
+  final bool isActive;
 
   static const Color _textPrimary = Color(0xFF4A3F5C);
   static const Color _textSecondary = Color(0xFF8A8099);
@@ -30,13 +36,15 @@ class UserHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<HomeCubit>()..loadHome(),
-      child: const _UserHomeView(),
+      child: _UserHomeView(isActive: isActive),
     );
   }
 }
 
 class _UserHomeView extends StatefulWidget {
-  const _UserHomeView();
+  const _UserHomeView({required this.isActive});
+
+  final bool isActive;
 
   @override
   State<_UserHomeView> createState() => _UserHomeViewState();
@@ -53,20 +61,49 @@ class _UserHomeViewState extends State<_UserHomeView> {
   @override
   void initState() {
     super.initState();
+    if (widget.isActive) {
+      _startSilentRefresh();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _UserHomeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive == oldWidget.isActive) return;
+
+    if (widget.isActive) {
+      _startSilentRefresh();
+      // Pull fresh home data (including latest work update) when tab opens.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.isActive) return;
+        context.read<HomeCubit>().loadHome(silent: true);
+      });
+    } else {
+      _stopSilentRefresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopSilentRefresh();
+    super.dispose();
+  }
+
+  void _startSilentRefresh() {
+    _silentRefreshTimer?.cancel();
     _silentRefreshTimer = Timer.periodic(
       _silentRefreshInterval,
       (_) => _silentRefresh(),
     );
   }
 
-  @override
-  void dispose() {
+  void _stopSilentRefresh() {
     _silentRefreshTimer?.cancel();
-    super.dispose();
+    _silentRefreshTimer = null;
   }
 
   Future<void> _silentRefresh() async {
-    if (!mounted || _isSilentRefreshing) return;
+    if (!mounted || !widget.isActive || _isSilentRefreshing) return;
 
     _isSilentRefreshing = true;
     try {
@@ -138,6 +175,8 @@ class _UserHomeViewState extends State<_UserHomeView> {
             final banners = state is HomeSuccess
                 ? state.banners
                 : const <BannerItemModel>[];
+            final latestUpdate =
+                state is HomeSuccess ? state.latestUpdate : null;
             final summaryKey = profile == null
                 ? 'loading'
                 : '${profile.totalCollection}_${profile.totalCommitment}_'
@@ -186,8 +225,14 @@ class _UserHomeViewState extends State<_UserHomeView> {
                             isLoading: isLoading,
                             items: workProgress,
                           ),
-                          SizedBox(height: 2.5.h),
-                          LatestProjectUpdates(isLoading: isLoading),
+                          if (isLoading || latestUpdate != null) ...[
+                            SizedBox(height: 2.5.h),
+                            LatestProjectUpdates(
+                              isLoading: isLoading,
+                              isActive: widget.isActive,
+                              latestUpdate: latestUpdate,
+                            ),
+                          ],
                           SizedBox(height: 1.h),
                         ],
                       ),

@@ -25,14 +25,6 @@ class _UserMainScreenState extends State<UserMainScreen> {
   int _currentIndex = UserBottomNav.homeIndex;
   DateTime? _lastBackPressedAt;
 
-  static const List<Widget> _screens = [
-    UserHomeScreen(),
-    UserInvestmentsScreen(),
-    UserStatusScreen(),
-    UserUpdatesScreen(),
-    UserProfileScreen(),
-  ];
-
   void selectTab(int index) {
     if (_currentIndex == index) {
       return;
@@ -40,6 +32,16 @@ class _UserMainScreenState extends State<UserMainScreen> {
 
     setState(() => _currentIndex = index);
   }
+
+  List<Widget> get _screens => [
+        UserHomeScreen(isActive: _currentIndex == UserBottomNav.homeIndex),
+        const UserInvestmentsScreen(),
+        const UserStatusScreen(),
+        UserUpdatesScreen(
+          isActive: _currentIndex == UserBottomNav.updatesIndex,
+        ),
+        const UserProfileScreen(),
+      ];
 
   void _handleBackPress() {
     final now = DateTime.now();
