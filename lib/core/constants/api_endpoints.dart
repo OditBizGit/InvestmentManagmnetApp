@@ -34,6 +34,8 @@ class ApiEndpoints {
   static const String investorTypeCount = "/api/Investor/InvestorTypeCount";
   static const String workUpdate = "/api/Project/AddWorkUpdate";
   static const String deleteWorkUpdate = "/api/Project/DeleteWorkUpdate/";
+  static const String addWorkStatus = "/api/Project/AddWorkStatus";
+  static const String getWorkStatus = "/api/Project/GetWorkStatus";
 
 
 
