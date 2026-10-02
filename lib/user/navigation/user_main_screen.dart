@@ -36,7 +36,9 @@ class _UserMainScreenState extends State<UserMainScreen> {
   List<Widget> get _screens => [
         UserHomeScreen(isActive: _currentIndex == UserBottomNav.homeIndex),
         const UserInvestmentsScreen(),
-        const UserStatusScreen(),
+        UserStatusScreen(
+          isActive: _currentIndex == UserBottomNav.statusIndex,
+        ),
         UserUpdatesScreen(
           isActive: _currentIndex == UserBottomNav.updatesIndex,
         ),

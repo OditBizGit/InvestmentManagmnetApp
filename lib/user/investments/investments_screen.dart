@@ -430,12 +430,7 @@ class _ProjectHeroCard extends StatelessWidget {
                     const _ProjectImageFallback(),
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return Container(
-                    color: UserInvestmentsScreen._accentSoft,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
+                  return const _ProjectHeroImageShimmer();
                 },
               )
             else
@@ -501,6 +496,21 @@ class _ProjectImageFallback extends StatelessWidget {
         color: UserInvestmentsScreen._accent,
         size: 12.w,
       ),
+    );
+  }
+}
+
+class _ProjectHeroImageShimmer extends StatelessWidget {
+  const _ProjectHeroImageShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: UserInvestmentsScreen._shimmerBase,
+      highlightColor: UserInvestmentsScreen._shimmerHighlight,
+      direction: ShimmerDirection.ltr,
+      period: const Duration(milliseconds: 1400),
+      child: const ColoredBox(color: Colors.white),
     );
   }
 }

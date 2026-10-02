@@ -57,6 +57,7 @@ dependencies:
   share_plus: ^12.0.2
   flutter_cache_manager: ^3.4.5
   video_player_win: ^3.3.0
+  gal: ^2.3.3
 
 dev_dependencies:
   flutter_test:

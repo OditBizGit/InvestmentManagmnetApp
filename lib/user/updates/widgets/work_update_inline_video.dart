@@ -19,10 +19,10 @@ class WorkUpdateInlineVideo extends StatefulWidget {
   final String title;
 
   @override
-  State<WorkUpdateInlineVideo> createState() => _WorkUpdateInlineVideoState();
+  State<WorkUpdateInlineVideo> createState() => WorkUpdateInlineVideoState();
 }
 
-class _WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
+class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
   VideoPlayerController? _controller;
   String? _error;
   bool _initializing = true;
@@ -202,6 +202,19 @@ class _WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
     }
     if (mounted) setState(() {});
     _revealControls();
+  }
+
+  /// Opens the fullscreen player once the inline controller is ready.
+  Future<void> openFullscreen() async {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      if (_initializing) {
+        // Wait briefly for an in-flight init to finish.
+        for (var i = 0; i < 40 && _initializing && mounted; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+      }
+    }
+    await _openFullscreen();
   }
 
   Future<void> _openFullscreen() async {
@@ -838,7 +851,7 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
                                       _scheduleHideControls();
                                     }
                                   },
-                                  formatDuration: _WorkUpdateInlineVideoState
+                                  formatDuration: WorkUpdateInlineVideoState
                                       ._formatDuration,
                                 ),
                                 Positioned(

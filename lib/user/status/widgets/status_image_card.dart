@@ -1,11 +1,16 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/user/status/widgets/status_card_actions.dart';
+import 'package:maribel_wellness_centre_application/user/updates/utils/work_update_media_cache.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class StatusImageCard extends StatelessWidget {
   const StatusImageCard({
     super.key,
     required this.imageUrl,
+    this.title = '',
+    this.description = '',
     this.onCopy,
     this.onShare,
     this.onDownload,
@@ -13,6 +18,8 @@ class StatusImageCard extends StatelessWidget {
   });
 
   final String imageUrl;
+  final String title;
+  final String description;
   final VoidCallback? onCopy;
   final VoidCallback? onShare;
   final VoidCallback? onDownload;
@@ -21,6 +28,8 @@ class StatusImageCard extends StatelessWidget {
   static const Color _label = Color(0xFFB0B0B0);
   static const Color _accentSoft = Color(0xFFF0EBF6);
   static const Color _accent = Color(0xFFA28CC1);
+  static const Color _shimmerBase = Color(0xFFE0E0E0);
+  static const Color _shimmerHighlight = Color(0xFFF5F5F5);
 
   @override
   Widget build(BuildContext context) {
@@ -46,11 +55,13 @@ class StatusImageCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: Image.network(
-                imageUrl,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                cacheManager: WorkUpdateMediaCache.manager,
+                httpHeaders: WorkUpdateMediaCache.authHeaders(),
                 fit: BoxFit.cover,
                 width: double.infinity,
-                errorBuilder: (context, error, stackTrace) => Container(
+                errorWidget: (context, url, error) => Container(
                   color: _accentSoft,
                   child: Icon(
                     Icons.image_outlined,
@@ -58,18 +69,42 @@ class StatusImageCard extends StatelessWidget {
                     size: 10.w,
                   ),
                 ),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: _accentSoft,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: _shimmerBase,
+                  highlightColor: _shimmerHighlight,
+                  direction: ShimmerDirection.ltr,
+                  child: const ColoredBox(color: _shimmerBase),
+                ),
               ),
             ),
           ),
+          if (title.trim().isNotEmpty) ...[
+            SizedBox(height: 1.h),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+          if (description.trim().isNotEmpty) ...[
+            SizedBox(height: 0.5.h),
+            Text(
+              description,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5.sp,
+                fontWeight: FontWeight.w400,
+                color: Colors.grey[700],
+                height: 1.35,
+              ),
+            ),
+          ],
           SizedBox(height: 1.4.h),
           Row(
             children: [

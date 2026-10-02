@@ -17,10 +17,10 @@ class StatusCardActions extends StatelessWidget {
   final VoidCallback? onDownload;
   final VoidCallback? onView;
 
-  static const Color _iconMuted = Color(0xFF9E9E9E);
-  static const Color _copyBg = Color(0xFFF0F0F0);
-  static const Color _shareBg = Color(0xFFD4EDE0);
-  static const Color _shareIcon = Color(0xFF4CAF7A);
+  // static const Color _iconMuted = Color(0xFF9E9E9E);
+  // static const Color _copyBg = Color(0xFFF0F0F0);
+  // static const Color _shareBg = Color(0xFFD4EDE0);
+  // static const Color _shareIcon = Color(0xFF4CAF7A);
   static const Color _downloadBg = Color(0xFFE8F4FC);
   static const Color _downloadIcon = Color(0xFF64B5F6);
   static const Color _viewBg = Color(0xFFF0EBF6);
@@ -31,20 +31,6 @@ class StatusCardActions extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ActionButton(
-          iconPath: ImageConstants.copy,
-          background: _copyBg,
-          iconColor: _iconMuted,
-          onTap: onCopy,
-        ),
-        SizedBox(width: 2.w),
-        _ActionButton(
-          iconPath: ImageConstants.share,
-          background: _shareBg,
-          iconColor: _shareIcon,
-          onTap: onShare,
-        ),
-        SizedBox(width: 2.w),
         _ActionButton(
           iconPath: ImageConstants.download,
           background: _downloadBg,
