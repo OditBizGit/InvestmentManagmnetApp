@@ -31,19 +31,19 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
   static _RecentTransaction _mapTransaction(
     InvestorTransactionHistoryModel item,
   ) {
-    final received = item.receivedAmount;
-    final amount = received > 0 ? received : item.investmentAmount;
+    final paidAmount = item.paidAmount;
+
     final description = item.narration.trim().isNotEmpty
         ? item.narration.trim()
         : (item.investorCode.trim().isNotEmpty
-            ? item.investorCode.trim()
-            : '-');
+              ? item.investorCode.trim()
+              : '-');
 
     return _RecentTransaction(
       date: _formatDate(item.date),
       party: item.fullName.trim().isNotEmpty ? item.fullName.trim() : 'Unknown',
       description: description,
-      amount: CurrencyFormatter.format(amount),
+      amount: CurrencyFormatter.format(paidAmount),
       status: item.status.trim().isNotEmpty ? item.status.trim() : 'Completed',
     );
   }
@@ -138,7 +138,9 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
                 );
               }
 
-              final rows = state.transactions.map(_mapTransaction).toList();
+              final latestTransactions = state.transactions.take(10).toList();
+
+              final rows = latestTransactions.map(_mapTransaction).toList();
               if (rows.isEmpty) {
                 return SizedBox(
                   height: 140,
@@ -175,10 +177,7 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
                               thickness: 1,
                               color: AppColors.border,
                             ),
-                          _TransactionRow(
-                            index: i,
-                            transaction: rows[i],
-                          ),
+                          _TransactionRow(index: i, transaction: rows[i]),
                         ],
                       ],
                     ),
@@ -245,10 +244,7 @@ class _TableHeader extends StatelessWidget {
 }
 
 class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(
-    this.title, {
-    required this.flex,
-  });
+  const _HeaderCell(this.title, {required this.flex});
 
   final String title;
   final int flex;
@@ -272,10 +268,7 @@ class _HeaderCell extends StatelessWidget {
 }
 
 class _TransactionRow extends StatelessWidget {
-  const _TransactionRow({
-    required this.index,
-    required this.transaction,
-  });
+  const _TransactionRow({required this.index, required this.transaction});
 
   final int index;
   final _RecentTransaction transaction;
@@ -301,10 +294,7 @@ class _TransactionRow extends StatelessWidget {
 }
 
 class _Cell extends StatelessWidget {
-  const _Cell(
-    this.text, {
-    required this.flex,
-  });
+  const _Cell(this.text, {required this.flex});
 
   final String text;
   final int flex;
@@ -326,4 +316,3 @@ class _Cell extends StatelessWidget {
     );
   }
 }
-

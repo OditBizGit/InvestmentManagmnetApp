@@ -33,24 +33,24 @@ class AdminTopBar extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
-                  color: AppColors.cardBg,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: SvgPicture.asset(
-                  ImageConstants.notificationBell,
-                  width: 20,
-                  height: 20,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.accent,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
+              // Container(
+              //   width: 42,
+              //   height: 42,
+              //   decoration: const BoxDecoration(
+              //     color: AppColors.cardBg,
+              //     shape: BoxShape.circle,
+              //   ),
+              //   alignment: Alignment.center,
+              //   child: SvgPicture.asset(
+              //     ImageConstants.notificationBell,
+              //     width: 20,
+              //     height: 20,
+              //     colorFilter: const ColorFilter.mode(
+              //       AppColors.accent,
+              //       BlendMode.srcIn,
+              //     ),
+              //   ),
+              // ),
               const SizedBox(width: 12),
               InkWell(
                 onTap: () {},
