@@ -10,10 +10,9 @@ import 'package:maribel_wellness_centre_application/admin/work_progress/screens/
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/view_updates_list.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/add _banner/add_banner.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/add_update_option_cards.dart';
-import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/widgets/update_status_stories_form.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_status_stroies/update_status_stories_form.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
-import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
 enum _ProjectPhaseMode { add, view }
@@ -82,26 +81,7 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
     });
   }
 
-  void _saveMedia(MediaUpdate update) {
-    final wasEditing = _editingMedia != null;
-    setState(() {
-      final index = _mediaUpdates.indexWhere((item) => item.id == update.id);
-      if (index >= 0) {
-        _mediaUpdates[index] = update;
-      } else {
-        _mediaUpdates.insert(0, update);
-      }
-      _editingMedia = null;
-    });
-    AppToast.success(
-      wasEditing
-          ? 'Media update saved successfully'
-          : 'Media update added successfully',
-      context: context,
-    );
-  }
-
-  /// Used by construction media form — toast is already shown by the form.
+  /// Used by media forms — toast is already shown by the form.
   void _saveConstructionMedia(MediaUpdate update) {
     setState(() {
       final index = _mediaUpdates.indexWhere((item) => item.id == update.id);
@@ -173,7 +153,8 @@ class _AddUpdateScreenState extends State<AddUpdateScreen> {
           initial: _editingMedia?.type == AddUpdateOptionType.statusStories
               ? _editingMedia
               : null,
-          onSave: _saveMedia,
+          // Toast is shown by the form from the API response.
+          onSave: _saveConstructionMedia,
         );
       case AddUpdateOptionType.constructionMedia:
         return UpdateConstructionMedia(

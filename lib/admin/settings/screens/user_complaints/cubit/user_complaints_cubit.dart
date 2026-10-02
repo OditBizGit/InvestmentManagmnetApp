@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 import '../model/complaint_ui_model.dart';
 import '../repository/user_complaints_respository.dart';
@@ -53,7 +54,10 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
     } catch (e) {
       emit(
         UserComplaintsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load complaints. Please try again.',
+          ),
         ),
       );
     }
@@ -123,7 +127,10 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
       );
       emit(
         ViewComplaintFailure(
-          message: e.toString().replaceFirst('Exception: ', ''),
+          message: ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to mark complaint as read. Please try again.',
+          ),
         ),
       );
     } finally {
@@ -198,7 +205,10 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
       );
       emit(
         SolveComplaintFailure(
-          message: e.toString().replaceFirst('Exception: ', ''),
+          message: ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to mark complaint as solved. Please try again.',
+          ),
         ),
       );
     } finally {

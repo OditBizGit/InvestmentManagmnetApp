@@ -69,7 +69,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   Widget _screenFor(AdminDrawerItem item) {
     switch (item) {
       case AdminDrawerItem.dashboard:
-        return const AdminHomeScreen();
+        return AdminHomeScreen(
+          isActive: _selectedItem == AdminDrawerItem.dashboard,
+        );
       case AdminDrawerItem.investors:
         return const AdminInvestorsScreen();
       case AdminDrawerItem.fundingPayments:

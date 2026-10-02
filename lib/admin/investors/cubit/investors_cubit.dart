@@ -5,6 +5,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_type_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 part 'investors_state.dart';
 
@@ -48,20 +49,15 @@ class InvestorsCubit extends Cubit<InvestorsState> {
         ),
       );
     } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         InvestorsFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investors'),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investors'),
         ),
       );
     } catch (e) {
       emit(
         InvestorsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investors'),
         ),
       );
     }
@@ -86,20 +82,15 @@ class InvestorsCubit extends Cubit<InvestorsState> {
       _investorTypes = response.data;
       emit(InvestorTypesSuccess(response.data));
     } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         InvestorTypesFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investor types'),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investor types'),
         ),
       );
     } catch (e) {
       emit(
         InvestorTypesFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investor types'),
         ),
       );
     }
@@ -130,20 +121,15 @@ class InvestorsCubit extends Cubit<InvestorsState> {
         ),
       );
     } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         RegisterInvestorFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to register investor'),
+          ApiErrorMessage.from(e, fallback: 'Failed to register investor'),
         ),
       );
     } catch (e) {
       emit(
         RegisterInvestorFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to register investor'),
         ),
       );
     }

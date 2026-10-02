@@ -1,44 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
+
+import '../cubit/dashboard_cubit.dart';
+import '../model/all_transaction_history_model.dart';
+import '../model/recent_updates_model.dart';
+import 'dashboard_shimmer.dart';
 
 class DashboardActivitySection extends StatelessWidget {
   const DashboardActivitySection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 900;
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<DashboardCubit, DashboardState>(
+          listenWhen: (previous, current) =>
+              previous.recentPaymentsLoading &&
+              !current.recentPaymentsLoading &&
+              current.recentPaymentsError != null,
+          listener: (context, state) {
+            final message = state.recentPaymentsError!;
+            if (message == DashboardCubit.noInternetMessage) return;
+            AppToast.error(message, context: context);
+          },
+        ),
+        BlocListener<DashboardCubit, DashboardState>(
+          listenWhen: (previous, current) =>
+              previous.recentUpdatesLoading &&
+              !current.recentUpdatesLoading &&
+              current.recentUpdatesError != null,
+          listener: (context, state) {
+            final message = state.recentUpdatesError!;
+            if (message == DashboardCubit.noInternetMessage) return;
+            AppToast.error(message, context: context);
+          },
+        ),
+      ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 900;
 
-        if (isNarrow) {
-          return const Column(
-            children: [
-              _RecentPaymentsCard(),
-              SizedBox(height: 14),
-              _RecentUpdatesCard(),
-              SizedBox(height: 14),
-              _QuickActionsCard(),
-            ],
+          if (isNarrow) {
+            return const Column(
+              children: [
+                _RecentPaymentsCard(),
+                SizedBox(height: 14),
+                _RecentUpdatesCard(),
+                SizedBox(height: 14),
+                _QuickActionsCard(),
+              ],
+            );
+          }
+
+          return const IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _RecentPaymentsCard()),
+                SizedBox(width: 14),
+                Expanded(child: _RecentUpdatesCard()),
+                SizedBox(width: 14),
+                Expanded(child: _QuickActionsCard()),
+              ],
+            ),
           );
-        }
-
-        return const IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _RecentPaymentsCard()),
-              SizedBox(width: 14),
-              Expanded(child: _RecentUpdatesCard()),
-              SizedBox(width: 14),
-              Expanded(child: _QuickActionsCard()),
-            ],
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 }
@@ -121,54 +154,107 @@ class _SectionHeader extends StatelessWidget {
 class _RecentPaymentsCard extends StatelessWidget {
   const _RecentPaymentsCard();
 
-  static const List<_PaymentItem> _payments = [
-    _PaymentItem(name: 'Corey Herwitz', date: '03 Jun, 2026', amount: '2,00,00,00'),
-    _PaymentItem(name: 'Alfredo Curtis', date: '03 Jun, 2026', amount: '2,00,00,00'),
-    _PaymentItem(name: 'Talan Baptista', date: '03 Jun, 2026', amount: '2,00,00,00'),
-    _PaymentItem(name: 'Alfonso Herwitz', date: '03 Jun, 2026', amount: '2,00,00,00'),
-    _PaymentItem(name: 'Terry Rosser', date: '03 Jun, 2026', amount: '2,00,00,00'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return _Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionHeader(
-            title: 'Recent Payments',
+      child: BlocBuilder<DashboardCubit, DashboardState>(
+        buildWhen: (previous, current) =>
+            previous.recentPaymentsLoading != current.recentPaymentsLoading ||
+            previous.recentPaymentsError != current.recentPaymentsError ||
+            previous.recentPayments != current.recentPayments ||
+            previous.recentPaymentsLoaded != current.recentPaymentsLoaded,
+        builder: (context, state) {
+          if (state.recentPaymentsLoading) {
+            return _buildLoading();
+          }
+
+          if (state.recentPaymentsError != null) {
+            return _buildError(state.recentPaymentsError!);
+          }
+
+          if (state.recentPaymentsLoaded) {
+            return _buildContent(state.recentPayments);
+          }
+
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return const DashboardRecentPaymentsShimmer();
+  }
+
+  Widget _buildError(String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: 'Recent Payments',
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: Colors.red,
+            ),
           ),
-          const SizedBox(height: 8),
-          for (var i = 0; i < _payments.length; i++) ...[
-            _PaymentRow(item: _payments[i]),
-            if (i < _payments.length - 1)
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(List<TransactionHistoryModel> payments) {
+    final visiblePayments = payments.take(5).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: 'Recent Payments',
+        ),
+        const SizedBox(height: 8),
+        if (visiblePayments.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No data found',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          )
+        else
+          for (var i = 0; i < visiblePayments.length; i++) ...[
+            _PaymentRow(payment: visiblePayments[i]),
+            if (i < visiblePayments.length - 1)
               const Divider(height: 1, color: AppColors.border),
           ],
-        ],
-      ),
+      ],
     );
   }
 }
 
-class _PaymentItem {
-  const _PaymentItem({
-    required this.name,
-    required this.date,
-    required this.amount,
-  });
-
-  final String name;
-  final String date;
-  final String amount;
-}
-
 class _PaymentRow extends StatelessWidget {
-  const _PaymentRow({required this.item});
+  const _PaymentRow({required this.payment});
 
-  final _PaymentItem item;
+  final TransactionHistoryModel payment;
 
   @override
   Widget build(BuildContext context) {
+    final name =
+        payment.fullName.isNotEmpty ? payment.fullName : 'Unknown Investor';
+    final amount = _formatAmount(
+      payment.paidAmount > 0 ? payment.paidAmount : payment.pendingAmount,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -177,7 +263,7 @@ class _PaymentRow extends StatelessWidget {
             radius: 18,
             backgroundColor: AppColors.cardBg,
             child: Text(
-              item.name.isNotEmpty ? item.name[0] : '?',
+              name[0].toUpperCase(),
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
@@ -191,7 +277,7 @@ class _PaymentRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -202,7 +288,7 @@ class _PaymentRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  item.date,
+                  _formatDate(payment.date),
                   style: TextStyle(
                     fontSize: 9.sp,
                     fontWeight: FontWeight.w400,
@@ -213,102 +299,174 @@ class _PaymentRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Received',
-                style: TextStyle(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.green,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                item.amount,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+          Text(
+            amount,
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final day = date.day.toString().padLeft(2, '0');
+    return '$day ${months[date.month - 1]}, ${date.year}';
+  }
+
+  String _formatAmount(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw =
+        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
   }
 }
 
 class _RecentUpdatesCard extends StatelessWidget {
   const _RecentUpdatesCard();
 
-  static const List<_UpdateItem> _updates = [
-    _UpdateItem(
-      title: '2nd Floor Construction Completed Successfully',
-      date: '03 Jun, 2026',
-      icon: Icons.apartment_outlined,
-      color: Color(0xFF5B8DEF),
-    ),
-    _UpdateItem(
-      title: '2nd Floor Construction Completed Successfully',
-      date: '03 Jun, 2026',
-      icon: Icons.construction_outlined,
-      color: Color(0xFFE89A3C),
-    ),
-    _UpdateItem(
-      title: '2nd Floor Construction Completed Successfully',
-      date: '03 Jun, 2026',
-      icon: Icons.groups_outlined,
-      color: Color(0xFF3CB371),
-    ),
-    _UpdateItem(
-      title: '2nd Floor Construction Completed Successfully',
-      date: '03 Jun, 2026',
-      icon: Icons.home_work_outlined,
-      color: Color(0xFF9B7EBF),
-    ),
+  static const List<Color> _accentColors = [
+    Color(0xFF5B8DEF),
+    Color(0xFFE89A3C),
+    Color(0xFF3CB371),
+    Color(0xFF9B7EBF),
+    Color(0xFFE57373),
   ];
 
   @override
   Widget build(BuildContext context) {
     return _Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionHeader(
-            title: 'Recent Updates',
-          ),
-          const SizedBox(height: 10),
-          for (var i = 0; i < _updates.length; i++) ...[
-            if (i > 0) const SizedBox(height: 14),
-            _UpdateRow(item: _updates[i]),
-          ],
-        ],
+      child: BlocBuilder<DashboardCubit, DashboardState>(
+        buildWhen: (previous, current) =>
+            previous.recentUpdatesLoading != current.recentUpdatesLoading ||
+            previous.recentUpdatesError != current.recentUpdatesError ||
+            previous.recentUpdates != current.recentUpdates ||
+            previous.recentUpdatesLoaded != current.recentUpdatesLoaded,
+        builder: (context, state) {
+          if (state.recentUpdatesLoading) {
+            return _buildLoading();
+          }
+
+          if (state.recentUpdatesError != null) {
+            return _buildError(state.recentUpdatesError!);
+          }
+
+          if (state.recentUpdatesLoaded) {
+            return _buildContent(state.recentUpdates);
+          }
+
+          return const SizedBox();
+        },
       ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: 'Recent Updates',
+        ),
+        const SizedBox(height: 24),
+        const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildError(String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: 'Recent Updates',
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: Colors.red,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(List<WorkUpdateModel> updates) {
+    final visibleUpdates = updates.take(5).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: 'Recent Updates',
+        ),
+        const SizedBox(height: 10),
+        if (visibleUpdates.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No data found',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          )
+        else
+          for (var i = 0; i < visibleUpdates.length; i++) ...[
+            if (i > 0) const SizedBox(height: 14),
+            _UpdateRow(
+              update: visibleUpdates[i],
+              color: _accentColors[i % _accentColors.length],
+            ),
+          ],
+      ],
     );
   }
 }
 
-class _UpdateItem {
-  const _UpdateItem({
-    required this.title,
-    required this.date,
-    required this.icon,
+class _UpdateRow extends StatelessWidget {
+  const _UpdateRow({
+    required this.update,
     required this.color,
   });
 
-  final String title;
-  final String date;
-  final IconData icon;
+  final WorkUpdateModel update;
   final Color color;
-}
-
-class _UpdateRow extends StatelessWidget {
-  const _UpdateRow({required this.item});
-
-  final _UpdateItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -319,10 +477,14 @@ class _UpdateRow extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: item.color.withValues(alpha: 0.12),
+            color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(item.icon, color: item.color, size: 24),
+          child: Icon(
+            Icons.construction_outlined,
+            color: color,
+            size: 24,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -330,7 +492,7 @@ class _UpdateRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                item.title,
+                update.title.isNotEmpty ? update.title : 'Untitled update',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -342,7 +504,7 @@ class _UpdateRow extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                item.date,
+                _formatDate(update.createdDate),
                 style: TextStyle(
                   fontSize: 9.sp,
                   fontWeight: FontWeight.w500,
@@ -354,6 +516,25 @@ class _UpdateRow extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final day = date.day.toString().padLeft(2, '0');
+    return '$day ${months[date.month - 1]}, ${date.year}';
   }
 }
 

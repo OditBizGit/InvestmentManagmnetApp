@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/model/projcet_model.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 import '../repository/create_project_repository.dart';
 
@@ -9,7 +10,7 @@ part 'create_project_state.dart';
 class CreateProjectCubit extends Cubit<CreateProjectState> {
   CreateProjectCubit({
     required this._repository,
-  })  : super(CreateProjectInitial());
+  }) : super(CreateProjectInitial());
 
   final ProjectRepository _repository;
 
@@ -45,7 +46,10 @@ class CreateProjectCubit extends Cubit<CreateProjectState> {
     } catch (e) {
       emit(
         ProjectsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load projects. Please try again.',
+          ),
         ),
       );
     }
@@ -88,7 +92,10 @@ class CreateProjectCubit extends Cubit<CreateProjectState> {
     } catch (e) {
       emit(
         CreateProjectFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to create project. Please try again.',
+          ),
         ),
       );
     }
@@ -131,7 +138,10 @@ class CreateProjectCubit extends Cubit<CreateProjectState> {
     } catch (e) {
       emit(
         UpdateProjectFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to update project. Please try again.',
+          ),
         ),
       );
     }

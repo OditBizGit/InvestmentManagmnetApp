@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 part 'work_progress_state.dart';
 
@@ -33,7 +34,7 @@ class WorkProgressCubit extends Cubit<WorkProgressState> {
       );
       emit(
         WorkProgressFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load work progress'),
         ),
       );
     }

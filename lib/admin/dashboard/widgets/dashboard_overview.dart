@@ -1,58 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/dashboard/cubit/dashboard_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/dashboard/model/dashboard_model.dart';
 import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dashboard_activity_section.dart';
 import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dashboard_details_section.dart';
+import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dashboard_shimmer.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
 class DashboardOverview extends StatelessWidget {
   const DashboardOverview({super.key});
-
-  static const List<_StatCardData> _stats = [
-    _StatCardData(
-      label: 'Total Funding',
-      value: '25 Core',
-      icon: ImageConstants.totalFunding,
-      iconColor: Color(0xFF9B7EBF),
-      iconBg: Color(0xFFF0EBF6),
-    ),
-    _StatCardData(
-      label: 'Amount Received',
-      value: '₹85,0000',
-      icon: ImageConstants.amountReceivable,
-      iconColor: Color(0xFF2CB5A8),
-      iconBg: Color(0xFFE6F7F5),
-    ),
-    _StatCardData(
-      label: 'Amount Remaining',
-      value: '₹2,500,000',
-      icon: ImageConstants.amountRemaining,
-      iconColor: Color(0xFFE06B7A),
-      iconBg: Color(0xFFFDECEE),
-    ),
-    _StatCardData(
-      label: 'Total Investors',
-      value: '124',
-      icon: ImageConstants.totalInvestors,
-      iconColor: Color(0xFFE89A3C),
-      iconBg: Color(0xFFFFF3E8),
-    ),
-    _StatCardData(
-      label: 'Active Investors',
-      value: '92',
-      icon: ImageConstants.activeInvestors,
-      iconColor: Color(0xFF3CB371),
-      iconBg: Color(0xFFE8F8EF),
-    ),
-    _StatCardData(
-      label: 'Funding Progress',
-      value: '25%',
-      icon: ImageConstants.investment,
-      iconColor: Color(0xFF4A90D9),
-      iconBg: Color(0xFFE8F1FB),
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +20,123 @@ class DashboardOverview extends StatelessWidget {
       children: [
         const _DashboardTitleRow(),
         const SizedBox(height: 24),
-        _StatsGrid(stats: _stats),
+        BlocBuilder<DashboardCubit, DashboardState>(
+          buildWhen: (previous, current) =>
+              previous.dashboardLoading != current.dashboardLoading ||
+              previous.dashboardError != current.dashboardError ||
+              previous.dashboard != current.dashboard ||
+              previous.dashboardLoaded != current.dashboardLoaded,
+          builder: (context, state) {
+            if (state.dashboardLoading) {
+              return const DashboardStatsShimmer();
+            }
+
+            if (state.dashboardError != null) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  state.dashboardError!,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: Colors.red,
+                  ),
+                ),
+              );
+            }
+
+            final dashboard = state.dashboard;
+            if (dashboard == null) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No data found',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              );
+            }
+
+            return _StatsGrid(stats: _buildStats(dashboard));
+          },
+        ),
         const SizedBox(height: 20),
         const DashboardDetailsSection(),
         const SizedBox(height: 20),
         const DashboardActivitySection(),
       ],
     );
+  }
+
+  List<_StatCardData> _buildStats(DashboardModel dashboard) {
+    final investorsCount = '${dashboard.totalInvestors}';
+
+    return [
+      _StatCardData(
+        label: 'Total Funding',
+        value: _formatAmount(dashboard.projectFund),
+        icon: ImageConstants.totalFunding,
+        iconColor: const Color(0xFF9B7EBF),
+        iconBg: const Color(0xFFF0EBF6),
+      ),
+      _StatCardData(
+        label: 'Amount Received',
+        value: _formatAmount(dashboard.totalReceivedAmount),
+        icon: ImageConstants.amountReceivable,
+        iconColor: const Color(0xFF2CB5A8),
+        iconBg: const Color(0xFFE6F7F5),
+      ),
+      _StatCardData(
+        label: 'Amount Remaining',
+        value: _formatAmount(dashboard.totalPendingAmount),
+        icon: ImageConstants.amountRemaining,
+        iconColor: const Color(0xFFE06B7A),
+        iconBg: const Color(0xFFFDECEE),
+      ),
+      _StatCardData(
+        label: 'Total Investors',
+        value: investorsCount,
+        icon: ImageConstants.totalInvestors,
+        iconColor: const Color(0xFFE89A3C),
+        iconBg: const Color(0xFFFFF3E8),
+      ),
+      _StatCardData(
+        label: 'Active Investors',
+        value: investorsCount,
+        icon: ImageConstants.activeInvestors,
+        iconColor: const Color(0xFF3CB371),
+        iconBg: const Color(0xFFE8F8EF),
+      ),
+      _StatCardData(
+        label: 'Funding Progress',
+        value: _formatPercent(dashboard.fundingProgress),
+        icon: ImageConstants.investment,
+        iconColor: const Color(0xFF4A90D9),
+        iconBg: const Color(0xFFE8F1FB),
+      ),
+    ];
+  }
+
+  String _formatAmount(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw =
+        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
+  }
+
+  String _formatPercent(double value) {
+    final isWhole = value == value.roundToDouble();
+    final raw = isWhole ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+    return '$raw%';
   }
 }
 
@@ -80,7 +149,6 @@ class _StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     const spacing = 12.0;
 
-    // Always keep all six cards in a single row; they shrink with available width.
     return Row(
       children: [
         for (var i = 0; i < stats.length; i++) ...[

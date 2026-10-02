@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/dashboard/cubit/dashboard_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/dashboard/repository/dashboard_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_main_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
@@ -60,11 +63,20 @@ class MyApp extends StatelessWidget {
         RepositoryProvider<ProfileRepository>.value(
           value: getIt<ProfileRepository>(),
         ),
+        RepositoryProvider<AddPhaseRepository>.value(
+          value: getIt<AddPhaseRepository>(),
+        ),
+        RepositoryProvider<DashboardRepository>.value(
+          value: getIt<DashboardRepository>(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<LoginCubit>(
             create: (_) => getIt<LoginCubit>(),
+          ),
+          BlocProvider<DashboardCubit>(
+            create: (_) => getIt<DashboardCubit>(),
           ),
         ],
         child: Sizer(

@@ -1,41 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
+
+import '../../work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
+import '../cubit/dashboard_cubit.dart';
+import '../model/dashboard_model.dart';
+import '../model/top_investors_model.dart';
+import 'dashboard_shimmer.dart';
 
 class DashboardDetailsSection extends StatelessWidget {
   const DashboardDetailsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 900;
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<DashboardCubit, DashboardState>(
+          listenWhen: (previous, current) =>
+              previous.dashboardLoading &&
+              !current.dashboardLoading &&
+              current.dashboardError != null,
+          listener: (context, state) {
+            AppToast.error(state.dashboardError!, context: context);
+          },
+        ),
+        BlocListener<DashboardCubit, DashboardState>(
+          listenWhen: (previous, current) =>
+              previous.workProgressLoading && !current.workProgressLoading,
+          listener: (context, state) {
+            final message = state.workProgressError;
+            if (message == null ||
+                message == DashboardCubit.noInternetMessage) {
+              return;
+            }
+            AppToast.error(message, context: context);
+          },
+        ),
+        BlocListener<DashboardCubit, DashboardState>(
+          listenWhen: (previous, current) =>
+              previous.topInvestorsLoading && !current.topInvestorsLoading,
+          listener: (context, state) {
+            final message = state.topInvestorsError;
+            if (message == null ||
+                message == DashboardCubit.noInternetMessage) {
+              return;
+            }
+            AppToast.error(message, context: context);
+          },
+        ),
+      ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 900;
 
-        if (isNarrow) {
-          return const Column(
-            children: [
-              _FundingOverviewCard(),
-              SizedBox(height: 14),
-              _HospitalWorkProgressCard(),
-              SizedBox(height: 14),
-              _TopRatedInvestorsCard(),
-            ],
+          if (isNarrow) {
+            return const Column(
+              children: [
+                _FundingOverviewCard(),
+                SizedBox(height: 14),
+                _HospitalWorkProgressCard(),
+                SizedBox(height: 14),
+                _TopRatedInvestorsCard(),
+              ],
+            );
+          }
+
+          return const IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _FundingOverviewCard(),
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: _HospitalWorkProgressCard(),
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: _TopRatedInvestorsCard(),
+                ),
+              ],
+            ),
           );
-        }
-
-        return const IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _FundingOverviewCard()),
-              SizedBox(width: 14),
-              Expanded(child: _HospitalWorkProgressCard()),
-              SizedBox(width: 14),
-              Expanded(child: _TopRatedInvestorsCard()),
-            ],
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 }
@@ -70,132 +122,240 @@ class _DashboardPanel extends StatelessWidget {
 class _FundingOverviewCard extends StatelessWidget {
   const _FundingOverviewCard();
 
-  static const double progress = 0.65;
-
   @override
   Widget build(BuildContext context) {
     return _DashboardPanel(
+      child: BlocBuilder<DashboardCubit, DashboardState>(
+        buildWhen: (previous, current) =>
+            previous.dashboardLoading != current.dashboardLoading ||
+            previous.dashboardError != current.dashboardError ||
+            previous.dashboard != current.dashboard ||
+            previous.dashboardLoaded != current.dashboardLoaded,
+        builder: (context, state) {
+          if (state.dashboardLoading) {
+            return _buildLoading();
+          }
+
+          if (state.dashboardError != null) {
+            return _buildError(state.dashboardError!);
+          }
+
+          if (state.dashboardLoaded && state.dashboard != null) {
+            return _buildContent(state.dashboard!);
+          }
+
+          if (state.dashboardLoaded) {
+            return _buildError('No data found');
+          }
+
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return const DashboardFundingOverviewShimmer();
+  }
+
+  Widget _buildError(String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Funding Overview',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: Colors.red,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(DashboardModel dashboard) {
+    final progressPercent = _normalizePercent(dashboard.fundingProgress);
+    final progressValue = (progressPercent / 100).clamp(0.0, 1.0);
+    final progressLabel = progressPercent == progressPercent.roundToDouble()
+        ? '${progressPercent.toStringAsFixed(0)}%'
+        : '${progressPercent.toStringAsFixed(1)}%';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Funding Overview',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: SizedBox(
+            width: 150,
+            height: 150,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: CircularProgressIndicator(
+                    value: progressValue,
+                    strokeWidth: 14,
+                    backgroundColor: const Color(0xFFEDEDED),
+                    color: AppColors.green,
+                    strokeCap: StrokeCap.round,
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      progressLabel,
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.green,
+                      ),
+                    ),
+                    Text(
+                      'Of Goal',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: _FundingMetricTile(
+                label: 'Project Fund',
+                value: _formatAmount(dashboard.projectFund),
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _FundingMetricTile(
+                label: 'Total Investment',
+                value: _formatAmount(dashboard.totalInvestmentAmount),
+                color: const Color(0xFF2CB5A8),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _FundingMetricTile(
+                label: 'Total Received',
+                value: _formatAmount(dashboard.totalReceivedAmount),
+                color: AppColors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _FundingMetricTile(
+                label: 'Total Pending',
+                value: _formatAmount(dashboard.totalPendingAmount),
+                color: const Color(0xFFE06B7A),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  double _normalizePercent(double value) {
+    if (value <= 1) return value * 100;
+    return value;
+  }
+
+  String _formatAmount(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw =
+        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
+  }
+}
+
+class _FundingMetricTile extends StatelessWidget {
+  const _FundingMetricTile({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Funding Overview',
+            label,
             style: TextStyle(
-              fontSize: 12.sp,
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.sp,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 20),
-          Center(
-            child: SizedBox(
-              width: 150,
-              height: 150,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    height: 150,
-                    child: CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 14,
-                      backgroundColor: const Color(0xFFEDEDED),
-                      color: AppColors.green,
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '65%',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.green,
-                        ),
-                      ),
-                      Text(
-                        'Of Goal',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const _FundingLegendItem(
-            color: AppColors.green,
-            label: 'Funding Overview',
-            value: '₹65,50,00,000 (65%)',
-          ),
-          const SizedBox(height: 14),
-          const _FundingLegendItem(
-            color: Color(0xFFD9D9D9),
-            label: 'Amount Remaining',
-            value: '₹63,50,00,000 (35%)',
-          ),
         ],
       ),
-    );
-  }
-}
-
-class _FundingLegendItem extends StatelessWidget {
-  const _FundingLegendItem({
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-
-  final Color color;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(top: 5),
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textMuted,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -203,81 +363,176 @@ class _FundingLegendItem extends StatelessWidget {
 class _HospitalWorkProgressCard extends StatelessWidget {
   const _HospitalWorkProgressCard();
 
-  static const List<_WorkProgressItem> _items = [
-    _WorkProgressItem(label: 'Foundation', percent: 100, color: AppColors.green),
-    _WorkProgressItem(label: 'Structure', percent: 85, color: AppColors.green),
-    _WorkProgressItem(
-      label: 'Electrical',
-      percent: 60,
-      color: Color(0xFFF2C94C),
-    ),
-    _WorkProgressItem(
-      label: 'Pluming',
-      percent: 45,
-      color: Color(0xFFE57373),
-    ),
-    _WorkProgressItem(
-      label: 'Interior',
-      percent: 20,
-      color: Color(0xFFE57373),
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return _DashboardPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: BlocBuilder<DashboardCubit, DashboardState>(
+        buildWhen: (previous, current) =>
+            previous.workProgressLoading != current.workProgressLoading ||
+            previous.workProgressError != current.workProgressError ||
+            previous.workPhases != current.workPhases ||
+            previous.workProgressLoaded != current.workProgressLoaded,
+        builder: (context, state) {
+          if (state.workProgressLoading) {
+            return _buildLoading();
+          }
+
+          if (state.workProgressError != null) {
+            return _buildError(state.workProgressError!);
+          }
+
+          if (state.workProgressLoaded) {
+            return _buildContent(state.workPhases);
+          }
+
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return const DashboardWorkProgressShimmer();
+  }
+
+  Widget _buildError(String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hospital Work Progress',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: Colors.red,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildContent(List<WorkPhaseListModel> workPhases) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hospital Work Progress',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        if (workPhases.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No work phases available',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          )
+        else
+          for (var i = 0; i < workPhases.length; i++) ...[ 
+            if (i > 0) const SizedBox(height: 14),
+
+            _WorkProgressRow(
+              item: _WorkProgressItem(
+                label: workPhases[i].stageName,
+                percent: workPhases[i].progress,
+                color: _getProgressColor(
+                  workPhases[i].progress,
+                ),
+              ),
+            ),
+          ],
+
+        const SizedBox(height: 18),
+
+        _buildOverallProgress(workPhases),
+      ],
+    );
+  }
+
+  Widget _buildOverallProgress(
+      List<WorkPhaseListModel> workPhases,
+      ) {
+    int overallProgress = 0;
+
+    if (workPhases.isNotEmpty) {
+      final total = workPhases.fold<int>(
+        0,
+            (sum, phase) => sum + (phase.progress),
+      );
+
+      overallProgress = (total / workPhases.length).round();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
         children: [
           Text(
-            'Hospital Work Progress',
+            'Overall Progress',
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.white,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '$overallProgress%',
             style: TextStyle(
               fontSize: 12.sp,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 18),
-          for (var i = 0; i < _items.length; i++) ...[
-            if (i > 0) const SizedBox(height: 14),
-            _WorkProgressRow(item: _items[i]),
-          ],
-          const SizedBox(height: 18),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  'Overall Progress',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.white,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '68%',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.white,
-                  ),
-                ),
-              ],
+              color: AppColors.white,
             ),
           ),
         ],
       ),
     );
   }
-}
 
+  Color _getProgressColor(int progress) {
+    if (progress >= 80) {
+      return AppColors.green;
+    }
+
+    if (progress >= 50) {
+      return const Color(0xFFF2C94C);
+    }
+
+    return const Color(0xFFE57373);
+  }
+}
 class _WorkProgressItem {
   const _WorkProgressItem({
     required this.label,
@@ -339,61 +594,115 @@ class _WorkProgressRow extends StatelessWidget {
 class _TopRatedInvestorsCard extends StatelessWidget {
   const _TopRatedInvestorsCard();
 
-  static const List<_InvestorItem> _investors = [
-    _InvestorItem(name: 'Corey Herwitz', amount: '2,00,00,00'),
-    _InvestorItem(name: 'Alfredo Curtis', amount: '2,00,00,00'),
-    _InvestorItem(name: 'Talan Baptista', amount: '2,00,00,00'),
-    _InvestorItem(name: 'Alfonso Herwitz', amount: '2,00,00,00'),
-    _InvestorItem(name: 'Terry Rosser', amount: '2,00,00,00'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return _DashboardPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Top Rated Investors',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+      child: BlocBuilder<DashboardCubit, DashboardState>(
+        buildWhen: (previous, current) =>
+            previous.topInvestorsLoading != current.topInvestorsLoading ||
+            previous.topInvestorsError != current.topInvestorsError ||
+            previous.topInvestors != current.topInvestors ||
+            previous.topInvestorsLoaded != current.topInvestorsLoaded,
+        builder: (context, state) {
+          if (state.topInvestorsLoading) {
+            return _buildLoading();
+          }
+
+          if (state.topInvestorsError != null) {
+            return _buildError(state.topInvestorsError!);
+          }
+
+          if (state.topInvestorsLoaded) {
+            return _buildContent(state.topInvestors);
+          }
+
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return const DashboardTopInvestorsShimmer();
+  }
+
+  Widget _buildError(String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Top Rated Investors',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: Colors.red,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(List<TopInvestorsModel> investors) {
+    final visibleInvestors = investors.take(5).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Top Rated Investors',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (visibleInvestors.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No data found',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.textMuted,
                 ),
               ),
-
-            ],
-          ),
-          const SizedBox(height: 8),
-          for (var i = 0; i < _investors.length; i++) ...[
-            _InvestorRow(item: _investors[i]),
-            if (i < _investors.length - 1)
+            ),
+          )
+        else
+          for (var i = 0; i < visibleInvestors.length; i++) ...[
+            _InvestorRow(investor: visibleInvestors[i]),
+            if (i < visibleInvestors.length - 1)
               const Divider(height: 1, color: AppColors.border),
           ],
-        ],
-      ),
+      ],
     );
   }
 }
 
-class _InvestorItem {
-  const _InvestorItem({required this.name, required this.amount});
-
-  final String name;
-  final String amount;
-}
-
 class _InvestorRow extends StatelessWidget {
-  const _InvestorRow({required this.item});
+  const _InvestorRow({required this.investor});
 
-  final _InvestorItem item;
+  final TopInvestorsModel investor;
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = resolveMediaUrl(investor.profileImage);
+    final paidPercent = _paidPercent(investor);
+    final amountLabel = _formatAmount(investor.investmentAmount);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -401,14 +710,20 @@ class _InvestorRow extends StatelessWidget {
           CircleAvatar(
             radius: 18,
             backgroundColor: AppColors.cardBg,
-            child: Text(
-              item.name.isNotEmpty ? item.name[0] : '?',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.accent,
-              ),
-            ),
+            backgroundImage:
+                imageUrl != null ? NetworkImage(imageUrl) : null,
+            child: imageUrl == null
+                ? Text(
+                    investor.fullName.isNotEmpty
+                        ? investor.fullName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -416,7 +731,9 @@ class _InvestorRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  investor.fullName.isNotEmpty
+                      ? investor.fullName
+                      : 'Unknown Investor',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -442,7 +759,7 @@ class _InvestorRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Paid 100%',
+                'Paid $paidPercent%',
                 style: TextStyle(
                   fontSize: 9.sp,
                   fontWeight: FontWeight.w500,
@@ -451,7 +768,7 @@ class _InvestorRow extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                item.amount,
+                amountLabel,
                 style: TextStyle(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
@@ -463,5 +780,27 @@ class _InvestorRow extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  int _paidPercent(TopInvestorsModel investor) {
+    if (investor.investmentAmount <= 0) return 0;
+    return ((investor.totalPaidAmount / investor.investmentAmount) * 100)
+        .round()
+        .clamp(0, 100);
+  }
+
+  String _formatAmount(double amount) {
+    final isWhole = amount == amount.roundToDouble();
+    final raw =
+        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
+    final parts = raw.split('.');
+    final withCommas = parts.first.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
+    );
+    if (parts.length > 1) {
+      return '₹$withCommas.${parts[1]}';
+    }
+    return '₹$withCommas';
   }
 }

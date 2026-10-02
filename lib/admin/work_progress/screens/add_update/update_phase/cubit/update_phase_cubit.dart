@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 import '../model/add_or_update_phase_request_model.dart';
 import '../model/add_or_update_phase_response_model.dart';
@@ -51,7 +52,7 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
       );
       emit(
         StageListFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load stages'),
         ),
       );
     }
@@ -119,7 +120,10 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
 
       emit(
         UpdatePhaseError(
-          message: e.toString(),
+          message: ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to add project stage.',
+          ),
         ),
       );
     }
@@ -151,7 +155,7 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
       );
       emit(
         WorkPhaseListFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load work phases'),
         ),
       );
     }
@@ -198,7 +202,7 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
       );
       emit(
         SaveWorkPhaseFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to save work phase'),
         ),
       );
     }

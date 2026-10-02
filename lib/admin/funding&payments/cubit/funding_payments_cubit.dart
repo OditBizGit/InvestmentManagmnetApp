@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/model
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 part 'funding_payments_state.dart';
 
@@ -62,20 +63,15 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
       _investors = response.data;
       emit(FundingInvestorsSuccess(response.data));
     } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         FundingInvestorsFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investors'),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investors'),
         ),
       );
     } catch (e) {
       emit(
         FundingInvestorsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investors'),
         ),
       );
     }
@@ -108,20 +104,15 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
         ),
       );
     } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         AddPaymentFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to add payment'),
+          ApiErrorMessage.from(e, fallback: 'Failed to add payment'),
         ),
       );
     } catch (e) {
       emit(
         AddPaymentFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to add payment'),
         ),
       );
     }
@@ -165,20 +156,21 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
       _investorDetails = response.data;
       emit(InvestorDetailsSuccess(response.data!));
     } on DioException catch (e) {
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         InvestorDetailsFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investor details'),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load investor details',
+          ),
         ),
       );
     } catch (e) {
       emit(
         InvestorDetailsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load investor details',
+          ),
         ),
       );
     }
@@ -234,14 +226,9 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
     } on DioException catch (e) {
       if (silent && _fundingInvestors.isNotEmpty) return;
 
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         TransactionHistoryFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investors'),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investors'),
         ),
       );
     } catch (e) {
@@ -249,7 +236,7 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
 
       emit(
         TransactionHistoryFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load investors'),
         ),
       );
     } finally {

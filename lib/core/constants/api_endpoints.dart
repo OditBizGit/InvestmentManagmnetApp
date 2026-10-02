@@ -36,6 +36,8 @@ class ApiEndpoints {
   static const String deleteWorkUpdate = "/api/Project/DeleteWorkUpdate/";
   static const String addWorkStatus = "/api/Project/AddWorkStatus";
   static const String getWorkStatus = "/api/Project/GetWorkStatus";
+  static const String deleteWorkStatus = "/api/Project/DeleteWorkStatus/";
+  static const String getDashboard = "/api/Dashboard/GetDashboard";
 
 
 
