@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "642905262049",
+    "project_id": "maribel-wellness",
+    "storage_bucket": "maribel-wellness.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642905262049:android:c8a27342e5e0c17aa934a0",
+        "android_client_info": {
+          "package_name": "com.example.maribel_wellness_centre_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDl0zTqLDBhrejCg4bNQDQF18DfhRUXISc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

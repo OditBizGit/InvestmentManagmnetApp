@@ -17,18 +17,44 @@ import 'package:maribel_wellness_centre_application/user/navigation/user_main_sc
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'core/notifications/notification_service.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(
+    RemoteMessage message) async {
+  await Firebase.initializeApp();
+
+  print('Background notification received');
+  print('Title: ${message.notification?.title}');
+  print('Body: ${message.notification?.body}');
+  print('Data: ${message.data}');
+}
 /// `true` → Admin interface · `false` → User interface
 const bool isAdmin = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
+  FirebaseMessaging.onBackgroundMessage(
+    firebaseMessagingBackgroundHandler,
+  );
+
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+
   await setupDi();
+
   if (!isAdmin) {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
   }
+
   runApp(const MyApp());
 }
 

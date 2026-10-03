@@ -16,6 +16,7 @@ import 'package:maribel_wellness_centre_application/user/profile/investment_deta
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/personal_info_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/register_complaint_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -105,7 +106,7 @@ class _UserProfileView extends StatelessWidget {
                   context.read<ProfileCubit>().loadProfile(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
                 child: Column(
                   children: [
                     if (isLoading)
@@ -178,6 +179,8 @@ class _UserProfileView extends StatelessWidget {
                       color: AppColors.error,
                       onTap: () => _onLogout(context),
                     ),
+                    SizedBox(height: 1.h),
+                    const _AppVersionLabel(),
                   ],
                 ),
               ),
@@ -681,6 +684,33 @@ class _PlaceholderLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AppVersionLabel extends StatelessWidget {
+  const _AppVersionLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final version = snapshot.data?.version;
+        if (version == null || version.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Text(
+          'Version $version',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textMuted,
+          ),
+        );
+      },
     );
   }
 }

@@ -58,6 +58,8 @@ dependencies:
   flutter_cache_manager: ^3.4.5
   video_player_win: ^3.3.0
   gal: ^2.3.3
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
 
 dev_dependencies:
   flutter_test:

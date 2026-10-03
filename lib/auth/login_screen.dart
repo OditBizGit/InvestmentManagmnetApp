@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart'
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sizer/sizer.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -106,126 +107,166 @@ class _LoginScreenState extends State<LoginScreen> {
         return Scaffold(
           backgroundColor: AppColors.white,
           body: SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 6.w),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 3.h),
-                    Image.asset(
-                      ImageConstants.logo,
-                      height: 9.h,
-                      fit: BoxFit.contain,
-                      alignment: Alignment.centerLeft,
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      'Welcome Back',
-                      style: TextStyle(
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 0.1.h),
-                    Text(
-                      'Track your hospital investment with complete transparency.',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: 3.5.h),
-                    _LoginTextField(
-                      label: 'Username',
-                      hint: 'Enter your username',
-                      iconPath: ImageConstants.username,
-                      controller: _usernameController,
-                      textInputAction: TextInputAction.next,
-                      enabled: !isLoading,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your username';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 2.h),
-                    _LoginTextField(
-                      label: 'Password',
-                      hint: 'Enter your password',
-                      iconPath: ImageConstants.password,
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      enabled: !isLoading,
-                      onFieldSubmitted: isLoading ? null : (_) => _onLogin(),
-                      suffixIcon: IconButton(
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                setState(
-                                  () => _obscurePassword = !_obscurePassword,
-                                );
-                              },
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.accent,
-                          size: 18.5.sp,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 4.h),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 6.h,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _onLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: AppColors.white,
-                          disabledBackgroundColor: AppColors.accent,
-                          disabledForegroundColor: AppColors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 3.h),
+                          Image.asset(
+                            ImageConstants.logo,
+                            height: 9.h,
+                            fit: BoxFit.contain,
+                            alignment: Alignment.centerLeft,
                           ),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.white,
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                'Login',
-                                style: TextStyle(
-                                  fontSize: 15.5.sp,
-                                  fontWeight: FontWeight.w600,
+                          SizedBox(height: 4.h),
+                          Text(
+                            'Welcome Back',
+                            style: TextStyle(
+                              fontSize: 22.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 0.1.h),
+                          Text(
+                            'Track your hospital investment with complete transparency.',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          SizedBox(height: 3.5.h),
+                          _LoginTextField(
+                            label: 'Username',
+                            hint: 'Enter your username',
+                            iconPath: ImageConstants.username,
+                            controller: _usernameController,
+                            textInputAction: TextInputAction.next,
+                            enabled: !isLoading,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter your username';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 2.h),
+                          _LoginTextField(
+                            label: 'Password',
+                            hint: 'Enter your password',
+                            iconPath: ImageConstants.password,
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            enabled: !isLoading,
+                            onFieldSubmitted:
+                                isLoading ? null : (_) => _onLogin(),
+                            suffixIcon: IconButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      setState(
+                                        () =>
+                                            _obscurePassword = !_obscurePassword,
+                                      );
+                                    },
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: AppColors.accent,
+                                size: 18.5.sp,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 4.h),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 6.h,
+                            child: ElevatedButton(
+                              onPressed: isLoading ? null : _onLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: AppColors.white,
+                                disabledBackgroundColor: AppColors.accent,
+                                disabledForegroundColor: AppColors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.4,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          AppColors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Login',
+                                      style: TextStyle(
+                                        fontSize: 15.5.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 4.h),
-                  ],
+                  ),
                 ),
-              ),
+                const _AppVersionLabel(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AppVersionLabel extends StatelessWidget {
+  const _AppVersionLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final version = snapshot.data?.version;
+        if (version == null || version.isEmpty) {
+          return SizedBox(height: 2.h);
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: 2.h),
+          child: Text(
+            'Version $version',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w100,
+              color: AppColors.textSecondary,
             ),
           ),
         );
