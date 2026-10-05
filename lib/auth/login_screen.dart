@@ -5,6 +5,8 @@ import 'package:maribel_wellness_centre_application/auth/admin_web_login_screen.
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sizer/sizer.dart';
@@ -93,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(builder: (_) => widget.home),
           );
+          getIt<NotificationService>().handlePendingInitialMessage();
         } else if (state is LoginFailure) {
           AppSnackBar.show(
             context,

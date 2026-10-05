@@ -12,6 +12,7 @@ import 'package:maribel_wellness_centre_application/auth/repository/login_reposi
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/user/home/repository/home_repository.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
@@ -20,36 +21,25 @@ import 'package:toastification/toastification.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-import 'core/notifications/notification_service.dart';
-
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(
-    RemoteMessage message) async {
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-
-  print('Background notification received');
-  print('Title: ${message.notification?.title}');
-  print('Body: ${message.notification?.body}');
-  print('Data: ${message.data}');
 }
+
 /// `true` → Admin interface · `false` → User interface
 const bool isAdmin = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
-
-  FirebaseMessaging.onBackgroundMessage(
-    firebaseMessagingBackgroundHandler,
-  );
-
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-
   await setupDi();
 
+  // Push notifications are user/investor only — skip on admin builds.
   if (!isAdmin) {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await getIt<NotificationService>().initialize();
+
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
@@ -109,6 +99,7 @@ class MyApp extends StatelessWidget {
           builder: (context, orientation, screenType) {
             return ToastificationWrapper(
               child: MaterialApp(
+                navigatorKey: isAdmin ? null : notificationNavigatorKey,
                 debugShowCheckedModeBanner: false,
                 title: isAdmin ? 'Maribel Admin' : 'Maribel Wellness Centre',
                 theme: ThemeData(

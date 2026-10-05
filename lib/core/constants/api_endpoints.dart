@@ -13,6 +13,8 @@ class ApiEndpoints {
   static const String getMyComplaints = "/api/Investor/GetMyComplaints";
   static const String workProgressGraph = "/api/Project/WorkProgressGraph";
   static const String getWorkUpdates = "/api/Project/GetWorkUpdates";
+  static const String registerDevice = "/api/Notification/RegisterDevice";
+  static const String getMyNotifications = "/api/Notification/GetMyNotifications";
 
   /// funding & payments
   static const String topInvestors = "/api/Investor/GetTopInvestors";

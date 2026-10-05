@@ -179,7 +179,7 @@ class _UserProfileView extends StatelessWidget {
                       color: AppColors.error,
                       onTap: () => _onLogout(context),
                     ),
-                    SizedBox(height: 1.h),
+                    SizedBox(height: 0.5.h),
                     const _AppVersionLabel(),
                   ],
                 ),

@@ -4,6 +4,7 @@ import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:sizer/sizer.dart';
 
@@ -96,6 +97,11 @@ class _SplashScreenState extends State<SplashScreen>
             : LoginScreen(home: widget.homeAfterLogin),
       ),
     );
+
+    final role = getIt<LocalStorage>().getUserRole()?.toLowerCase();
+    if (hasSession && role == 'investor') {
+      getIt<NotificationService>().handlePendingInitialMessage();
+    }
   }
 
   @override

@@ -1,18 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/auth/model/login_response_model.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
+import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 
 part 'login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   LoginCubit({
-    required this._authRepository,
-    required this._localStorage,
-  }) : super(LoginInitial());
+    required AuthRepository authRepository,
+    required LocalStorage localStorage,
+    required NotificationService notificationService,
+  })  : _authRepository = authRepository,
+        _localStorage = localStorage,
+        _notificationService = notificationService,
+        super(LoginInitial());
 
   final AuthRepository _authRepository;
   final LocalStorage _localStorage;
+  final NotificationService _notificationService;
+
 
   Future<void> login({
     required String username,
@@ -66,6 +73,11 @@ class LoginCubit extends Cubit<LoginState> {
                 ? profileImage
                 : null,
       );
+
+      // FCM device registration is investor/user-side only.
+      if (data.userRole.toLowerCase() == 'investor') {
+        _notificationService.registerDeviceToken();
+      }
 
       emit(LoginSuccess(response));
     } catch (e) {

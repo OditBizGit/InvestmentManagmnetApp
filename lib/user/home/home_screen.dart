@@ -253,8 +253,6 @@ class _HomeHeader extends StatelessWidget {
 
   final String displayName;
 
-  static final int _notificationCount = NotificationScreen.unreadCount;
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -309,45 +307,10 @@ class _HomeHeader extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: EdgeInsets.all(1.w),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                SvgPicture.asset(
-                  ImageConstants.notification,
-                  width: 5.5.w,
-                  height: 5.5.w,
-                ),
-                if (_notificationCount > 0)
-                  Positioned(
-                    right: -1.2.w,
-                    top: -1.2.w,
-                    child: Container(
-                      constraints: BoxConstraints(
-                        minWidth: 4.w,
-                        minHeight: 4.w,
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: _notificationCount > 9 ? 1.w : 0.6.w,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE53935),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _notificationCount > 99
-                            ? '99+'
-                            : '$_notificationCount',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          height: 1.1,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            child: SvgPicture.asset(
+              ImageConstants.notification,
+              width: 5.5.w,
+              height: 5.5.w,
             ),
           ),
         ),

@@ -11,9 +11,12 @@ import 'package:maribel_wellness_centre_application/admin/work_progress/screens/
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
+import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
+import 'package:maribel_wellness_centre_application/user/home/cubit/notifications_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/home/repository/home_repository.dart';
+import 'package:maribel_wellness_centre_application/user/home/repository/notifications_repository.dart';
 import 'package:maribel_wellness_centre_application/user/investments/cubit/investments_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/investments/repository/investments_repository.dart';
 import 'package:maribel_wellness_centre_application/user/profile/cubit/profile_cubit.dart';
@@ -163,12 +166,22 @@ Future<void> setupDi() async {
   getIt.registerLazySingleton<StatusRepository>(
     () => StatusRepository(dio: getIt<Dio>()),
   );
+  getIt.registerLazySingleton<NotificationsRepository>(
+    () => NotificationsRepository(dio: getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<NotificationService>(
+    () => NotificationService(
+      notificationsRepository: getIt<NotificationsRepository>(),
+      localStorage: getIt<LocalStorage>(),
+    ),
+  );
 
   // ── BLoC / Cubit factories ────────────────────────────────────────
   getIt.registerFactory<LoginCubit>(
     () => LoginCubit(
       authRepository: getIt<AuthRepository>(),
       localStorage: getIt<LocalStorage>(),
+      notificationService: getIt<NotificationService>(),
     ),
   );
   getIt.registerFactory<DashboardCubit>(
@@ -214,6 +227,11 @@ Future<void> setupDi() async {
   getIt.registerFactory<StatusCubit>(
     () => StatusCubit(
       repository: getIt<StatusRepository>(),
+    ),
+  );
+  getIt.registerFactory<NotificationsCubit>(
+    () => NotificationsCubit(
+      repository: getIt<NotificationsRepository>(),
     ),
   );
 }
