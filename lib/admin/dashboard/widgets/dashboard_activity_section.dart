@@ -79,12 +79,19 @@ class DashboardActivitySection extends StatelessWidget {
 class _Panel extends StatelessWidget {
   const _Panel({required this.child});
 
+  /// Matches the tallest common filled layout (~title + 5 list rows).
+  static const double minHeight = 420;
+
+  /// Body area used by empty / error states so height matches 5 data rows.
+  static const double listBodyHeight = 340;
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      constraints: const BoxConstraints(minHeight: minHeight),
       alignment: Alignment.topLeft,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -103,16 +110,53 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
+class _CardStatusBody extends StatelessWidget {
+  const _CardStatusBody({
     required this.title,
-    this.actionLabel,
-    this.onAction,
+    required this.message,
+    this.isError = false,
   });
 
   final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(title: title),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: _Panel.listBodyHeight,
+          width: double.infinity,
+          child: Center(
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: isError ? Colors.red : AppColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    // this.actionLabel,
+    // this.onAction,
+  });
+
+  final String title;
+  // final String? actionLabel;
+  // final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -128,24 +172,24 @@ class _SectionHeader extends StatelessWidget {
             ),
           ),
         ),
-        if (actionLabel != null)
-          TextButton(
-            onPressed: onAction ?? () {},
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: AppColors.accent,
-            ),
-            child: Text(
-              actionLabel!,
-              style: TextStyle(
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.accent,
-              ),
-            ),
-          ),
+        // if (actionLabel != null)
+        //   TextButton(
+        //     onPressed: onAction ?? () {},
+        //     style: TextButton.styleFrom(
+        //       padding: EdgeInsets.zero,
+        //       minimumSize: Size.zero,
+        //       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        //       foregroundColor: AppColors.accent,
+        //     ),
+        //     child: Text(
+        //       actionLabel!,
+        //       style: TextStyle(
+        //         fontSize: 10.sp,
+        //         fontWeight: FontWeight.w600,
+        //         color: AppColors.accent,
+        //       ),
+        //     ),
+        //   ),
       ],
     );
   }
@@ -169,14 +213,18 @@ class _RecentPaymentsCard extends StatelessWidget {
           }
 
           if (state.recentPaymentsError != null) {
-            return _buildError(state.recentPaymentsError!);
+            return _CardStatusBody(
+              title: 'Recent Payments',
+              message: state.recentPaymentsError!,
+              isError: true,
+            );
           }
 
           if (state.recentPaymentsLoaded) {
             return _buildContent(state.recentPayments);
           }
 
-          return const SizedBox();
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -184,28 +232,6 @@ class _RecentPaymentsCard extends StatelessWidget {
 
   Widget _buildLoading() {
     return const DashboardRecentPaymentsShimmer();
-  }
-
-  Widget _buildError(String message) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(
-          title: 'Recent Payments',
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: Colors.red,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildContent(List<TransactionHistoryModel> payments) {
@@ -218,25 +244,36 @@ class _RecentPaymentsCard extends StatelessWidget {
           title: 'Recent Payments',
         ),
         const SizedBox(height: 8),
-        if (visiblePayments.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No data found',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-          )
-        else
-          for (var i = 0; i < visiblePayments.length; i++) ...[
-            _PaymentRow(payment: visiblePayments[i]),
-            if (i < visiblePayments.length - 1)
-              const Divider(height: 1, color: AppColors.border),
-          ],
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: _Panel.listBodyHeight,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: visiblePayments.isEmpty
+                ? SizedBox(
+                    height: _Panel.listBodyHeight,
+                    child: Center(
+                      child: Text(
+                        'No data found',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      for (var i = 0; i < visiblePayments.length; i++) ...[
+                        _PaymentRow(payment: visiblePayments[i]),
+                        if (i < visiblePayments.length - 1)
+                          const Divider(height: 1, color: AppColors.border),
+                      ],
+                    ],
+                  ),
+          ),
+        ),
       ],
     );
   }
@@ -373,14 +410,18 @@ class _RecentUpdatesCard extends StatelessWidget {
           }
 
           if (state.recentUpdatesError != null) {
-            return _buildError(state.recentUpdatesError!);
+            return _CardStatusBody(
+              title: 'Recent Updates',
+              message: state.recentUpdatesError!,
+              isError: true,
+            );
           }
 
           if (state.recentUpdatesLoaded) {
             return _buildContent(state.recentUpdates);
           }
 
-          return const SizedBox();
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -393,30 +434,12 @@ class _RecentUpdatesCard extends StatelessWidget {
         const _SectionHeader(
           title: 'Recent Updates',
         ),
-        const SizedBox(height: 24),
-        const Center(
-          child: CircularProgressIndicator(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildError(String message) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(
-          title: 'Recent Updates',
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: Colors.red,
-            ),
+        const SizedBox(height: 8),
+        const SizedBox(
+          height: _Panel.listBodyHeight,
+          width: double.infinity,
+          child: Center(
+            child: CircularProgressIndicator(),
           ),
         ),
       ],
@@ -433,27 +456,38 @@ class _RecentUpdatesCard extends StatelessWidget {
           title: 'Recent Updates',
         ),
         const SizedBox(height: 10),
-        if (visibleUpdates.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No data found',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-          )
-        else
-          for (var i = 0; i < visibleUpdates.length; i++) ...[
-            if (i > 0) const SizedBox(height: 14),
-            _UpdateRow(
-              update: visibleUpdates[i],
-              color: _accentColors[i % _accentColors.length],
-            ),
-          ],
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: _Panel.listBodyHeight,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: visibleUpdates.isEmpty
+                ? SizedBox(
+                    height: _Panel.listBodyHeight,
+                    child: Center(
+                      child: Text(
+                        'No data found',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      for (var i = 0; i < visibleUpdates.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 14),
+                        _UpdateRow(
+                          update: visibleUpdates[i],
+                          color: _accentColors[i % _accentColors.length],
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
+        ),
       ],
     );
   }
@@ -555,8 +589,20 @@ class _QuickActionsCard extends StatelessWidget {
       destination: AdminDrawerItem.fundingPayments,
     ),
     _QuickActionItem(
-      label: 'Sent Notification',
-      icon: ImageConstants.notification,
+      label: 'Work Progress',
+      icon: ImageConstants.workProgress,
+      color: AppColors.textMuted,
+      destination: AdminDrawerItem.workProgress,
+    ),
+    _QuickActionItem(
+      label: 'Reports',
+      icon: ImageConstants.reports,
+      color: AppColors.textMuted,
+      destination: AdminDrawerItem.reports,
+    ),
+    _QuickActionItem(
+      label: 'Settings',
+      icon: ImageConstants.updates,
       color: AppColors.textMuted,
       destination: AdminDrawerItem.settings,
     ),
@@ -564,6 +610,9 @@ class _QuickActionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topRow = _actions.take(3).toList();
+    final bottomRow = _actions.skip(3).toList();
+
     return _Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,19 +621,38 @@ class _QuickActionsCard extends StatelessWidget {
             title: 'Quick Actions',
           ),
           const SizedBox(height: 14),
-
-          // First row
-          Row(
-            children: [
-              for (var i = 0; i < _actions.length; i++) ...[
-                if (i > 0) const SizedBox(width: 12),
-                Expanded(
-                  child: _QuickActionTile(
-                    item: _actions[i],
-                  ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: _Panel.listBodyHeight,
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    for (var i = 0; i < topRow.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 12),
+                      Expanded(
+                        child: _QuickActionTile(item: topRow[i]),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    for (var i = 0; i < bottomRow.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 12),
+                      Expanded(
+                        child: _QuickActionTile(item: bottomRow[i]),
+                      ),
+                    ],
+                    // Keep bottom tiles the same width as the top row of 3.
+                    const SizedBox(width: 12),
+                    const Expanded(child: SizedBox.shrink()),
+                  ],
                 ),
               ],
-            ],
+            ),
           ),
         ],
       ),

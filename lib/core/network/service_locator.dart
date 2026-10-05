@@ -50,6 +50,12 @@ String? resolveMediaUrl(String? path) {
 ///
 /// Call once from [main] before [runApp].
 Future<void> setupDi() async {
+
+  final isMobileNotificationPlatform =
+      !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS);
+
   // ── Core ──────────────────────────────────────────────────────────
   final localStorage = await LocalStorage.init();
   getIt.registerSingleton<LocalStorage>(localStorage);
@@ -169,21 +175,41 @@ Future<void> setupDi() async {
   getIt.registerLazySingleton<NotificationsRepository>(
     () => NotificationsRepository(dio: getIt<Dio>()),
   );
-  getIt.registerLazySingleton<NotificationService>(
-    () => NotificationService(
-      notificationsRepository: getIt<NotificationsRepository>(),
+  // getIt.registerLazySingleton<NotificationService>(
+  //   () => NotificationService(
+  //     notificationsRepository: getIt<NotificationsRepository>(),
+  //     localStorage: getIt<LocalStorage>(),
+  //   ),
+  // );
+
+  if (isMobileNotificationPlatform) {
+    getIt.registerLazySingleton<NotificationService>(
+          () => NotificationService(
+        notificationsRepository: getIt<NotificationsRepository>(),
+        localStorage: getIt<LocalStorage>(),
+      ),
+    );
+  }
+
+  // ── BLoC / Cubit factories ────────────────────────────────────────
+  // getIt.registerFactory<LoginCubit>(
+  //   () => LoginCubit(
+  //     authRepository: getIt<AuthRepository>(),
+  //     localStorage: getIt<LocalStorage>(),
+  //     notificationService: getIt<NotificationService>(),
+  //   ),
+  // );
+
+  getIt.registerFactory<LoginCubit>(
+        () => LoginCubit(
+      authRepository: getIt<AuthRepository>(),
       localStorage: getIt<LocalStorage>(),
+      notificationService: isMobileNotificationPlatform
+          ? getIt<NotificationService>()
+          : null,
     ),
   );
 
-  // ── BLoC / Cubit factories ────────────────────────────────────────
-  getIt.registerFactory<LoginCubit>(
-    () => LoginCubit(
-      authRepository: getIt<AuthRepository>(),
-      localStorage: getIt<LocalStorage>(),
-      notificationService: getIt<NotificationService>(),
-    ),
-  );
   getIt.registerFactory<DashboardCubit>(
     () => DashboardCubit(
       phaseRepository: getIt<AddPhaseRepository>(),

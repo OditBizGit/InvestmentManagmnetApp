@@ -8,17 +8,16 @@ part 'login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   LoginCubit({
-    required AuthRepository authRepository,
-    required LocalStorage localStorage,
-    required NotificationService notificationService,
-  })  : _authRepository = authRepository,
-        _localStorage = localStorage,
-        _notificationService = notificationService,
-        super(LoginInitial());
+    required this._authRepository,
+    required this._localStorage,
+    // required this._notificationService,
+    required this._notificationService,
+  })  : super(LoginInitial());
 
   final AuthRepository _authRepository;
   final LocalStorage _localStorage;
-  final NotificationService _notificationService;
+  // final NotificationService _notificationService;
+  final NotificationService? _notificationService;
 
 
   Future<void> login({
@@ -75,8 +74,11 @@ class LoginCubit extends Cubit<LoginState> {
       );
 
       // FCM device registration is investor/user-side only.
+      // if (data.userRole.toLowerCase() == 'investor') {
+      //   _notificationService.registerDeviceToken();
+      // }
       if (data.userRole.toLowerCase() == 'investor') {
-        _notificationService.registerDeviceToken();
+        await _notificationService?.registerDeviceToken();
       }
 
       emit(LoginSuccess(response));

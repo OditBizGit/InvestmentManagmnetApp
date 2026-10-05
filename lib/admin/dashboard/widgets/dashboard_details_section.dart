@@ -95,12 +95,19 @@ class DashboardDetailsSection extends StatelessWidget {
 class _DashboardPanel extends StatelessWidget {
   const _DashboardPanel({required this.child});
 
+  /// Matches the tallest common filled layout (~title + 5 list rows).
+  static const double minHeight = 420;
+
+  /// Body area used by empty / error states so height matches 5 data rows.
+  static const double listBodyHeight = 340;
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      constraints: const BoxConstraints(minHeight: minHeight),
       alignment: Alignment.topLeft,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -115,6 +122,50 @@ class _DashboardPanel extends StatelessWidget {
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _CardStatusBody extends StatelessWidget {
+  const _CardStatusBody({
+    required this.title,
+    required this.message,
+    this.isError = false,
+  });
+
+  final String title;
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: _DashboardPanel.listBodyHeight,
+          width: double.infinity,
+          child: Center(
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: isError ? Colors.red : AppColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -137,7 +188,11 @@ class _FundingOverviewCard extends StatelessWidget {
           }
 
           if (state.dashboardError != null) {
-            return _buildError(state.dashboardError!);
+            return _CardStatusBody(
+              title: 'Funding Overview',
+              message: state.dashboardError!,
+              isError: true,
+            );
           }
 
           if (state.dashboardLoaded && state.dashboard != null) {
@@ -145,10 +200,13 @@ class _FundingOverviewCard extends StatelessWidget {
           }
 
           if (state.dashboardLoaded) {
-            return _buildError('No data found');
+            return const _CardStatusBody(
+              title: 'Funding Overview',
+              message: 'No data found',
+            );
           }
 
-          return const SizedBox();
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -156,33 +214,6 @@ class _FundingOverviewCard extends StatelessWidget {
 
   Widget _buildLoading() {
     return const DashboardFundingOverviewShimmer();
-  }
-
-  Widget _buildError(String message) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Funding Overview',
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: Colors.red,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildContent(DashboardModel dashboard) {
@@ -378,14 +409,18 @@ class _HospitalWorkProgressCard extends StatelessWidget {
           }
 
           if (state.workProgressError != null) {
-            return _buildError(state.workProgressError!);
+            return _CardStatusBody(
+              title: 'Hospital Work Progress',
+              message: state.workProgressError!,
+              isError: true,
+            );
           }
 
           if (state.workProgressLoaded) {
             return _buildContent(state.workPhases);
           }
 
-          return const SizedBox();
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -395,81 +430,57 @@ class _HospitalWorkProgressCard extends StatelessWidget {
     return const DashboardWorkProgressShimmer();
   }
 
-  Widget _buildError(String message) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Hospital Work Progress',
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: Colors.red,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-
   Widget _buildContent(List<WorkPhaseListModel> workPhases) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Hospital Work Progress',
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+    // Fixed height so Overall Progress can sit at the bottom without
+    // LayoutBuilder (incompatible with the parent IntrinsicHeight).
+    return SizedBox(
+      height: _DashboardPanel.minHeight - 36,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hospital Work Progress',
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-
-        const SizedBox(height: 18),
-
-        if (workPhases.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No work phases available',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-          )
-        else
-          for (var i = 0; i < workPhases.length; i++) ...[ 
-            if (i > 0) const SizedBox(height: 14),
-
-            _WorkProgressRow(
-              item: _WorkProgressItem(
-                label: workPhases[i].stageName,
-                percent: workPhases[i].progress,
-                color: _getProgressColor(
-                  workPhases[i].progress,
-                ),
-              ),
-            ),
-          ],
-
-        const SizedBox(height: 18),
-
-        _buildOverallProgress(workPhases),
-      ],
+          const SizedBox(height: 18),
+          Expanded(
+            child: workPhases.isEmpty
+                ? Center(
+                    child: Text(
+                      'No work phases available',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < workPhases.length; i++) ...[
+                          if (i > 0) const SizedBox(height: 14),
+                          _WorkProgressRow(
+                            item: _WorkProgressItem(
+                              label: workPhases[i].stageName,
+                              percent: workPhases[i].progress,
+                              color: _getProgressColor(
+                                workPhases[i].progress,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 18),
+          _buildOverallProgress(workPhases),
+        ],
+      ),
     );
   }
 
@@ -609,14 +620,18 @@ class _TopRatedInvestorsCard extends StatelessWidget {
           }
 
           if (state.topInvestorsError != null) {
-            return _buildError(state.topInvestorsError!);
+            return _CardStatusBody(
+              title: 'Top Rated Investors',
+              message: state.topInvestorsError!,
+              isError: true,
+            );
           }
 
           if (state.topInvestorsLoaded) {
             return _buildContent(state.topInvestors);
           }
 
-          return const SizedBox();
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -624,33 +639,6 @@ class _TopRatedInvestorsCard extends StatelessWidget {
 
   Widget _buildLoading() {
     return const DashboardTopInvestorsShimmer();
-  }
-
-  Widget _buildError(String message) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Top Rated Investors',
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: Colors.red,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildContent(List<TopInvestorsModel> investors) {
@@ -668,25 +656,36 @@ class _TopRatedInvestorsCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        if (visibleInvestors.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No data found',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-          )
-        else
-          for (var i = 0; i < visibleInvestors.length; i++) ...[
-            _InvestorRow(investor: visibleInvestors[i]),
-            if (i < visibleInvestors.length - 1)
-              const Divider(height: 1, color: AppColors.border),
-          ],
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: _DashboardPanel.listBodyHeight,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: visibleInvestors.isEmpty
+                ? SizedBox(
+                    height: _DashboardPanel.listBodyHeight,
+                    child: Center(
+                      child: Text(
+                        'No data found',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      for (var i = 0; i < visibleInvestors.length; i++) ...[
+                        _InvestorRow(investor: visibleInvestors[i]),
+                        if (i < visibleInvestors.length - 1)
+                          const Divider(height: 1, color: AppColors.border),
+                      ],
+                    ],
+                  ),
+          ),
+        ),
       ],
     );
   }

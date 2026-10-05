@@ -299,9 +299,7 @@ class _HeaderBar extends StatelessWidget {
         final actions = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _DateRangeButton(),
             const SizedBox(width: 10),
-            const _ExportButton(),
           ],
         );
 
@@ -329,99 +327,7 @@ class _HeaderBar extends StatelessWidget {
   }
 }
 
-class _DateRangeButton extends StatelessWidget {
-  const _DateRangeButton();
 
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                ImageConstants.calender,
-                width: 16,
-                height: 16,
-                colorFilter: const ColorFilter.mode(
-                  AppColors.accent,
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '01 Jan, 2026 – 30 Jun, 2026',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                color: AppColors.textMuted,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExportButton extends StatelessWidget {
-  const _ExportButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.accent),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.file_download_outlined,
-                size: 16,
-                color: AppColors.accent,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Export',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.accent,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _TabsSearchRow extends StatelessWidget {
   const _TabsSearchRow({
@@ -477,13 +383,21 @@ class _TabsSearchRow extends StatelessWidget {
           ),
           child: TextField(
             onChanged: onSearchChanged,
+
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textPrimary,
+            ),
+
             decoration: InputDecoration(
               hintText: 'Search by ID, tranche...',
               hintStyle: TextStyle(
                 fontSize: 10.sp,
-                color: AppColors.hint,
                 fontWeight: FontWeight.w400,
+                color: AppColors.hint,
               ),
+
               prefixIcon: Padding(
                 padding: const EdgeInsets.all(12),
                 child: SvgPicture.asset(
@@ -496,24 +410,35 @@ class _TabsSearchRow extends StatelessWidget {
                   ),
                 ),
               ),
+
               filled: true,
               fillColor: AppColors.white,
               isDense: true,
+
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 10,
               ),
+
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(
+                  color: AppColors.border,
+                ),
               ),
+
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(
+                  color: AppColors.border,
+                ),
               ),
+
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: AppColors.accent),
+                borderSide: const BorderSide(
+                  color: AppColors.accent,
+                ),
               ),
             ),
           ),
@@ -619,7 +544,7 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('PAYMENT MODE', flex: 4),
           _HeaderCell('AMOUNT', flex: 3),
           _HeaderCell('STATUS', flex: 2),
-          _HeaderCell('ACTION', flex: 2, align: TextAlign.center),
+          // _HeaderCell('ACTION', flex: 2, align: TextAlign.center),
         ],
       ),
     );
@@ -770,35 +695,26 @@ class _HistoryRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _StatusBadge(status: transaction.status),
-            ),
-          ),
+
           Expanded(
             flex: 2,
             child: Center(
-              child: Material(
-                color: const Color(0xFFF6F4F8),
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  onTap: () {},
-                  borderRadius: BorderRadius.circular(8),
-                  child: const SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: Icon(
-                      Icons.file_download_outlined,
-                      size: 16,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
+              child: _StatusBadge(
+                status: transaction.status,
               ),
             ),
           ),
+
+          // Expanded(
+          //   flex: 2,
+          //   child: Center(
+          //     child: Material(
+          //       color: const Color(0xFFF6F4F8),
+          //       borderRadius: BorderRadius.circular(8),
+          //
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );
@@ -852,6 +768,7 @@ class _StatusBadge extends StatelessWidget {
 
     final Color bg;
     final Color fg;
+
     if (isCompleted) {
       bg = const Color(0xFFE6F6EC);
       fg = AppColors.green;
@@ -866,18 +783,24 @@ class _StatusBadge extends StatelessWidget {
       fg = const Color(0xFFE06B7A);
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          fontSize: 8.5.sp,
-          fontWeight: FontWeight.w600,
-          color: fg,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 5,
+        ),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          status,
+          style: TextStyle(
+            fontSize: 8.5.sp,
+            fontWeight: FontWeight.w600,
+            color: fg,
+          ),
         ),
       ),
     );

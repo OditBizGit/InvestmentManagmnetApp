@@ -54,6 +54,10 @@ class _UpdateProjectPhaseFormViewState
     'Pending',
   ];
 
+  static const String _statusCompleted = 'Completed';
+  static const String _statusInProgress = 'In Progress';
+  static const String _statusPending = 'Pending';
+
   final _assignedTeamController = TextEditingController();
   final _progressController = TextEditingController();
   final _newStageController = TextEditingController();
@@ -75,11 +79,96 @@ class _UpdateProjectPhaseFormViewState
       _stageId = initial.stageId;
       _assignedTeamController.text = initial.assignedTeam;
       _progressController.text = '${initial.progress}';
-      _status = initial.status;
+      _status = _syncStatusWithProgress(initial.progress);
       _startDate = initial.startDate;
       _dueDate = initial.dueDate;
       _descriptionController.text = initial.description;
     }
+  }
+
+  int? _parseProgress() {
+    final raw = _progressController.text.trim().replaceAll('%', '');
+    if (raw.isEmpty) return null;
+    return int.tryParse(raw);
+  }
+
+  /// Keeps status consistent with progress rules.
+  String _syncStatusWithProgress(int progress) {
+    if (progress <= 0) return _statusPending;
+    if (progress >= 100) return _statusCompleted;
+    // Any value between 1% and 99% is In Progress.
+    return _statusInProgress;
+  }
+
+  void _onProgressChanged(String value) {
+    final parsed = int.tryParse(value);
+    if (parsed != null && parsed > 100) {
+      _progressController.text = '100';
+      _progressController.selection =
+          const TextSelection.collapsed(offset: 3);
+    }
+
+    final progress = _parseProgress();
+    // Empty field: don't force status yet; treat explicit 0 as Pending.
+    if (progress == null) return;
+
+    setState(() {
+      _status = _syncStatusWithProgress(progress);
+    });
+  }
+
+  void _onStatusChanged(String? value) {
+    if (value == null) return;
+
+    final progress = _parseProgress();
+
+    // Explicit 0% must always stay Pending — empty progress can still change status.
+    if (progress == 0 && value != _statusPending) {
+      AppToast.error(
+        'Progress is 0%. Status must remain Pending',
+        context: context,
+      );
+      setState(() => _status = _statusPending);
+      return;
+    }
+
+    if (progress != null && progress >= 100 && value != _statusCompleted) {
+      AppToast.error(
+        'Progress is 100%. Status is automatically set to Completed',
+        context: context,
+      );
+      setState(() => _status = _statusCompleted);
+      return;
+    }
+
+    if (value == _statusCompleted) {
+      if (progress != null && progress < 100) {
+        AppToast.error(
+          'Progress must be 100% before marking as Completed',
+          context: context,
+        );
+        return;
+      }
+      // No progress yet — selecting Completed sets progress to 100%.
+      setState(() {
+        _status = _statusCompleted;
+        if (progress == null) {
+          _progressController.text = '100';
+        }
+      });
+      return;
+    }
+
+    if (value == _statusInProgress && progress == 0) {
+      AppToast.error(
+        'In Progress requires progress greater than 0%',
+        context: context,
+      );
+      setState(() => _status = _statusPending);
+      return;
+    }
+
+    setState(() => _status = value);
   }
 
   @override
@@ -167,8 +256,8 @@ class _UpdateProjectPhaseFormViewState
     final stage = _stage?.trim();
     final team = _assignedTeamController.text.trim();
     final progressRaw = _progressController.text.trim().replaceAll('%', '');
-    final progress = int.tryParse(progressRaw);
-    final status = _status?.trim();
+    final progress = _parseProgress();
+    var status = _status?.trim();
     final cubit = context.read<UpdatePhaseCubit>();
 
     if (stage == null || stage.isEmpty) {
@@ -193,6 +282,50 @@ class _UpdateProjectPhaseFormViewState
     }
     if (progress != null && progress < 0) {
       AppToast.error('Progress cannot be negative', context: context);
+      return;
+    }
+
+    // Progress 100% always means Completed.
+    if (progress == 100) {
+      status = _statusCompleted;
+      if (_status != _statusCompleted) {
+        setState(() => _status = _statusCompleted);
+      }
+    }
+
+    if (status == _statusCompleted && progress != 100) {
+      AppToast.error(
+        'Completed status requires 100% progress',
+        context: context,
+      );
+      return;
+    }
+
+    if (status == _statusInProgress) {
+      if (progress == null) {
+        AppToast.error(
+          'Please enter progress for In Progress status',
+          context: context,
+        );
+        return;
+      }
+      if (progress <= 0) {
+        AppToast.error(
+          'In Progress requires progress greater than 0%',
+          context: context,
+        );
+        return;
+      }
+    }
+
+    // 0% (or empty) is only valid for Pending.
+    if ((progress == null || progress == 0) &&
+        status != _statusPending &&
+        status != _statusCompleted) {
+      AppToast.error(
+        '0% progress is only allowed when status is Pending',
+        context: context,
+      );
       return;
     }
 
@@ -468,14 +601,7 @@ class _UpdateProjectPhaseFormViewState
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(3),
                       ],
-                      onChanged: (value) {
-                        final parsed = int.tryParse(value);
-                        if (parsed != null && parsed > 100) {
-                          _progressController.text = '100';
-                          _progressController.selection =
-                              const TextSelection.collapsed(offset: 3);
-                        }
-                      },
+                      onChanged: _onProgressChanged,
                     ),
                   );
                   final statusField = _LabeledField(
@@ -484,7 +610,7 @@ class _UpdateProjectPhaseFormViewState
                       value: _status,
                       hint: 'Select status',
                       items: _statuses,
-                      onChanged: (value) => setState(() => _status = value),
+                      onChanged: _onStatusChanged,
                     ),
                   );
                   final descriptionField = _LabeledField(

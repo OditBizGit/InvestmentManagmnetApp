@@ -68,7 +68,7 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
             fit: StackFit.expand,
             children: [
               Image.asset(
-                ImageConstants.webLoginLogo,
+                ImageConstants.webLogin3,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,

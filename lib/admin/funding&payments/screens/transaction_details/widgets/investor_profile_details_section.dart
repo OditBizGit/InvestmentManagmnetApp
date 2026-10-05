@@ -670,43 +670,7 @@ class _PendingScheduleCard extends StatelessWidget {
       );
     }
 
-    final actions = LayoutBuilder(
-      builder: (context, constraints) {
-        final stacked = constraints.maxWidth < 360;
-        final reminder = _SoftActionButton(
-          label: 'Send Due Reminder',
-          icon: Icons.mail_outline_rounded,
-          background: const Color(0xFFF0EBF6),
-          foreground: AppColors.accent,
-          onTap: () {},
-        );
-        final invoice = _SoftActionButton(
-          label: 'Generate Invoice',
-          icon: Icons.description_outlined,
-          background: const Color(0xFFEAF1FC),
-          foreground: const Color(0xFF3D4F6F),
-          onTap: () {},
-        );
 
-        if (stacked) {
-          return Column(
-            children: [
-              reminder,
-              const SizedBox(height: 10),
-              invoice,
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: reminder),
-            const SizedBox(width: 10),
-            Expanded(child: invoice),
-          ],
-        );
-      },
-    );
 
     final useFixedHeight = height != null && height! > 0;
 
@@ -718,8 +682,6 @@ class _PendingScheduleCard extends StatelessWidget {
         progressBlock,
         const SizedBox(height: 12),
         duesList(expand: useFixedHeight),
-        const SizedBox(height: 14),
-        actions,
       ],
     );
 
@@ -864,54 +826,6 @@ class _MilestoneItem extends StatelessWidget {
   }
 }
 
-class _SoftActionButton extends StatelessWidget {
-  const _SoftActionButton({
-    required this.label,
-    required this.icon,
-    required this.background,
-    required this.foreground,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color background;
-  final Color foreground;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16, color: foreground),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w600,
-                    color: foreground,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _InfoTile extends StatelessWidget {
   const _InfoTile({

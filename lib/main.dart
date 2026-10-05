@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,23 +22,58 @@ import 'package:toastification/toastification.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'firebase_options.dart';
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }
 
-/// `true` → Admin interface · `false` → User interface
-const bool isAdmin = false;
+// `true` → Admin interface · `false` → User interface
+const bool isAdmin = true;
+
+// Future<void> main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//
+//   await setupDi();
+//
+//   // Push notifications are user/investor only — skip on admin builds.
+//   if (!isAdmin) {
+//     await Firebase.initializeApp(    options: DefaultFirebaseOptions.currentPlatform,
+//     );
+//
+//     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+//     await getIt<NotificationService>().initialize();
+//
+//     await SystemChrome.setPreferredOrientations([
+//       DeviceOrientation.portraitUp,
+//     ]);
+//   }
+//
+//   runApp(const MyApp());
+// }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await setupDi();
 
-  // Push notifications are user/investor only — skip on admin builds.
-  if (!isAdmin) {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Notifications are ONLY for Android and iOS.
+  // No notifications on Web or Windows.
+  if (!kIsWeb &&
+      !isAdmin &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    FirebaseMessaging.onBackgroundMessage(
+      firebaseMessagingBackgroundHandler,
+    );
+
     await getIt<NotificationService>().initialize();
 
     await SystemChrome.setPreferredOrientations([
