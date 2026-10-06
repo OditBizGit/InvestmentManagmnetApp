@@ -70,4 +70,6 @@ class ImageConstants {
   static const String notificationBell = '$_svgPath/notification_bell.svg';
   static const String camera = '$_svgPath/camera.svg';
   static const String calender = '$_svgPath/calender.svg';
+  static const String Meribel = '$_logoPath/Meribel.svg';
+  static const String meribelIcon = '$_logoPath/Meribel icon.svg';
 }

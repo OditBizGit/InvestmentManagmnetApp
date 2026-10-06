@@ -93,7 +93,7 @@ class ComplaintCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      complaint.userId,
+                      'User ID: ${complaint.userId}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

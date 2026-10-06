@@ -106,9 +106,9 @@ class AdminSideDrawer extends StatelessWidget {
                   if (showLabels)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Image.asset(
-                        ImageConstants.logo,
-                        height: 50,
+                      child: SvgPicture.asset(
+                        ImageConstants.Meribel,
+                        height: 70,
                         fit: BoxFit.contain,
                         alignment: Alignment.center,
                       ),

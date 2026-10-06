@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
 
@@ -35,7 +36,7 @@ class AdminFooter extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-            Image.asset(ImageConstants.logo, width: 18, height: 18),
+            SvgPicture.asset(ImageConstants.meribelIcon, width: 18, height: 18),
         ],
       ),
     );

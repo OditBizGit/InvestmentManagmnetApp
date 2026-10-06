@@ -1,3 +1,5 @@
+import 'dart:developer';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -320,11 +322,17 @@ class _UpdateStatusStoriesFormViewState
           ? 'PNG or JPG image'
           : 'MP4 or MOV video';
 
+      // FileType.video + withData:true is what throws after a successful
+      // selection: Windows reads the whole file while it is still locked,
+      // and Android/iOS export/compress gallery videos. Use a document
+      // picker and load bytes ourselves only when we need a photo preview.
       final result = await FilePicker.platform.pickFiles(
-        type: kind == _MediaKind.photo ? FileType.custom : FileType.video,
-        allowedExtensions: kind == _MediaKind.photo ? allowed : null,
+        type: FileType.custom,
+        allowedExtensions: allowed,
         allowMultiple: false,
-        withData: kind == _MediaKind.photo || kIsWeb,
+        withData: kIsWeb || kind == _MediaKind.photo,
+        allowCompression: false,
+        compressionQuality: 0,
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -345,8 +353,17 @@ class _UpdateStatusStoriesFormViewState
         return;
       }
 
-      final path = file.path;
-      final bytes = file.bytes;
+      // On web, PlatformFile.path throws. Never read it in the browser.
+      final path = kIsWeb ? null : file.path;
+      var bytes = file.bytes;
+
+      if ((bytes == null || bytes.isEmpty) &&
+          !kIsWeb &&
+          path != null &&
+          path.isNotEmpty &&
+          kind == _MediaKind.photo) {
+        bytes = await _readFileBytes(path);
+      }
 
       final sizeInBytes = file.size > 0
           ? file.size
@@ -398,15 +415,32 @@ class _UpdateStatusStoriesFormViewState
           sizeInBytes: sizeInBytes,
         );
       });
-    } catch (_) {
+    } catch (error, stackTrace) {
+      log('Status stories file pick failed: $error', stackTrace: stackTrace);
       if (!mounted) return;
       AppToast.error(
-        'Unable to open the file picker. Please try again.',
+        'Could not complete the file selection. Please try again.',
         context: context,
       );
     } finally {
       if (mounted) setState(() => _picking = false);
     }
+  }
+
+  Future<Uint8List?> _readFileBytes(String path) async {
+    Object? lastError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await File(path).readAsBytes();
+      } catch (error) {
+        lastError = error;
+        await Future<void>.delayed(
+          Duration(milliseconds: 150 * (attempt + 1)),
+        );
+      }
+    }
+    log('Could not read picked file at $path: $lastError');
+    return null;
   }
 
   void _clearSelectedMedia() {
