@@ -6,7 +6,7 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29"/>
     <application
-        android:label="maribel_wellness_centre_application"
+        android:label="MaribelWellnessCenter"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

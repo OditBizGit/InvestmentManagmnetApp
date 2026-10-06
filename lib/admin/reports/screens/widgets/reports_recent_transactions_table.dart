@@ -35,9 +35,7 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
 
     final description = item.narration.trim().isNotEmpty
         ? item.narration.trim()
-        : (item.investorCode.trim().isNotEmpty
-              ? item.investorCode.trim()
-              : '-');
+        : '-';
 
     return _RecentTransaction(
       date: _formatDate(item.date),

@@ -1,11 +1,11 @@
 {
-    "name": "maribel_wellness_centre_application",
-    "short_name": "maribel_wellness_centre_application",
+    "name": "MaribelWellnessCenter",
+    "short_name": "MaribelWellnessCenter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Maribel wellness project",
+    "description": "MaribelWellnessCenter",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

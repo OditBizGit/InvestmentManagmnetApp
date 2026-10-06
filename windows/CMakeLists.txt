@@ -4,7 +4,7 @@ project(maribel_wellness_centre_application LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "maribel_wellness_centre_application")
+set(BINARY_NAME "MaribelWellnessCenter")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

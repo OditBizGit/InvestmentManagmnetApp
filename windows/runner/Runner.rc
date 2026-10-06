@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "maribel_wellness_centre_application" "\0"
+            VALUE "CompanyName", "MaribelWellnessCenter" "\0"
+            VALUE "FileDescription", "MaribelWellnessCenter" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "maribel_wellness_centre_application" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "maribel_wellness_centre_application.exe" "\0"
-            VALUE "ProductName", "maribel_wellness_centre_application" "\0"
+            VALUE "InternalName", "MaribelWellnessCenter" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 MaribelWellnessCenter. All rights reserved." "\0"
+            VALUE "OriginalFilename", "MaribelWellnessCenter.exe" "\0"
+            VALUE "ProductName", "MaribelWellnessCenter" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
