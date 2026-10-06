@@ -19,6 +19,28 @@ class AppNotificationModel {
   final DateTime? createdDate;
   final DateTime? readDate;
 
+  AppNotificationModel copyWith({
+    int? notificationId,
+    String? title,
+    String? message,
+    String? type,
+    int? relatedId,
+    bool? isRead,
+    DateTime? createdDate,
+    DateTime? readDate,
+  }) {
+    return AppNotificationModel(
+      notificationId: notificationId ?? this.notificationId,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      type: type ?? this.type,
+      relatedId: relatedId ?? this.relatedId,
+      isRead: isRead ?? this.isRead,
+      createdDate: createdDate ?? this.createdDate,
+      readDate: readDate ?? this.readDate,
+    );
+  }
+
   factory AppNotificationModel.fromJson(Map<String, dynamic> json) {
     return AppNotificationModel(
       notificationId: _readInt(

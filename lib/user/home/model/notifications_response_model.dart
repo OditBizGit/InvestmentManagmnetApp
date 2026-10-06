@@ -55,6 +55,100 @@ class NotificationsResponseModel {
   }
 }
 
+class MarkAsReadResponseModel {
+  const MarkAsReadResponseModel({
+    required this.status,
+    required this.message,
+    required this.data,
+    required this.code,
+  });
+
+  final bool status;
+  final String message;
+  final bool data;
+  final int code;
+
+  factory MarkAsReadResponseModel.fromJson(Map<String, dynamic> json) {
+    return MarkAsReadResponseModel(
+      status: _readStatus(json['status'] ?? json['Status']),
+      message: (json['message'] ?? json['Message'] ?? '').toString(),
+      data: _readBool(json['data'] ?? json['Data']),
+      code: _readInt(json['code'] ?? json['Code']),
+    );
+  }
+
+  static bool _readStatus(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' ||
+          normalized == 'success' ||
+          normalized == '1';
+    }
+    return false;
+  }
+
+  static bool _readBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' || normalized == '1';
+    }
+    return false;
+  }
+
+  static int _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+}
+
+class UnreadCountResponseModel {
+  const UnreadCountResponseModel({
+    required this.status,
+    required this.message,
+    required this.data,
+    required this.code,
+  });
+
+  final bool status;
+  final String message;
+  final int data;
+  final int code;
+
+  factory UnreadCountResponseModel.fromJson(Map<String, dynamic> json) {
+    return UnreadCountResponseModel(
+      status: _readStatus(json['status'] ?? json['Status']),
+      message: (json['message'] ?? json['Message'] ?? '').toString(),
+      data: _readInt(json['data'] ?? json['Data']),
+      code: _readInt(json['code'] ?? json['Code']),
+    );
+  }
+
+  static bool _readStatus(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' ||
+          normalized == 'success' ||
+          normalized == '1';
+    }
+    return false;
+  }
+
+  static int _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+}
+
 class RegisterDeviceRequestModel {
   const RegisterDeviceRequestModel({
     required this.deviceToken,

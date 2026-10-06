@@ -17,6 +17,7 @@ import 'package:maribel_wellness_centre_application/user/home/widgets/latest_pro
 import 'package:maribel_wellness_centre_application/user/home/widgets/work_progress_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/service_gallery_carousel.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/top_investors_carousel.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class UserHomeScreen extends StatelessWidget {
@@ -177,6 +178,9 @@ class _UserHomeViewState extends State<_UserHomeView> {
                 : const <BannerItemModel>[];
             final latestUpdate =
                 state is HomeSuccess ? state.latestUpdate : null;
+            final unreadCount = state is HomeSuccess
+                ? state.unreadNotificationCount
+                : 0;
             final summaryKey = profile == null
                 ? 'loading'
                 : '${profile.totalCollection}_${profile.totalCommitment}_'
@@ -189,7 +193,9 @@ class _UserHomeViewState extends State<_UserHomeView> {
                 Padding(
                   padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 0.5.h),
                   child: _HomeHeader(
+                    isLoading: isLoading,
                     displayName: profile?.displayName ?? 'Investor',
+                    unreadCount: unreadCount,
                   ),
                 ),
                 Expanded(
@@ -249,9 +255,15 @@ class _UserHomeViewState extends State<_UserHomeView> {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.displayName});
+  const _HomeHeader({
+    required this.isLoading,
+    required this.displayName,
+    required this.unreadCount,
+  });
 
+  final bool isLoading;
   final String displayName;
+  final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -262,59 +274,173 @@ class _HomeHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text.rich(
-                TextSpan(
-                  text: 'Hi, ',
-                  style: TextStyle(
-                    fontSize: 17.sp,
-                    fontWeight: FontWeight.w400,
-                    color: UserHomeScreen._accent,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: displayName.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 17.sp,
-                        fontWeight: FontWeight.w700,
-                        color: UserHomeScreen._textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 0.1.h),
-              Text(
-                'Here is the latest status of your investment',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w400,
-                  color: UserHomeScreen._textSecondary,
-                  height: 1.35,
-                ),
-              ),
+              if (isLoading)
+                const _HomeHeaderShimmer()
+              else
+                _HomeHeaderText(displayName: displayName),
             ],
           ),
         ),
         SizedBox(width: 2.w),
         InkWell(
-          onTap: () {
-            Navigator.of(context).push(
+          onTap: () async {
+            await Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const NotificationScreen(),
               ),
             );
+            if (!context.mounted) return;
+            context.read<HomeCubit>().refreshUnreadCount();
           },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: EdgeInsets.all(1.w),
-            child: SvgPicture.asset(
-              ImageConstants.notification,
-              width: 5.5.w,
-              height: 5.5.w,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                SvgPicture.asset(
+                  ImageConstants.notification,
+                  width: 5.5.w,
+                  height: 5.5.w,
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    right: -0.7.w,
+                    top: -1.2.w,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        minWidth: 3.3.w,
+                        minHeight: 3.3.w,
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 1.w),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE53935),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5.sp,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _HomeHeaderText extends StatelessWidget {
+  const _HomeHeaderText({required this.displayName});
+
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            text: 'Hi, ',
+            style: TextStyle(
+              fontSize: 17.sp,
+              fontWeight: FontWeight.w400,
+              color: UserHomeScreen._accent,
+            ),
+            children: [
+              TextSpan(
+                text: displayName.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w700,
+                  color: UserHomeScreen._textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 0.1.h),
+        Text(
+          'Here is the latest status of your investment',
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w400,
+            color: UserHomeScreen._textSecondary,
+            height: 1.35,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeHeaderShimmer extends StatelessWidget {
+  const _HomeHeaderShimmer();
+
+  static const Color _shimmerBase = Color(0xFFE0E0E0);
+  static const Color _shimmerHighlight = Color(0xFFF5F5F5);
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: _shimmerBase,
+      highlightColor: _shimmerHighlight,
+      direction: ShimmerDirection.ltr,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: _shimmerBase,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text.rich(
+              TextSpan(
+                text: 'Hi, ',
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.transparent,
+                ),
+                children: const [
+                  TextSpan(
+                    text: 'INVESTOR',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.transparent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 0.1.h),
+          Container(
+            decoration: BoxDecoration(
+              color: _shimmerBase,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'Here is the latest status of your investment',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w400,
+                color: Colors.transparent,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

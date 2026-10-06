@@ -15,6 +15,9 @@ class ApiEndpoints {
   static const String getWorkUpdates = "/api/Project/GetWorkUpdates";
   static const String registerDevice = "/api/Notification/RegisterDevice";
   static const String getMyNotifications = "/api/Notification/GetMyNotifications";
+  static const String getUnreadCount = "/api/Notification/GetUnreadCount";
+  static const String markAsRead = "/api/Notification/MarkAsRead/";
+  static const String markAllAsRead = "/api/Notification/MarkAllAsRead";
 
   /// funding & payments
   static const String topInvestors = "/api/Investor/GetTopInvestors";

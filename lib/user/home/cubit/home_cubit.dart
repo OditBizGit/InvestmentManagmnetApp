@@ -5,6 +5,7 @@ import 'package:maribel_wellness_centre_application/user/home/model/home_profile
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/work_progress_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/repository/home_repository.dart';
+import 'package:maribel_wellness_centre_application/user/home/repository/notifications_repository.dart';
 import 'package:maribel_wellness_centre_application/user/updates/model/work_update_model.dart';
 import 'package:maribel_wellness_centre_application/user/updates/repository/updates_repository.dart';
 
@@ -14,12 +15,15 @@ class HomeCubit extends Cubit<HomeState> {
   HomeCubit({
     required HomeRepository repository,
     required UpdatesRepository updatesRepository,
+    required NotificationsRepository notificationsRepository,
   })  : _repository = repository,
         _updatesRepository = updatesRepository,
+        _notificationsRepository = notificationsRepository,
         super(HomeInitial());
 
   final HomeRepository _repository;
   final UpdatesRepository _updatesRepository;
+  final NotificationsRepository _notificationsRepository;
   bool _isLoading = false;
 
   Future<void> loadHome({bool silent = false}) async {
@@ -38,6 +42,7 @@ class HomeCubit extends Cubit<HomeState> {
       List<WorkProgressItemModel>? workProgress;
       List<BannerItemModel>? banners;
       WorkUpdateModel? latestUpdate;
+      int? unreadNotificationCount;
       Object? profileError;
       Object? investorsError;
       Object? workProgressError;
@@ -70,6 +75,11 @@ class HomeCubit extends Cubit<HomeState> {
         }).catchError((Object error) {
           latestUpdateError = error;
         }),
+        _notificationsRepository.getUnreadCount().then((value) {
+          unreadNotificationCount = value;
+        }).catchError((Object error) {
+          // Keep previous count if this call fails.
+        }),
       ]);
 
       final nextProfile = profile ?? previous?.profile;
@@ -77,6 +87,8 @@ class HomeCubit extends Cubit<HomeState> {
       final nextWorkProgress = workProgress ?? previous?.workProgress;
       final nextBanners = banners ?? previous?.banners;
       final nextLatestUpdate = latestUpdate ?? previous?.latestUpdate;
+      final nextUnreadCount =
+          unreadNotificationCount ?? previous?.unreadNotificationCount ?? 0;
 
       // Prefer emitting updated data even if one of the calls failed.
       if (nextProfile != null) {
@@ -87,6 +99,7 @@ class HomeCubit extends Cubit<HomeState> {
             workProgress: nextWorkProgress ?? const [],
             banners: nextBanners ?? const [],
             latestUpdate: nextLatestUpdate,
+            unreadNotificationCount: nextUnreadCount,
           ),
         );
         return;
@@ -102,6 +115,27 @@ class HomeCubit extends Cubit<HomeState> {
       emit(HomeFailure(_messageFromError(error)));
     } finally {
       _isLoading = false;
+    }
+  }
+
+  Future<void> refreshUnreadCount() async {
+    final previous = state is HomeSuccess ? state as HomeSuccess : null;
+    if (previous == null) return;
+
+    try {
+      final count = await _notificationsRepository.getUnreadCount();
+      emit(
+        HomeSuccess(
+          profile: previous.profile,
+          topInvestors: previous.topInvestors,
+          workProgress: previous.workProgress,
+          banners: previous.banners,
+          latestUpdate: previous.latestUpdate,
+          unreadNotificationCount: count,
+        ),
+      );
+    } catch (_) {
+      // Keep showing the last known count.
     }
   }
 

@@ -13,6 +13,7 @@ final class HomeSuccess extends HomeState {
     this.workProgress = const [],
     this.banners = const [],
     this.latestUpdate,
+    this.unreadNotificationCount = 0,
   });
 
   final HomeProfileModel profile;
@@ -20,6 +21,7 @@ final class HomeSuccess extends HomeState {
   final List<WorkProgressItemModel> workProgress;
   final List<BannerItemModel> banners;
   final WorkUpdateModel? latestUpdate;
+  final int unreadNotificationCount;
 }
 
 final class HomeFailure extends HomeState {

@@ -231,6 +231,7 @@ Future<void> setupDi() async {
     () => HomeCubit(
       repository: getIt<HomeRepository>(),
       updatesRepository: getIt<UpdatesRepository>(),
+      notificationsRepository: getIt<NotificationsRepository>(),
     ),
   );
   getIt.registerFactory<ProfileCubit>(
