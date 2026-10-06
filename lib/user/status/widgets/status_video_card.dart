@@ -97,8 +97,6 @@ class _StatusVideoCardState extends State<StatusVideoCard> {
             SizedBox(height: 0.5.h),
             Text(
               widget.description,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12.5.sp,
                 fontWeight: FontWeight.w400,

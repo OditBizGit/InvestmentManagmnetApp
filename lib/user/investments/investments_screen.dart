@@ -459,6 +459,8 @@ class _ProjectHeroCard extends StatelessWidget {
                 children: [
                   Text(
                     projectName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -468,6 +470,8 @@ class _ProjectHeroCard extends StatelessWidget {
                   if (projectDescription.isNotEmpty)
                     Text(
                       projectDescription,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12.5.sp,
                         fontWeight: FontWeight.w400,

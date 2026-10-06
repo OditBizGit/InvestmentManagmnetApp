@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/banner_item_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/home_profile_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
@@ -112,7 +112,13 @@ class HomeCubit extends Cubit<HomeState> {
           workProgressError ??
           bannersError ??
           latestUpdateError;
-      emit(HomeFailure(_messageFromError(error)));
+      emit(
+        HomeFailure(
+          error == null
+              ? 'Failed to load home'
+              : ApiErrorMessage.from(error, fallback: 'Failed to load home'),
+        ),
+      );
     } finally {
       _isLoading = false;
     }
@@ -149,17 +155,5 @@ class HomeCubit extends Cubit<HomeState> {
         return bDate.compareTo(aDate);
       });
     return sorted.first;
-  }
-
-  String _messageFromError(Object? error) {
-    if (error is DioException) {
-      final message = error.response?.data is Map
-          ? (error.response?.data['message'] as String?)
-          : null;
-      if (message != null && message.isNotEmpty) return message;
-      return error.message ?? 'Failed to load home';
-    }
-    if (error == null) return 'Failed to load home';
-    return error.toString().replaceFirst('Exception: ', '');
   }
 }

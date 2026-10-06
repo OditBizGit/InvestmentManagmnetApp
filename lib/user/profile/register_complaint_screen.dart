@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:maribel_wellness_centre_application/user/profile/complaint_success_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/my_complaints_response_model.dart';
@@ -86,21 +87,22 @@ class _RegisterComplaintScreenState extends State<RegisterComplaintScreen> {
       });
     } on DioException catch (e) {
       if (!mounted) return;
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       setState(() {
         _isLoadingComplaints = false;
-        _complaintsError = message?.isNotEmpty == true
-            ? message
-            : (e.message ?? 'Failed to load complaints');
+        _complaintsError = ApiErrorMessage.from(
+          e,
+          fallback: 'Failed to load complaints',
+        );
         _registeredComplaints = const [];
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isLoadingComplaints = false;
-        _complaintsError = e.toString().replaceFirst('Exception: ', '');
+        _complaintsError = ApiErrorMessage.from(
+          e,
+          fallback: 'Failed to load complaints',
+        );
         _registeredComplaints = const [];
       });
     }
@@ -147,20 +149,21 @@ class _RegisterComplaintScreenState extends State<RegisterComplaintScreen> {
       );
     } on DioException catch (e) {
       if (!mounted) return;
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       AppSnackBar.show(
         context,
-        message: message?.isNotEmpty == true
-            ? message!
-            : (e.message ?? 'Failed to register complaint'),
+        message: ApiErrorMessage.from(
+          e,
+          fallback: 'Failed to register complaint',
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       AppSnackBar.show(
         context,
-        message: e.toString().replaceFirst('Exception: ', ''),
+        message: ApiErrorMessage.from(
+          e,
+          fallback: 'Failed to register complaint',
+        ),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

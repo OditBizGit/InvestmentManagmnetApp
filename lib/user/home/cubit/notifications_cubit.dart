@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/app_notification_model.dart';
 import 'package:maribel_wellness_centre_application/user/home/repository/notifications_repository.dart';
 
@@ -45,14 +46,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         token: token,
       );
       if (token != _loadToken || isClosed) return;
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         NotificationsFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load notifications'),
+          ApiErrorMessage.from(e, fallback: 'Failed to load notifications'),
         ),
       );
     } catch (e) {
@@ -66,7 +62,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       if (token != _loadToken || isClosed) return;
       emit(
         NotificationsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(e, fallback: 'Failed to load notifications'),
         ),
       );
     } finally {

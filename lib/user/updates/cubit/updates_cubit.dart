@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/user/updates/model/work_update_model.dart';
 import 'package:maribel_wellness_centre_application/user/updates/repository/updates_repository.dart';
 
@@ -46,21 +47,22 @@ class UpdatesCubit extends Cubit<UpdatesState> {
       emit(UpdatesSuccess(updates));
     } on DioException catch (e) {
       if (silent && state is UpdatesSuccess) return;
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         UpdatesFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load work updates'),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load work updates',
+          ),
         ),
       );
     } catch (e) {
       if (silent && state is UpdatesSuccess) return;
       emit(
         UpdatesFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load work updates',
+          ),
         ),
       );
     } finally {

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
 
@@ -52,21 +53,22 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(ProfileSuccess(response.data!));
     } on DioException catch (e) {
       if (silent && state is ProfileSuccess) return;
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         ProfileFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investor details'),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load investor details',
+          ),
         ),
       );
     } catch (e) {
       if (silent && state is ProfileSuccess) return;
       emit(
         ProfileFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load investor details',
+          ),
         ),
       );
     }

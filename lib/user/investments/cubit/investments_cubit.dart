@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
+import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/user/investments/model/investor_transaction_history_data_model.dart';
 import 'package:maribel_wellness_centre_application/user/investments/repository/investments_repository.dart';
 
@@ -53,21 +54,22 @@ class InvestmentsCubit extends Cubit<InvestmentsState> {
       emit(InvestmentsSuccess(response.data!));
     } on DioException catch (e) {
       if (silent && state is InvestmentsSuccess) return;
-      final message = e.response?.data is Map
-          ? (e.response?.data['message'] as String?)
-          : null;
       emit(
         InvestmentsFailure(
-          message?.isNotEmpty == true
-              ? message!
-              : (e.message ?? 'Failed to load investment history'),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load investment history',
+          ),
         ),
       );
     } catch (e) {
       if (silent && state is InvestmentsSuccess) return;
       emit(
         InvestmentsFailure(
-          e.toString().replaceFirst('Exception: ', ''),
+          ApiErrorMessage.from(
+            e,
+            fallback: 'Failed to load investment history',
+          ),
         ),
       );
     }
