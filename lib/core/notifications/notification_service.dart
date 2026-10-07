@@ -29,7 +29,7 @@ class NotificationService {
       AndroidNotificationChannel(
     'maribel_high_importance',
     'Maribel Notifications',
-    description: 'Push notifications for Maribel Wellness Centre',
+    description: 'Push notifications for Maribel Maternity Care',
     importance: Importance.high,
   );
 

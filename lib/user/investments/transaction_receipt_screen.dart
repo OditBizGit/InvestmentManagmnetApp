@@ -170,12 +170,12 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
                   ),
                   child: Column(
                     children: [
-                      Image.asset(
-                        ImageConstants.logo,
+                      SvgPicture.asset(
+                        ImageConstants.Meribel,
                         height: 7.h,
                         fit: BoxFit.contain,
                       ),
-                      SizedBox(height: 1.2.h),
+                      SizedBox(height: 0.8.h),
                       Text(
                         'TRANSACTION RECEIPT',
                         style: TextStyle(
@@ -300,7 +300,7 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
                       ),
                       SizedBox(height: 0.1.h),
                       Text(
-                        'Maribel Wellness Centre',
+                        'Maribel Maternity Care',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12.sp,

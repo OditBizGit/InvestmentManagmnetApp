@@ -46,7 +46,7 @@ class ImageConstants {
   static const String webLoginLogo = '$_logoPath/web_login_logo.png';
   static const String webLogin1 = '$_logoPath/newlogo1.png';
   static const String webLogin2 = '$_logoPath/newlogo2.png';
-  static const String webLogin3 = '$_logoPath/newlogo3.png';
+  static const String webLogin3 = '$_logoPath/MaribelWebLogin.png';
 
   /// admin web logos
   static const String dashboard = '$_svgPath/dashboard.svg';
@@ -72,4 +72,6 @@ class ImageConstants {
   static const String calender = '$_svgPath/calender.svg';
   static const String Meribel = '$_logoPath/Meribel.svg';
   static const String meribelIcon = '$_logoPath/Meribel icon.svg';
+  static const String maribelLogo = '$_logoPath/maribelLogo.png';
+  static const String appIcon = '$_logoPath/maribelAppIcon.png';
 }

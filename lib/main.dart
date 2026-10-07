@@ -32,7 +32,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 // `true` → Admin interface · `false` → User interface
-const bool isAdmin = true;
+const bool isAdmin = false;
 
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -137,7 +137,7 @@ class MyApp extends StatelessWidget {
               child: MaterialApp(
                 navigatorKey: isAdmin ? null : notificationNavigatorKey,
                 debugShowCheckedModeBanner: false,
-                title: isAdmin ? 'Maribel Admin' : 'Maribel Wellness Centre',
+                title: isAdmin ? 'Maribel Admin' : 'Maribel Maternity Care',
                 theme: ThemeData(
                   fontFamily: fontFamily,
                   colorScheme:

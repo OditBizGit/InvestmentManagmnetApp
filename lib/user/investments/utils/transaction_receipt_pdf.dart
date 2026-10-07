@@ -51,7 +51,7 @@ class TransactionReceiptPdf {
       ShareParams(
         files: [XFile(file.path, mimeType: 'application/pdf')],
         subject: 'Transaction Receipt',
-        text: 'Transaction receipt from Maribel Wellness Centre',
+        text: 'Transaction receipt from Maribel Maternity Care',
       ),
     );
   }
@@ -107,7 +107,7 @@ class TransactionReceiptPdf {
     final fontData =
         await rootBundle.load('assets/font/Montserrat-Bold.ttf');
     final font = pw.Font.ttf(fontData);
-    final logoData = await rootBundle.load(ImageConstants.logo);
+    final logoData = await rootBundle.load(ImageConstants.maribelLogo);
     final logo = pw.MemoryImage(logoData.buffer.asUint8List());
     final tickIcon = await _loadTickSvgImage();
 
@@ -135,7 +135,7 @@ class TransactionReceiptPdf {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Image(logo, height: 56),
+                    pw.Image(logo, height: 70),
                     pw.SizedBox(height: 12),
                     pw.Text(
                       'TRANSACTION RECEIPT',
@@ -207,7 +207,7 @@ class TransactionReceiptPdf {
                     ),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'Maribel Wellness Centre',
+                      'Maribel Maternity Care',
                       style: pw.TextStyle(
                         font: font,
                         fontSize: 12,

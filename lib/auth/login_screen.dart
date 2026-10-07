@@ -121,13 +121,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(height: 3.h),
-                          Image.asset(
-                            ImageConstants.logo,
-                            height: 9.h,
+                          SvgPicture.asset(
+                            ImageConstants.Meribel,
+                            height: 10.h,
                             fit: BoxFit.contain,
                             alignment: Alignment.centerLeft,
                           ),
-                          SizedBox(height: 4.h),
+                          SizedBox(height: 2.h),
                           Text(
                             'Welcome Back',
                             style: TextStyle(
