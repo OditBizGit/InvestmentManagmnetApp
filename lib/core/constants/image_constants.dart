@@ -32,6 +32,8 @@ class ImageConstants {
   static const String topInvestor = '$_svgPath/top_investor.svg';
   static const String tick = '$_svgPath/tick.svg';
   static const String complaints = '$_svgPath/complaints.svg';
+  static const String imageError = '$_svgPath/image_error.svg';
+  static const String videoError = '$_svgPath/video_error.svg';
 
   static const String notification = '$_svgPath/notification.svg';
   static const String print = '$_svgPath/print.svg';

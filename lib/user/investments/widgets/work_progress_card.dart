@@ -32,7 +32,7 @@ class WorkProgressCardShimmer extends StatelessWidget {
       period: const Duration(milliseconds: 1400),
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        padding: EdgeInsets.fromLTRB(4.w, 2.h, 5.w, 2.h),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -42,36 +42,30 @@ class WorkProgressCardShimmer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _Line(
-                        sample: 'Work Progress',
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        widthFactor: 0.45,
-                      ),
-                      SizedBox(height: 0.2.h),
-                      _Line(
-                        sample: 'From pending to completed All in one place.',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w400,
-                          height: 1.3,
-                        ),
-                        widthFactor: 0.92,
-                      ),
-                    ],
+                  child: _Line(
+                    sample: 'Work Progress',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    widthFactor: 0.55,
                   ),
                 ),
                 SizedBox(width: 2.w),
                 const _PhaseDropdownShimmer(wrapWithShimmer: false),
               ],
+            ),
+            SizedBox(height: 0.2.h),
+            _Line(
+              sample: 'From pending to completed All in one place.',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w400,
+                height: 1.3,
+              ),
+              widthFactor: 0.92,
             ),
             SizedBox(height: 2.h),
             SizedBox(
@@ -334,31 +328,15 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Work Progress',
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                        color: _textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 0.2.h),
-                    Text(
-                      'From pending to completed All in one place.',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w400,
-                        color: _textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Work Progress',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
                 ),
               ),
               SizedBox(width: 2.w),
@@ -369,6 +347,16 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
                 onChanged: _onStageSelected,
               ),
             ],
+          ),
+          SizedBox(height: 0.2.h),
+          Text(
+            'From pending to completed All in one place.',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w400,
+              color: _textSecondary,
+              height: 1.3,
+            ),
           ),
           SizedBox(height: 2.h),
           SizedBox(
@@ -908,57 +896,81 @@ class _PhaseDropdownState extends State<_PhaseDropdown> {
     final label =
         widget.phases.isEmpty ? 'No stages' : widget.selectedPhase;
 
-    final dropdownWidth = 28.w;
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: _PhaseDropdownField(
+        key: _fieldKey,
+        backgroundColor: _accentSoft,
+        borderColor: _isOpen ? _accent : _accent.withValues(alpha: 0.28),
+        onTap: _toggle,
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12.5.sp,
+            fontWeight: FontWeight.w600,
+            color: _accent,
+            height: 1.2,
+          ),
+        ),
+        trailing: AnimatedRotation(
+          turns: _isOpen ? 0.5 : 0,
+          duration: const Duration(milliseconds: 180),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: _accent,
+            size: _PhaseDropdownField.iconSize,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+/// Shared chrome for the loaded field and its shimmer skeleton.
+class _PhaseDropdownField extends StatelessWidget {
+  const _PhaseDropdownField({
+    super.key,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.label,
+    required this.trailing,
+    this.onTap,
+  });
+
+  static double get width => 28.w;
+  static double get iconSize => 5.w;
+
+  final Color backgroundColor;
+  final Color borderColor;
+  final Widget label;
+  final Widget trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
-      width: dropdownWidth,
-      child: CompositedTransformTarget(
-        link: _layerLink,
-        child: Material(
-          key: _fieldKey,
-          color: _accentSoft,
+      width: width,
+      child: Material(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: _toggle,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: dropdownWidth,
-              padding: EdgeInsets.symmetric(horizontal: 2.2.w, vertical: 0.5.h),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: _isOpen
-                      ? _accent
-                      : _accent.withValues(alpha: 0.28),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.5.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _accent,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 1.w),
-                  AnimatedRotation(
-                    turns: _isOpen ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: _accent,
-                      size: 5.w,
-                    ),
-                  ),
-                ],
-              ),
+          child: Container(
+            width: width,
+            padding: EdgeInsets.symmetric(horizontal: 2.2.w, vertical: 0.5.h),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: borderColor),
+            ),
+            child: Row(
+              children: [
+                Expanded(child: label),
+                SizedBox(width: 1.w),
+                trailing,
+              ],
             ),
           ),
         ),
@@ -979,39 +991,42 @@ class _PhaseDropdownShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dropdownWidth = 28.w;
+    final labelStyle = TextStyle(
+      fontSize: 12.5.sp,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+    );
 
-    final child = SizedBox(
-      width: dropdownWidth,
-      child: Container(
-        width: dropdownWidth,
-        padding: EdgeInsets.symmetric(horizontal: 2.2.w, vertical: 0.5.h),
+    // Same shell as the loaded field; only label + chevron bars are filled so
+    // size/alignment match and the skeleton does not become one solid block.
+    final child = _PhaseDropdownField(
+      backgroundColor: Colors.transparent,
+      borderColor: Colors.white,
+      label: Align(
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: 0.72,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'Phase 1',
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.clip,
+              style: labelStyle.copyWith(color: Colors.transparent),
+            ),
+          ),
+        ),
+      ),
+      trailing: Container(
+        width: _PhaseDropdownField.iconSize,
+        height: _PhaseDropdownField.iconSize,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Phase 1',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.transparent,
-                  height: 1.2,
-                ),
-              ),
-            ),
-            SizedBox(width: 1.w),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Colors.transparent,
-              size: 5.w,
-            ),
-          ],
+          borderRadius: BorderRadius.circular(4),
         ),
       ),
     );

@@ -9,7 +9,7 @@ class PersonalInfoScreen extends StatelessWidget {
   final InvestorDetailsModel? details;
 
   static String _displayValue(String? value) {
-    if (value == null || value.trim().isEmpty) return '-------';
+    if (value == null || value.trim().isEmpty) return 'Not Provided';
     return value.trim();
   }
 

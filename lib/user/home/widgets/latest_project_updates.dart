@@ -177,13 +177,9 @@ class LatestProjectUpdates extends StatelessWidget {
                 direction: ShimmerDirection.ltr,
                 child: const ColoredBox(color: _shimmerBase),
               ),
-              errorWidget: (context, url, error) => Container(
-                color: const Color(0xFFF0EBF6),
-                child: Icon(
-                  Icons.apartment_outlined,
-                  color: _button,
-                  size: 10.w,
-                ),
+              errorWidget: (context, url, error) => const _MediaErrorPane(
+                svgPath: ImageConstants.imageError,
+                message: 'Unable to load image',
               ),
             ),
             Positioned(
@@ -211,12 +207,66 @@ class LatestProjectUpdates extends StatelessWidget {
       );
     }
 
+    if (update.isVideo) {
+      return const _MediaErrorPane(
+        svgPath: ImageConstants.videoError,
+        message: 'Unable to load preview',
+      );
+    }
+
+    if (update.isImage) {
+      return const _MediaErrorPane(
+        svgPath: ImageConstants.imageError,
+        message: 'Unable to load image',
+      );
+    }
+
     return Container(
       color: const Color(0xFFF0EBF6),
       child: Icon(
         Icons.apartment_outlined,
         color: _button,
         size: 10.w,
+      ),
+    );
+  }
+}
+
+class _MediaErrorPane extends StatelessWidget {
+  const _MediaErrorPane({
+    required this.svgPath,
+    required this.message,
+  });
+
+  final String svgPath;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.grey[300],
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
+            svgPath,
+            width: 10.w,
+            height: 10.w,
+            colorFilter: ColorFilter.mode(
+              Colors.grey[600]!,
+              BlendMode.srcIn,
+            ),
+          ),
+          SizedBox(height: 0.8.h),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 11.5.sp,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -73,7 +73,7 @@ class _UserProfileView extends StatelessWidget {
       CurrencyFormatter.format(amount);
 
   static String _investorCodeLabel(String? code) {
-    if (code == null || code.isEmpty) return '—';
+    if (code == null || code.isEmpty) return 'Not Provided';
     final trimmed = code.trim();
     if (trimmed.toUpperCase().startsWith('INV')) return trimmed;
     return 'INV - $trimmed';
@@ -275,7 +275,7 @@ class _ProfileDetailsContent extends StatelessWidget {
                 label: 'Email Address',
                 value: details?.email.isNotEmpty == true
                     ? details!.email
-                    : '—',
+                    : 'Not Provided',
               ),
               Divider(
                 height: 1,
@@ -289,7 +289,7 @@ class _ProfileDetailsContent extends StatelessWidget {
                 label: 'Phone Number',
                 value: details?.phoneNumber?.isNotEmpty == true
                     ? details!.phoneNumber!
-                    : '—',
+                    : 'Not Provided',
               ),
             ],
           ),

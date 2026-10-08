@@ -14,10 +14,10 @@ class DocumentsScreen extends StatelessWidget {
       value != null && value.trim().isNotEmpty;
 
   static String _displayValue(String? value) =>
-      _hasValue(value) ? value!.trim() : '-------';
+      _hasValue(value) ? value!.trim() : 'Not Provided';
 
   static String _formatAadhaar(String? value) {
-    if (!_hasValue(value)) return '-------';
+    if (!_hasValue(value)) return 'Not Provided';
     final digits = value!.replaceAll(RegExp(r'\D'), '');
     if (digits.length == 12) {
       return '${digits.substring(0, 4)} ${digits.substring(4, 8)} ${digits.substring(8)}';
@@ -26,7 +26,7 @@ class DocumentsScreen extends StatelessWidget {
   }
 
   static String _formatDate(DateTime? date) {
-    if (date == null) return '-------';
+    if (date == null) return 'Not Provided';
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     return '$day-$month-${date.year}';

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/updates/utils/work_update_media_cache.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
@@ -205,6 +207,7 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
   }
 
   /// Opens the fullscreen player once the inline controller is ready.
+  /// On load failure, opens a fullscreen error page so View still works.
   Future<void> openFullscreen() async {
     if (_controller == null || !_controller!.value.isInitialized) {
       if (_initializing) {
@@ -214,7 +217,33 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
         }
       }
     }
+    if (!mounted) return;
+
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      await _openFullscreenError(
+        message: _error ?? 'Unable to load preview',
+      );
+      return;
+    }
     await _openFullscreen();
+  }
+
+  Future<void> _openFullscreenError({required String message}) async {
+    await Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: true,
+        barrierColor: Colors.black,
+        pageBuilder: (_, animation, secondaryAnimation) =>
+            _FullscreenVideoErrorPage(
+          title: widget.title,
+          message: message,
+        ),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   Future<void> _openFullscreen() async {
@@ -380,16 +409,20 @@ class _ErrorPane extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.videocam_off_rounded,
-            color: Colors.grey[600],
-            size: 10.w,
+          SvgPicture.asset(
+            ImageConstants.videoError,
+            width: 10.w,
+            height: 10.w,
+            colorFilter: ColorFilter.mode(
+              Colors.grey[600]!,
+              BlendMode.srcIn,
+            ),
           ),
           SizedBox(height: 0.8.h),
           Text(
             message,
             style: TextStyle(
-              fontSize: 11.sp,
+              fontSize: 11.5.sp,
               color: Colors.grey[600],
             ),
           ),
@@ -608,6 +641,94 @@ class _IconControlButton extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(1.2.w),
           child: Icon(icon, color: Colors.white, size: 6.w),
+        ),
+      ),
+    );
+  }
+}
+
+class _FullscreenVideoErrorPage extends StatelessWidget {
+  const _FullscreenVideoErrorPage({
+    required this.title,
+    required this.message,
+  });
+
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    ImageConstants.videoError,
+                    width: 12.w,
+                    height: 12.w,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white54,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  SizedBox(height: 0.8.h),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      fontSize: 11.5.sp,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 1.h,
+              left: 2.w,
+              right: 2.w,
+              child: Row(
+                children: [
+                  Material(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      customBorder: const CircleBorder(),
+                      child: Padding(
+                        padding: EdgeInsets.all(2.w),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 5.5.w,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (title.trim().isNotEmpty) ...[
+                    SizedBox(width: 2.w),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

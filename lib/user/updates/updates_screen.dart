@@ -560,9 +560,28 @@ class _UpdateCard extends StatelessWidget {
               placeholder: (context, url) => const _MediaShimmer(),
               errorWidget: (context, url, error) => Container(
                 color: Colors.grey[300],
-                child: const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      ImageConstants.imageError,
+                      width: 10.w,
+                      height: 10.w,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey[600]!,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    SizedBox(height: 0.8.h),
+                    Text(
+                      'Unable to load image',
+                      style: TextStyle(
+                        fontSize: 11.5.sp,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

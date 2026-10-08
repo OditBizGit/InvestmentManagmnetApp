@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/status/widgets/status_card_actions.dart';
 import 'package:maribel_wellness_centre_application/user/updates/utils/work_update_media_cache.dart';
 import 'package:shimmer/shimmer.dart';
@@ -62,11 +64,29 @@ class StatusImageCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 width: double.infinity,
                 errorWidget: (context, url, error) => Container(
-                  color: _accentSoft,
-                  child: Icon(
-                    Icons.image_outlined,
-                    color: _accent,
-                    size: 10.w,
+                  color: Colors.grey[300],
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        ImageConstants.imageError,
+                        width: 10.w,
+                        height: 10.w,
+                        colorFilter: ColorFilter.mode(
+                          Colors.grey[600]!,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      SizedBox(height: 0.8.h),
+                      Text(
+                        'Unable to load image',
+                        style: TextStyle(
+                          fontSize: 11.5.sp,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 placeholder: (context, url) => Shimmer.fromColors(

@@ -494,11 +494,29 @@ class _ProjectImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: UserInvestmentsScreen._accentSoft,
-      child: Icon(
-        Icons.apartment_outlined,
-        color: UserInvestmentsScreen._accent,
-        size: 12.w,
+      color: Colors.grey[300],
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
+            ImageConstants.imageError,
+            width: 10.w,
+            height: 10.w,
+            colorFilter: ColorFilter.mode(
+              Colors.grey[600]!,
+              BlendMode.srcIn,
+            ),
+          ),
+          SizedBox(height: 0.8.h),
+          Text(
+            'Unable to load image',
+            style: TextStyle(
+              fontSize: 11.5.sp,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
       ),
     );
   }
