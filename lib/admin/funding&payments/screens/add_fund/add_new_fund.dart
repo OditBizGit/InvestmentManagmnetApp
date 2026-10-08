@@ -267,14 +267,16 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
         'Cannot exceed due of ${_formatCurrency(_dueRemainingAmount)}',
         context: context,
       );
-
-      if (_selectedPaymentMethod == null) {
-        AppToast.error('Please select a payment method', context: context);
-        return;
-      }
+      return;
     }
 
-     final request = AddInvestorPaymentRequestModel(
+    if (_selectedPaymentMethod == null ||
+        _selectedPaymentMethod!.trim().isEmpty) {
+      AppToast.error('Please select a payment method', context: context);
+      return;
+    }
+
+    final request = AddInvestorPaymentRequestModel(
       userId: _selectedInvestor!.userId,
       paidAmount: paidAmount,
       narration: _descriptionController.text.trim(),

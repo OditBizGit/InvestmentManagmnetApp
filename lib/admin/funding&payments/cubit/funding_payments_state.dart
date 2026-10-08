@@ -39,17 +39,23 @@ final class AddPaymentFailure extends FundingPaymentsState {
 final class TransactionHistoryLoading extends FundingPaymentsState {}
 
 final class TransactionHistorySuccess extends FundingPaymentsState {
-  TransactionHistorySuccess(this.investors);
+  TransactionHistorySuccess(
+    this.investors, {
+    this.projectTotalFund,
+  });
 
   final List<FundingInvestorModel> investors;
+  final double? projectTotalFund;
 }
 
 final class TransactionHistoryEmpty extends FundingPaymentsState {
   TransactionHistoryEmpty({
     this.message = 'No investors found',
+    this.projectTotalFund,
   });
 
   final String message;
+  final double? projectTotalFund;
 }
 
 final class TransactionHistoryFailure extends FundingPaymentsState {

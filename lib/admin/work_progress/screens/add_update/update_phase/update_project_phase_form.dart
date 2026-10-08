@@ -48,6 +48,13 @@ class _UpdateProjectPhaseFormView extends StatefulWidget {
 
 class _UpdateProjectPhaseFormViewState
     extends State<_UpdateProjectPhaseFormView> {
+  static const int _maxDescriptionWords = 20;
+
+  int _countWords(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return 0;
+    return trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+  }
   static const List<String> _statuses = [
     'Completed',
     'In Progress',
@@ -270,6 +277,16 @@ class _UpdateProjectPhaseFormViewState
     }
     if (status == null || status.isEmpty) {
       AppToast.error('Please select status', context: context);
+      return;
+    }
+
+    final description = _descriptionController.text.trim();
+    final descriptionWords = _countWords(description);
+    if (descriptionWords > _maxDescriptionWords) {
+      AppToast.error(
+        'Description must be at most $_maxDescriptionWords words',
+        context: context,
+      );
       return;
     }
     if (progressRaw.isNotEmpty && progress == null) {
@@ -613,12 +630,38 @@ class _UpdateProjectPhaseFormViewState
                       onChanged: _onStatusChanged,
                     ),
                   );
+                  final descriptionWordCount =
+                      _countWords(_descriptionController.text);
                   final descriptionField = _LabeledField(
                     label: 'Description',
-                    child: _TextField(
-                      controller: _descriptionController,
-                      hint: 'Enter phase description',
-                      maxLines: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _TextField(
+                          controller: _descriptionController,
+                          hint:
+                              'Enter phase description (max $_maxDescriptionWords words)',
+                          maxLines: 3,
+                          inputFormatters: [
+                            _MaxWordsInputFormatter(_maxDescriptionWords),
+                          ],
+                          onChanged: (_) => setState(() {}),
+                        ),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$descriptionWordCount/$_maxDescriptionWords words',
+                            style: TextStyle(
+                              fontSize: 9.sp,
+                              fontWeight: FontWeight.w400,
+                              color: descriptionWordCount >= _maxDescriptionWords
+                                  ? AppColors.error
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
 
@@ -765,6 +808,30 @@ class _TextField extends StatelessWidget {
       ),
       decoration: _inputDecoration(hint).copyWith(suffixText: suffixText),
     );
+  }
+}
+
+/// Blocks typing/pasting once [maxWords] non-empty words are reached.
+class _MaxWordsInputFormatter extends TextInputFormatter {
+  _MaxWordsInputFormatter(this.maxWords);
+
+  final int maxWords;
+
+  int _countWords(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return 0;
+    return trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (_countWords(newValue.text) <= maxWords) {
+      return newValue;
+    }
+    return oldValue;
   }
 }
 

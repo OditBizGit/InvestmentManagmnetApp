@@ -43,6 +43,7 @@ class AddInvestorFormCards extends StatelessWidget {
   const AddInvestorFormCards({
     super.key,
     required this.formKey,
+    this.isEditing = false,
     required this.fullNameController,
     required this.organizationController,
     required this.mobileController,
@@ -58,6 +59,7 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.onPickDate,
     required this.formatDate,
     this.profilePhoto,
+    this.existingProfileImageUrl,
     required this.onPickProfilePhoto,
     required this.onClearProfilePhoto,
     required this.frequencyOptions,
@@ -89,11 +91,14 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.onPickNomineeDateOfBirth,
     required this.nomineePhoneController,
     this.nomineePhoto,
+    this.existingNomineeImageUrl,
     required this.onPickNomineePhoto,
-    required this.onClearNomineePhoto, DateTime? dateOfBirth,
+    required this.onClearNomineePhoto,
+    DateTime? dateOfBirth,
   });
 
   final GlobalKey<FormState> formKey;
+  final bool isEditing;
   final TextEditingController fullNameController;
   final TextEditingController organizationController;
   final TextEditingController mobileController;
@@ -109,6 +114,7 @@ class AddInvestorFormCards extends StatelessWidget {
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
   final PickedPhoto? profilePhoto;
+  final String? existingProfileImageUrl;
   final VoidCallback onPickProfilePhoto;
   final VoidCallback onClearProfilePhoto;
   final List<String> frequencyOptions;
@@ -140,6 +146,7 @@ class AddInvestorFormCards extends StatelessWidget {
   final VoidCallback onPickNomineeDateOfBirth;
   final TextEditingController nomineePhoneController;
   final PickedPhoto? nomineePhoto;
+  final String? existingNomineeImageUrl;
   final VoidCallback onPickNomineePhoto;
   final VoidCallback onClearNomineePhoto;
 
@@ -150,6 +157,7 @@ class AddInvestorFormCards extends StatelessWidget {
       child: Column(
         children: [
           _BasicInformationCard(
+            isEditing: isEditing,
             fullNameController: fullNameController,
             organizationController: organizationController,
             mobileController: mobileController,
@@ -159,11 +167,13 @@ class AddInvestorFormCards extends StatelessWidget {
             investorType: investorType,
             onTypeChanged: onTypeChanged,
             profilePhoto: profilePhoto,
+            existingProfileImageUrl: existingProfileImageUrl,
             onPickProfilePhoto: onPickProfilePhoto,
             onClearProfilePhoto: onClearProfilePhoto,
           ),
           const SizedBox(height: 16),
           _LoginCredentialsCard(
+            isEditing: isEditing,
             usernameController: usernameController,
             passwordController: passwordController,
           ),
@@ -206,6 +216,7 @@ class AddInvestorFormCards extends StatelessWidget {
             formatDate: formatDate,
             nomineePhoneController: nomineePhoneController,
             nomineePhoto: nomineePhoto,
+            existingNomineeImageUrl: existingNomineeImageUrl,
             onPickNomineePhoto: onPickNomineePhoto,
             onClearNomineePhoto: onClearNomineePhoto,
           ),
@@ -217,6 +228,7 @@ class AddInvestorFormCards extends StatelessWidget {
 
 class _BasicInformationCard extends StatelessWidget {
   const _BasicInformationCard({
+    this.isEditing = false,
     required this.fullNameController,
     required this.organizationController,
     required this.mobileController,
@@ -226,10 +238,12 @@ class _BasicInformationCard extends StatelessWidget {
     required this.investorType,
     required this.onTypeChanged,
     this.profilePhoto,
+    this.existingProfileImageUrl,
     required this.onPickProfilePhoto,
     required this.onClearProfilePhoto,
   });
 
+  final bool isEditing;
   final TextEditingController fullNameController;
   final TextEditingController organizationController;
   final TextEditingController mobileController;
@@ -239,15 +253,33 @@ class _BasicInformationCard extends StatelessWidget {
   final String? investorType;
   final ValueChanged<String?> onTypeChanged;
   final PickedPhoto? profilePhoto;
+  final String? existingProfileImageUrl;
   final VoidCallback onPickProfilePhoto;
   final VoidCallback onClearProfilePhoto;
+
+  static final _phoneInputFormatters = <TextInputFormatter>[
+    FilteringTextInputFormatter.digitsOnly,
+    LengthLimitingTextInputFormatter(10),
+  ];
 
   String? _validateOptionalPhone(String? value) {
     final mobile = value?.trim() ?? '';
     if (mobile.isEmpty) return null;
     final digits = mobile.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 10) {
-      return 'Enter a valid mobile number';
+    if (digits.length != 10) {
+      return 'Enter a valid 10-digit mobile number';
+    }
+    return null;
+  }
+
+  String? _validateRequiredPhone(String? value) {
+    final mobile = value?.trim() ?? '';
+    if (mobile.isEmpty) {
+      return 'Please enter mobile number';
+    }
+    final digits = mobile.replaceAll(RegExp(r'\D'), '');
+    if (digits.length != 10) {
+      return 'Enter a valid 10-digit mobile number';
     }
     return null;
   }
@@ -261,6 +293,7 @@ class _BasicInformationCard extends StatelessWidget {
         children: [
           AddInvestorPhotoUploadBox(
             photo: profilePhoto,
+            existingImageUrl: existingProfileImageUrl,
             onPick: onPickProfilePhoto,
             onClear: onClearProfilePhoto,
           ),
@@ -309,17 +342,8 @@ class _BasicInformationCard extends StatelessWidget {
                         controller: mobileController,
                         hint: 'Enter mobile number',
                         keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          final mobile = value?.trim() ?? '';
-                          if (mobile.isEmpty) {
-                            return 'Please enter mobile number';
-                          }
-                          final digits = mobile.replaceAll(RegExp(r'\D'), '');
-                          if (digits.length < 10) {
-                            return 'Enter a valid mobile number';
-                          }
-                          return null;
-                        },
+                        inputFormatters: _phoneInputFormatters,
+                        validator: _validateRequiredPhone,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -329,6 +353,7 @@ class _BasicInformationCard extends StatelessWidget {
                         controller: alternateMobileController,
                         hint: 'Enter alternate phone number',
                         keyboardType: TextInputType.phone,
+                        inputFormatters: _phoneInputFormatters,
                         validator: _validateOptionalPhone,
                       ),
                     ),
@@ -344,11 +369,12 @@ class _BasicInformationCard extends StatelessWidget {
                     const SizedBox(height: 14),
                     AddInvestorLabeledField(
                       label: 'Address',
-                      isRequired: true,
+                      isRequired: !isEditing,
                       child: AddInvestorTextInput(
                         controller: addressController,
                         hint: 'Enter address',
                         validator: (value) {
+                          if (isEditing) return null;
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter address';
                           }
@@ -415,18 +441,8 @@ class _BasicInformationCard extends StatelessWidget {
                             controller: mobileController,
                             hint: 'Enter mobile number',
                             keyboardType: TextInputType.phone,
-                            validator: (value) {
-                              final mobile = value?.trim() ?? '';
-                              if (mobile.isEmpty) {
-                                return 'Please enter mobile number';
-                              }
-                              final digits =
-                                  mobile.replaceAll(RegExp(r'\D'), '');
-                              if (digits.length < 10) {
-                                return 'Enter a valid mobile number';
-                              }
-                              return null;
-                            },
+                            inputFormatters: _phoneInputFormatters,
+                            validator: _validateRequiredPhone,
                           ),
                         ),
                       ),
@@ -443,6 +459,7 @@ class _BasicInformationCard extends StatelessWidget {
                             controller: alternateMobileController,
                             hint: 'Enter alternate phone number',
                             keyboardType: TextInputType.phone,
+                            inputFormatters: _phoneInputFormatters,
                             validator: _validateOptionalPhone,
                           ),
                         ),
@@ -463,11 +480,12 @@ class _BasicInformationCard extends StatelessWidget {
                   const SizedBox(height: 14),
                   AddInvestorLabeledField(
                     label: 'Address',
-                    isRequired: true,
+                    isRequired: !isEditing,
                     child: AddInvestorTextInput(
                       controller: addressController,
                       hint: 'Enter address',
                       validator: (value) {
+                        if (isEditing) return null;
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter address';
                         }
@@ -548,10 +566,12 @@ class _LoginCredentialsCard extends StatefulWidget {
   const _LoginCredentialsCard({
     required this.usernameController,
     required this.passwordController,
+    this.isEditing = false,
   });
 
   final TextEditingController usernameController;
   final TextEditingController passwordController;
+  final bool isEditing;
 
   @override
   State<_LoginCredentialsCard> createState() => _LoginCredentialsCardState();
@@ -562,60 +582,73 @@ class _LoginCredentialsCardState extends State<_LoginCredentialsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final canEditCredentials = !widget.isEditing;
+
     return AddInvestorSectionCard(
       title: 'Login Credentials',
-      subtitle:
-          'Create a username and password for this investor to access their account.',
+      subtitle: widget.isEditing
+          ? 'Username and password cannot be changed while updating an investor.'
+          : 'Create a username and password for this investor to access their account.',
       child: LayoutBuilder(
         builder: (context, constraints) {
           final twoCol = constraints.maxWidth >= 560;
           final usernameField = AddInvestorLabeledField(
             label: 'Username',
-            isRequired: true,
+            isRequired: canEditCredentials,
             child: AddInvestorTextInput(
               controller: widget.usernameController,
               hint: 'Enter username',
-              validator: (value) {
-                final username = value?.trim() ?? '';
-                if (username.isEmpty) {
-                  return 'Please enter username';
-                }
-                if (username.length < 3) {
-                  return 'Username must be at least 3 characters';
-                }
-                return null;
-              },
+              enabled: canEditCredentials,
+              validator: canEditCredentials
+                  ? (value) {
+                      final username = value?.trim() ?? '';
+                      if (username.isEmpty) {
+                        return 'Please enter username';
+                      }
+                      if (username.length < 3) {
+                        return 'Username must be at least 3 characters';
+                      }
+                      return null;
+                    }
+                  : null,
             ),
           );
           final passwordField = AddInvestorLabeledField(
             label: 'Password',
-            isRequired: true,
+            isRequired: canEditCredentials,
             child: AddInvestorTextInput(
               controller: widget.passwordController,
-              hint: 'Enter password',
+              hint: widget.isEditing
+                  ? 'Password cannot be edited'
+                  : 'Enter password',
+              enabled: canEditCredentials,
               obscureText: _obscurePassword,
-              suffixIcon: IconButton(
-                onPressed: () {
-                  setState(() => _obscurePassword = !_obscurePassword);
-                },
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: AppColors.hint,
-                  size: 20,
-                ),
-              ),
-              validator: (value) {
-                final password = value ?? '';
-                if (password.isEmpty) {
-                  return 'Please enter password';
-                }
-                if (password.length < 6) {
-                  return 'Password must be at least 6 characters';
-                }
-                return null;
-              },
+              suffixIcon: canEditCredentials
+                  ? IconButton(
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: AppColors.hint,
+                        size: 20,
+                      ),
+                    )
+                  : null,
+              validator: canEditCredentials
+                  ? (value) {
+                      final password = value ?? '';
+                      if (password.isEmpty) {
+                        return 'Please enter password';
+                      }
+                      if (password.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    }
+                  : null,
             ),
           );
 
@@ -1165,6 +1198,7 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
   const AddInvestorPhotoUploadBox({
     super.key,
     this.photo,
+    this.existingImageUrl,
     required this.onPick,
     required this.onClear,
     this.uploadLabel = 'Upload Profile Photo',
@@ -1172,6 +1206,7 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
   });
 
   final PickedPhoto? photo;
+  final String? existingImageUrl;
   final VoidCallback onPick;
   final VoidCallback onClear;
   final String uploadLabel;
@@ -1179,7 +1214,23 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photo != null;
+    final hasPickedPhoto = photo != null;
+    final hasExistingImage =
+        existingImageUrl != null && existingImageUrl!.trim().isNotEmpty;
+    final hasPhoto = hasPickedPhoto || hasExistingImage;
+
+    DecorationImage? image;
+    if (hasPickedPhoto) {
+      image = DecorationImage(
+        image: MemoryImage(photo!.bytes),
+        fit: BoxFit.cover,
+      );
+    } else if (hasExistingImage) {
+      image = DecorationImage(
+        image: NetworkImage(existingImageUrl!),
+        fit: BoxFit.cover,
+      );
+    }
 
     return Material(
       color: Colors.transparent,
@@ -1197,12 +1248,7 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F1F5),
                     borderRadius: BorderRadius.circular(24),
-                    image: hasPhoto
-                        ? DecorationImage(
-                            image: MemoryImage(photo!.bytes),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+                    image: image,
                   ),
                   alignment: Alignment.center,
                   child: hasPhoto
@@ -1253,7 +1299,11 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    hasPhoto ? photo!.name : 'JPEG, PNG (Max 2MB)',
+                    hasPickedPhoto
+                        ? photo!.name
+                        : hasExistingImage
+                            ? 'Current profile photo'
+                            : 'JPEG, PNG (Max 2MB)',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -1385,6 +1435,7 @@ class AddInvestorTextInput extends StatelessWidget {
     this.keyboardType,
     this.validator,
     this.obscureText = false,
+    this.enabled = true,
     this.suffixIcon,
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
@@ -1396,6 +1447,7 @@ class AddInvestorTextInput extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final bool obscureText;
+  final bool enabled;
   final Widget? suffixIcon;
   final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization;
@@ -1405,6 +1457,7 @@ class AddInvestorTextInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      enabled: enabled,
       keyboardType: keyboardType,
       obscureText: obscureText,
       inputFormatters: inputFormatters,
@@ -1415,10 +1468,12 @@ class AddInvestorTextInput extends StatelessWidget {
       style: TextStyle(
         fontSize: 11.sp,
         fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
+        color: enabled ? AppColors.textPrimary : AppColors.textMuted,
       ),
       decoration: addInvestorInputDecoration(hint).copyWith(
         suffixIcon: suffixIcon,
+        filled: !enabled,
+        fillColor: enabled ? null : const Color(0xFFF5F4F7),
       ),
     );
   }

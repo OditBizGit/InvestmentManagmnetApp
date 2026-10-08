@@ -73,7 +73,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           isActive: _selectedItem == AdminDrawerItem.dashboard,
         );
       case AdminDrawerItem.investors:
-        return const AdminInvestorsScreen();
+        return AdminInvestorsScreen(
+          isActive: _selectedItem == AdminDrawerItem.investors,
+        );
       case AdminDrawerItem.fundingPayments:
         return AdminFundingPaymentsScreen(
           isActive: _selectedItem == AdminDrawerItem.fundingPayments,

@@ -51,7 +51,7 @@ class _CreateAdminView extends StatefulWidget {
 }
 
 class _CreateAdminViewState extends State<_CreateAdminView> {
-  final _formKey = GlobalKey<FormState>();
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _formCardKey = GlobalKey();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -103,13 +103,18 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
   }
 
   void _resetForm() {
-    _formKey.currentState?.reset();
+    FocusScope.of(context).unfocus();
     _usernameController.clear();
     _passwordController.clear();
     _fullNameController.clear();
     _emailController.clear();
     _phoneController.clear();
     _alternativePhoneController.clear();
+    // Remount the Form so AutovalidateMode.onUserInteraction fields
+    // do not keep showing errors after controllers are cleared.
+    setState(() {
+      _formKey = GlobalKey<FormState>();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncFormCardHeight());
   }
 

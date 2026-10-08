@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/model
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/repository/create_project_repository.dart';
 import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
 part 'funding_payments_state.dart';
@@ -14,16 +15,20 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
   FundingPaymentsCubit({
     required InvestorsRepository investorsRepository,
     required InvestorPaymentRepository paymentRepository,
+    required ProjectRepository projectRepository,
   })  : _investorsRepository = investorsRepository,
         _paymentRepository = paymentRepository,
+        _projectRepository = projectRepository,
         super(FundingPaymentsInitial());
 
   final InvestorsRepository _investorsRepository;
   final InvestorPaymentRepository _paymentRepository;
+  final ProjectRepository _projectRepository;
 
   List<InvestorModel> _investors = [];
   List<FundingInvestorModel> _fundingInvestors = [];
   InvestorDetailsModel? _investorDetails;
+  double? _projectTotalFund;
   bool _isFundingInvestorsRequestInFlight = false;
 
   List<InvestorModel> get investors => _investors;
@@ -31,6 +36,9 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
   List<FundingInvestorModel> get fundingInvestors => _fundingInvestors;
 
   InvestorDetailsModel? get investorDetails => _investorDetails;
+
+  /// Project funding goal (Total Fund) from the live project, if available.
+  double? get projectTotalFund => _projectTotalFund;
 
   bool get hasFundingInvestors => _fundingInvestors.isNotEmpty;
 
@@ -180,12 +188,35 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
     _investorDetails = null;
   }
 
+  Future<void> _refreshProjectTotalFund() async {
+    try {
+      final response = await _projectRepository.getProjects();
+      if (response == null) return;
+
+      final projects = response.data;
+      if (projects.isEmpty) {
+        _projectTotalFund = null;
+        return;
+      }
+
+      final fund = projects.first.totalFund;
+      _projectTotalFund = fund > 0 ? fund : null;
+    } catch (_) {
+      // Keep the last known project fund if refresh fails.
+    }
+  }
+
   Future<void> _loadFundingInvestors({required bool silent}) async {
     if (_isFundingInvestorsRequestInFlight) return;
     _isFundingInvestorsRequestInFlight = true;
 
     try {
-      final response = await _paymentRepository.getFundingInvestors();
+      final fundingFuture = _paymentRepository.getFundingInvestors();
+      await Future.wait([
+        fundingFuture,
+        _refreshProjectTotalFund(),
+      ]);
+      final response = await fundingFuture;
 
       final hasData = response.investors.isNotEmpty;
       final looksSuccessful = response.status ||
@@ -213,6 +244,7 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
             message: response.message.isNotEmpty
                 ? response.message
                 : 'No investors found',
+            projectTotalFund: _projectTotalFund,
           ),
         );
         return;
@@ -221,6 +253,7 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
       emit(
         TransactionHistorySuccess(
           List<FundingInvestorModel>.unmodifiable(_fundingInvestors),
+          projectTotalFund: _projectTotalFund,
         ),
       );
     } on DioException catch (e) {

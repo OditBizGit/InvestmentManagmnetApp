@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/update_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_form_cards.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_side_panel.dart';
@@ -15,12 +17,17 @@ import 'package:sizer/sizer.dart';
 class AddNewInvestorScreen extends StatelessWidget {
   const AddNewInvestorScreen({
     super.key,
+    this.investorToEdit,
     this.onBack,
     this.onAddSuccess,
+    this.onUpdateSuccess,
   });
 
+  /// When set, the form opens in update mode with these fields prefilled.
+  final InvestorModel? investorToEdit;
   final VoidCallback? onBack;
   final VoidCallback? onAddSuccess;
+  final VoidCallback? onUpdateSuccess;
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +38,10 @@ class AddNewInvestorScreen extends StatelessWidget {
           repository: context.read<InvestorsRepository>(),
         )..fetchInvestorTypes(),
         child: _AddNewInvestorView(
+          investorToEdit: investorToEdit,
           onBack: onBack,
           onAddSuccess: onAddSuccess,
+          onUpdateSuccess: onUpdateSuccess,
         ),
       ),
     );
@@ -41,12 +50,16 @@ class AddNewInvestorScreen extends StatelessWidget {
 
 class _AddNewInvestorView extends StatefulWidget {
   const _AddNewInvestorView({
+    this.investorToEdit,
     this.onBack,
     this.onAddSuccess,
+    this.onUpdateSuccess,
   });
 
+  final InvestorModel? investorToEdit;
   final VoidCallback? onBack;
   final VoidCallback? onAddSuccess;
+  final VoidCallback? onUpdateSuccess;
 
   @override
   State<_AddNewInvestorView> createState() => _AddNewInvestorViewState();
@@ -93,7 +106,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   String? _investorType;
   DateTime? _investmentDate = DateTime.now();
   PickedPhoto? _profilePhoto;
+  String? _existingProfileImageUrl;
   PickedPhoto? _nomineePhoto;
+  String? _existingNomineeImageUrl;
   String? _nomineeRelationship;
   DateTime? _nomineeDateOfBirth;
   DateTime? _dateOfBirth;
@@ -104,6 +119,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   String? _selectedPaymentMode;
   List<PaymentScheduleInstallment> _paymentSchedule = const [];
 
+  bool get _isEditing => widget.investorToEdit != null;
+
   @override
   void initState() {
     super.initState();
@@ -111,7 +128,177 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _advancePaymentController.addListener(_rebuildPaymentSchedule);
     _customInstallmentController.addListener(_rebuildPaymentSchedule);
     _intervalController.addListener(_rebuildPaymentSchedule);
+    _prefillFromInvestor(widget.investorToEdit);
     _paymentSchedule = _buildPaymentSchedule();
+  }
+
+  void _prefillFromInvestor(InvestorModel? investor) {
+    if (investor == null) return;
+
+    // Basic information
+    _fullNameController.text = investor.fullName;
+    _organizationController.text = investor.organization ?? '';
+    _mobileController.text = _digitsPhone(investor.phoneNumber);
+    _alternateMobileController.text = _optionalDigitsPhone(
+      investor.alternativeNumber,
+    );
+    _emailController.text = investor.email ?? '';
+    _addressController.text = investor.address ?? '';
+    _usernameController.text = investor.username;
+    _investorType = investor.investorType;
+    _existingProfileImageUrl = investor.profileImageUrl;
+    _dateOfBirth = investor.dateOfBirth;
+
+    // KYC / bank — only prefill values that pass form validators so Update
+    // is not blocked by invalid API data sitting below the fold.
+    if (_isValidAadhaar(investor.aadhaarNumber)) {
+      _aadhaarController.text = investor.aadhaarNumber!.trim();
+    }
+    if (_isValidPan(investor.panCardNumber)) {
+      _panController.text = investor.panCardNumber!.trim().toUpperCase();
+    }
+    _bankNameController.text = investor.bankName ?? '';
+    if (_isValidIfsc(investor.ifscCode)) {
+      _ifscController.text = investor.ifscCode!.trim().toUpperCase();
+    }
+    final account = investor.accountNumber?.trim() ?? '';
+    if (account.length >= 9) {
+      _accountNumberController.text = account;
+    }
+
+    // Investment
+    final amount = investor.investmentAmount > 0
+        ? investor.investmentAmount
+        : investor.totalInvestmentAmount;
+    if (amount > 0) {
+      _amountController.text = _formatAmountForField(amount);
+    }
+
+    _investmentDate =
+        investor.investmentDate ?? investor.createdDate ?? _investmentDate;
+
+    if (investor.investmentAdvanceAmount > 0) {
+      _advancePaymentController.text =
+          _formatAmountForField(investor.investmentAdvanceAmount);
+    }
+
+    _selectedPaymentMode = _matchOption(
+      investor.paymentMethod,
+      kAdvancePaymentModeOptions,
+    );
+
+    final frequency = _matchOption(
+      investor.investmentSplitType,
+      _frequencyOptions,
+    );
+    if (frequency != null) {
+      _selectedFrequency = frequency;
+    }
+
+    final splitMonths = investor.investmentSplitMonths;
+    if (splitMonths > 0) {
+      final asOption = splitMonths.toString();
+      if (_installmentCountOptions.contains(asOption)) {
+        _selectedInstallmentCount = asOption;
+      } else {
+        _selectedInstallmentCount = 'Custom';
+        _customInstallmentController.text = asOption;
+      }
+    }
+
+    final needsInterval =
+        _selectedFrequency == 'Week' || _selectedFrequency == 'Day';
+    if (needsInterval) {
+      final gap = investor.investmentSplitGap > 0
+          ? investor.investmentSplitGap
+          : 1;
+      _intervalController.text = gap.toString();
+    }
+
+    // Nominee
+    _nomineeNameController.text = investor.nomineeName ?? '';
+    _nomineeAddressController.text = investor.nomineeAddress ?? '';
+    _nomineePhoneController.text = _optionalDigitsPhone(
+      investor.nomineePhoneNumber,
+    );
+    if (_isValidAadhaar(investor.nomineeAadhaarNumber)) {
+      _nomineeAadhaarController.text = investor.nomineeAadhaarNumber!.trim();
+    }
+    if (_isValidPan(investor.nomineePanCardNumber)) {
+      _nomineePanController.text =
+          investor.nomineePanCardNumber!.trim().toUpperCase();
+    }
+    _nomineeDateOfBirth = investor.nomineeDateOfBirth;
+    _existingNomineeImageUrl = investor.nomineeProfilePhotoUrl;
+    _nomineeRelationship = _matchOption(
+      investor.nomineeRelationship,
+      const [
+        'Spouse',
+        'Father',
+        'Mother',
+        'Son',
+        'Daughter',
+        'Brother',
+        'Sister',
+        'Other',
+      ],
+      fallbackToOther: true,
+    );
+  }
+
+  static bool _isValidAadhaar(String? value) {
+    final raw = value?.trim() ?? '';
+    return raw.length == 12 && RegExp(r'^\d{12}$').hasMatch(raw);
+  }
+
+  static bool _isValidPan(String? value) {
+    final raw = value?.trim().toUpperCase() ?? '';
+    return RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(raw);
+  }
+
+  static bool _isValidIfsc(String? value) {
+    final raw = value?.trim().toUpperCase() ?? '';
+    return RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(raw);
+  }
+
+  static String _digitsPhone(String? value) {
+    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 10) {
+      return digits.substring(digits.length - 10);
+    }
+    return digits;
+  }
+
+  static String _optionalDigitsPhone(String? value) {
+    final digits = _digitsPhone(value);
+    return digits.length == 10 ? digits : '';
+  }
+
+  static String _formatAmountForField(double amount) {
+    return amount == amount.roundToDouble()
+        ? amount.toStringAsFixed(0)
+        : amount.toStringAsFixed(2);
+  }
+
+  /// Case-insensitive match against known dropdown options.
+  static String? _matchOption(
+    String? raw,
+    List<String> options, {
+    bool fallbackToOther = false,
+  }) {
+    final value = raw?.trim() ?? '';
+    if (value.isEmpty) return null;
+
+    for (final option in options) {
+      if (option.toLowerCase() == value.toLowerCase()) {
+        return option;
+      }
+    }
+
+    if (fallbackToOther && options.contains('Other')) {
+      return 'Other';
+    }
+    return null;
   }
 
   @override
@@ -179,11 +366,6 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     return interval;
   }
 
-  /// Maps to API `InvestmentSplitGap`.
-  ///
-  /// - Week/Day: gap between installments (weeks or days) from the interval field.
-  /// - Month (including Custom month count): always `1` (every month).
-  ///   Custom values like 15 are sent as [investmentSplitMonths], not as gap.
   int get _resolvedSplitGap {
     if (_needsInterval) {
       return _resolvedInterval ?? 0;
@@ -344,6 +526,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       setState(() {});
+      AppToast.error(
+        'Please fix the highlighted fields before continuing',
+        context: context,
+      );
       return;
     }
 
@@ -399,7 +585,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       return;
     }
 
-    if (_paymentSchedule.isEmpty) {
+    // Schedule preview is only required when registering a new investor.
+    // On update, advance may equal amount (no remaining installments).
+    if (!_isEditing && _paymentSchedule.isEmpty) {
       AppToast.error(
         'Unable to build payment schedule. Check investment and advance amounts.',
         context: context,
@@ -409,7 +597,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
 
     final amount = double.tryParse(
       _amountController.text.trim().replaceAll(',', ''),
-    );
+    ) ??
+        0;
 
     MultipartFile? profileImage;
     if (_profilePhoto != null) {
@@ -417,6 +606,53 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
         _profilePhoto!.bytes,
         filename: _profilePhoto!.name,
       );
+    }
+
+    MultipartFile? nomineeProfilePhoto;
+    if (_nomineePhoto != null) {
+      nomineeProfilePhoto = MultipartFile.fromBytes(
+        _nomineePhoto!.bytes,
+        filename: _nomineePhoto!.name,
+      );
+    }
+
+    if (_isEditing) {
+      final investor = widget.investorToEdit!;
+      final updateRequest = UpdateInvestorRequestModel(
+        userId: investor.userId,
+        fullName: _fullNameController.text.trim(),
+        email: _optionalText(_emailController.text),
+        phoneNumber: _optionalText(_mobileController.text),
+        alternativeNumber: _optionalText(_alternateMobileController.text),
+        investorType: _investorType?.trim(),
+        organization: _optionalText(_organizationController.text),
+        address: _optionalText(_addressController.text),
+        aadhaarNumber: _optionalText(_aadhaarController.text),
+        panCardNumber: _optionalText(_panController.text),
+        accountNumber: _optionalText(_accountNumberController.text),
+        ifscCode: _optionalText(_ifscController.text),
+        bankName: _optionalText(_bankNameController.text),
+        dateOfBirth: _dateOfBirth,
+        investmentAmount: amount,
+        investmentDate: _investmentDate,
+        investmentSplitMonths: count,
+        investmentSplitType: _selectedFrequency,
+        investmentSplitGap: _resolvedSplitGap,
+        investmentAdvanceAmount: advance,
+        paymentMethod: _optionalText(_selectedPaymentMode ?? ''),
+        nomineeName: _optionalText(_nomineeNameController.text),
+        nomineeRelationship: _optionalText(_nomineeRelationship ?? ''),
+        nomineeAddress: _optionalText(_nomineeAddressController.text),
+        nomineeDateOfBirth: _nomineeDateOfBirth,
+        nomineeAadhaarNumber: _optionalText(_nomineeAadhaarController.text),
+        nomineePanCardNumber: _optionalText(_nomineePanController.text),
+        nomineePhoneNumber: _optionalText(_nomineePhoneController.text),
+        profileImage: profileImage,
+        nomineeProfilePhoto: nomineeProfilePhoto,
+      );
+
+      await context.read<InvestorsCubit>().updateInvestor(updateRequest);
+      return;
     }
 
     final request = RegisterInvestorRequestModel(
@@ -450,15 +686,15 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       nomineePanCardNumber: _nomineePanController.text.trim(),
       dateOfBirth: _dateOfBirth,
       nomineePhoneNumber: _nomineePhoneController.text.trim(),
-      nomineeProfilePhoto: _nomineePhoto != null
-          ? MultipartFile.fromBytes(
-              _nomineePhoto!.bytes,
-              filename: _nomineePhoto!.name,
-            )
-          : null,
+      nomineeProfilePhoto: nomineeProfilePhoto,
     );
 
     await context.read<InvestorsCubit>().registerInvestor(request);
+  }
+
+  static String? _optionalText(String value) {
+    final text = value.trim();
+    return text.isEmpty ? null : text;
   }
 
   Future<void> _pickProfilePhoto() async {
@@ -468,7 +704,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   }
 
   void _clearProfilePhoto() {
-    setState(() => _profilePhoto = null);
+    setState(() {
+      _profilePhoto = null;
+      _existingProfileImageUrl = null;
+    });
   }
 
   Future<void> _pickNomineePhoto() async {
@@ -478,7 +717,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   }
 
   void _clearNomineePhoto() {
-    setState(() => _nomineePhoto = null);
+    setState(() {
+      _nomineePhoto = null;
+      _existingNomineeImageUrl = null;
+    });
   }
 
   Future<void> _pickDate() async {
@@ -563,12 +805,25 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
             }
             _handleBack();
           });
+        } else if (state is UpdateInvestorSuccess) {
+          AppToast.success(state.message, context: context);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (widget.onUpdateSuccess != null) {
+              widget.onUpdateSuccess!();
+              return;
+            }
+            _handleBack();
+          });
         } else if (state is RegisterInvestorFailure) {
+          AppToast.error(state.message, context: context);
+        } else if (state is UpdateInvestorFailure) {
           AppToast.error(state.message, context: context);
         }
       },
       builder: (context, state) {
-        final isRegistering = state is RegisterInvestorLoading;
+        final isRegistering = state is RegisterInvestorLoading ||
+            state is UpdateInvestorLoading;
 
         return ColoredBox(
           color: AppColors.screenBg,
@@ -580,6 +835,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
 
               final formCards = AddInvestorFormCards(
                 formKey: _formKey,
+                isEditing: _isEditing,
                 fullNameController: _fullNameController,
                 organizationController: _organizationController,
                 mobileController: _mobileController,
@@ -596,6 +852,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 onPickDate: _pickDate,
                 formatDate: _formatDate,
                 profilePhoto: _profilePhoto,
+                existingProfileImageUrl: _existingProfileImageUrl,
                 onPickProfilePhoto: _pickProfilePhoto,
                 onClearProfilePhoto: _clearProfilePhoto,
                 monthOptions: _installmentCountOptions,
@@ -630,11 +887,13 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 onPickNomineeDateOfBirth: _pickNomineeDateOfBirth,
                 nomineePhoneController: _nomineePhoneController,
                 nomineePhoto: _nomineePhoto,
+                existingNomineeImageUrl: _existingNomineeImageUrl,
                 onPickNomineePhoto: _pickNomineePhoto,
                 onClearNomineePhoto: _clearNomineePhoto,
               );
 
               final sidePanel = AddInvestorSidePanel(
+                isEditing: _isEditing,
                 isLoading: isRegistering,
                 onCancel: _handleBack,
                 onAdd: _handleAdd,
@@ -650,7 +909,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _BreadcrumbHeader(onBack: _handleBack),
+                    _BreadcrumbHeader(
+                      isEditing: _isEditing,
+                      onBack: _handleBack,
+                    ),
                     const SizedBox(height: 20),
                     Expanded(
                       child: isNarrow
@@ -695,12 +957,21 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
 }
 
 class _BreadcrumbHeader extends StatelessWidget {
-  const _BreadcrumbHeader({required this.onBack});
+  const _BreadcrumbHeader({
+    required this.onBack,
+    this.isEditing = false,
+  });
 
   final VoidCallback onBack;
+  final bool isEditing;
 
   @override
   Widget build(BuildContext context) {
+    final pageTitle = isEditing ? 'Update Investor' : 'Add New Investor';
+    final pageSubtitle = isEditing
+        ? 'Review and update the investor details below.'
+        : 'Fill in the details to add a new investor to the system.';
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 560;
@@ -729,7 +1000,7 @@ class _BreadcrumbHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Add New Investor',
+                  pageTitle,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -750,7 +1021,7 @@ class _BreadcrumbHeader extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Add New Investor',
+              pageTitle,
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w700,
@@ -759,7 +1030,7 @@ class _BreadcrumbHeader extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Fill in the details to add a new investor to the system.',
+              pageSubtitle,
               style: TextStyle(
                 fontSize: 10.5.sp,
                 fontWeight: FontWeight.w400,

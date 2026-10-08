@@ -132,13 +132,13 @@ class _CreateAdminFormCardState extends State<CreateAdminFormCard> {
                 keyboardType: TextInputType.phone,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(15),
+                  LengthLimitingTextInputFormatter(10),
                 ],
                 validator: (value) {
                   final phone = value?.trim() ?? '';
                   if (phone.isEmpty) return null;
-                  if (phone.length < 10) {
-                    return 'Enter a valid phone number';
+                  if (phone.length != 10) {
+                    return 'Enter a valid 10-digit phone number';
                   }
                   return null;
                 },
@@ -153,13 +153,13 @@ class _CreateAdminFormCardState extends State<CreateAdminFormCard> {
                 keyboardType: TextInputType.phone,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(15),
+                  LengthLimitingTextInputFormatter(10),
                 ],
                 validator: (value) {
                   final phone = value?.trim() ?? '';
                   if (phone.isEmpty) return null;
-                  if (phone.length < 10) {
-                    return 'Enter a valid phone number';
+                  if (phone.length != 10) {
+                    return 'Enter a valid 10-digit phone number';
                   }
                   return null;
                 },

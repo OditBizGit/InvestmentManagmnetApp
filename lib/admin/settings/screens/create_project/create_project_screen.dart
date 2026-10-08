@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_limit_warning_dialog.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/cubit/create_project_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/model/projcet_model.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/repository/create_project_repository.dart';
@@ -151,7 +153,17 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
     setState(_resetForm);
   }
 
-  void _handleSubmit() {
+  Future<double> _fetchTotalInvestorInvestment() async {
+    final response = await getIt<InvestorsRepository>().getInvestors();
+    final fromTotal = response.total.totalInvestmentAmount;
+    if (fromTotal > 0) return fromTotal;
+    return response.data.fold<double>(
+      0,
+      (sum, investor) => sum + investor.totalInvestmentAmount,
+    );
+  }
+
+  Future<void> _handleSubmit() async {
     FocusScope.of(context).unfocus();
 
     final projects = context.read<CreateProjectCubit>().projects;
@@ -190,6 +202,20 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
     if (totalFund == null || totalFund <= 0) {
       AppToast.error('Enter a valid fund amount', context: context);
       return;
+    }
+
+    try {
+      final totalInvestment = await _fetchTotalInvestorInvestment();
+      if (!mounted) return;
+      final shouldContinue = await FundingLimitWarningDialog.showIfNeeded(
+        context,
+        projectAmount: totalFund,
+        totalInvestment: totalInvestment,
+        mode: FundingLimitDialogMode.confirmSave,
+      );
+      if (!shouldContinue || !mounted) return;
+    } catch (_) {
+      // If investor totals cannot be loaded, allow save without blocking.
     }
 
     final request = ProjectRequestModel(

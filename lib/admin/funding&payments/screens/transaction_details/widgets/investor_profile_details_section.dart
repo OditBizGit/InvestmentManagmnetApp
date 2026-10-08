@@ -138,36 +138,44 @@ class _PersonalContactCard extends StatelessWidget {
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 
+  String _displayOrNA(String? value) {
+    final text = value?.trim() ?? '';
+    return text.isEmpty ? 'N/A' : text;
+  }
+
   String get _maskedAccount {
     final account = details.accountNumber.trim();
-    if (account.isEmpty) return '-';
+    if (account.isEmpty) return 'N/A';
     if (account.length <= 4) return account;
     return '•••• ${account.substring(account.length - 4)}';
+  }
+
+  String get _bankDisplay {
+    final bankName = details.bankName.trim();
+    final account = details.accountNumber.trim();
+    if (bankName.isEmpty && account.isEmpty) return 'N/A';
+    if (bankName.isEmpty) return _maskedAccount;
+    if (account.isEmpty) return bankName;
+    return '$bankName $_maskedAccount';
   }
 
   @override
   Widget build(BuildContext context) {
     final imageUrl = resolveMediaUrl(details.profileImage);
-    final email = details.email.trim().isNotEmpty ? details.email.trim() : '-';
-    final phone =
-        details.phoneNumber.trim().isNotEmpty ? details.phoneNumber.trim() : '-';
-    final address =
-        details.address.trim().isNotEmpty ? details.address.trim() : '-';
-    final pan = details.panCardNumber.trim().isNotEmpty
-        ? details.panCardNumber.trim()
-        : '-';
-    final bankName =
-        details.bankName.trim().isNotEmpty ? details.bankName.trim() : '-';
-    final ifsc =
-        details.ifscCode.trim().isNotEmpty ? details.ifscCode.trim() : '-';
+    final email = _displayOrNA(details.email);
+    final phone = _displayOrNA(details.phoneNumber);
+    final address = _displayOrNA(details.address);
+    final pan = _displayOrNA(details.panCardNumber);
+    final ifsc = _displayOrNA(details.ifscCode);
     final org = details.organization.trim().isNotEmpty
         ? details.organization.trim()
-        : (details.investorType.trim().isNotEmpty
-            ? details.investorType.trim()
-            : '-');
-    final investorCode = details.investorCode.trim().isNotEmpty
-        ? details.investorCode.trim()
-        : '-';
+        : _displayOrNA(details.investorType);
+    final investorCode = _displayOrNA(details.investorCode);
+    final investmentDateRaw =
+        formatDate(details.investmentDate ?? details.createdDate).trim();
+    final investmentDate = investmentDateRaw.isEmpty || investmentDateRaw == '-'
+        ? 'N/A'
+        : investmentDateRaw;
     final roleLine = [
       if (details.investorType.trim().isNotEmpty) details.investorType.trim(),
       if (details.organization.trim().isNotEmpty) details.organization.trim(),
@@ -256,9 +264,7 @@ class _PersonalContactCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
-                            details.fullName.trim().isNotEmpty
-                                ? details.fullName.trim()
-                                : 'Unknown',
+                            _displayOrNA(details.fullName),
                             style: TextStyle(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w700,
@@ -356,7 +362,7 @@ class _PersonalContactCard extends StatelessWidget {
               );
               final bankTile = _InfoTile(
                 label: 'BANK ACCOUNT',
-                value: '$bankName $_maskedAccount',
+                value: _bankDisplay,
                 subValue: 'IFSC: $ifsc',
                 icon: Icons.account_balance_outlined,
               );
@@ -367,7 +373,7 @@ class _PersonalContactCard extends StatelessWidget {
               );
               final agreementTile = _InfoTile(
                 label: 'INVESTMENT DATE',
-                value: formatDate(details.investmentDate ?? details.createdDate),
+                value: investmentDate,
                 icon: Icons.description_outlined,
               );
 

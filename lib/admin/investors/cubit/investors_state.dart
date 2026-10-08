@@ -53,3 +53,21 @@ final class RegisterInvestorFailure extends InvestorsState {
 
   final String message;
 }
+
+final class UpdateInvestorLoading extends InvestorsState {}
+
+final class UpdateInvestorSuccess extends InvestorsState {
+  UpdateInvestorSuccess({
+    required this.message,
+    this.data,
+  });
+
+  final String message;
+  final String? data;
+}
+
+final class UpdateInvestorFailure extends InvestorsState {
+  UpdateInvestorFailure(this.message);
+
+  final String message;
+}

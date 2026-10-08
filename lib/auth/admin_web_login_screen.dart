@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
@@ -104,9 +105,9 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset(
-                              ImageConstants.logo,
-                              height: 42,
+                            SvgPicture.asset(
+                              ImageConstants.Meribel,
+                              height: 10.h,
                               fit: BoxFit.contain,
                               alignment: Alignment.centerLeft,
                             ),
@@ -114,7 +115,7 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                             Text(
                               'Welcome Back',
                               style: TextStyle(
-                                fontSize: 20.sp,
+                                fontSize: 17.sp,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                                 height: 1.2,

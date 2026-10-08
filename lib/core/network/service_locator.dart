@@ -7,6 +7,7 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/repository/create_project_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
@@ -225,6 +226,7 @@ Future<void> setupDi() async {
     () => FundingPaymentsCubit(
       investorsRepository: getIt<InvestorsRepository>(),
       paymentRepository: getIt<InvestorPaymentRepository>(),
+      projectRepository: ProjectRepository(dio: getIt<Dio>()),
     ),
   );
   getIt.registerFactory<HomeCubit>(

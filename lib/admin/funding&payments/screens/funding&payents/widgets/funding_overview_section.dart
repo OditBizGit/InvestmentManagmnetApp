@@ -5,20 +5,37 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
 
+enum _FundingLimitAlertKind { reached, exceeded }
+
 class FundingOverviewSection extends StatelessWidget {
   const FundingOverviewSection({
     super.key,
     this.transactions = const [],
+    this.projectAmount,
     this.onAddFunding,
   });
 
   final List<FundingInvestorModel> transactions;
+  final double? projectAmount;
   final VoidCallback? onAddFunding;
 
+  double get _totalInvestorInvestment => transactions
+      .map((e) => e.totalInvestmentAmount)
+      .fold<double>(0, (sum, value) => sum + value);
+
+  _FundingLimitAlertKind? get _limitAlertKind {
+    final limit = projectAmount;
+    if (limit == null || limit <= 0) return null;
+
+    final total = _totalInvestorInvestment;
+    // Tolerance avoids float noise around currency equality.
+    if (total > limit + 0.01) return _FundingLimitAlertKind.exceeded;
+    if (total + 0.01 >= limit) return _FundingLimitAlertKind.reached;
+    return null;
+  }
+
   List<_StatCardData> get _stats {
-    final totalFunding = transactions
-        .map((e) => e.totalInvestmentAmount)
-        .fold<double>(0, (sum, value) => sum + value);
+    final totalFunding = _totalInvestorInvestment;
     final amountReceived = transactions
         .map((e) => e.totalPaidAmount)
         .fold<double>(0, (sum, value) => sum + value);
@@ -78,12 +95,175 @@ class FundingOverviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final alertKind = _limitAlertKind;
+    final limit = projectAmount ?? 0;
+    final total = _totalInvestorInvestment;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _FundingTitleRow(onAddFunding: onAddFunding),
+        if (alertKind != null) ...[
+          const SizedBox(height: 16),
+          _FundingLimitAlert(
+            kind: alertKind,
+            projectAmountLabel: _formatCurrency(limit),
+            totalInvestmentLabel: _formatCurrency(total),
+            exceededAmountLabel: _formatCurrency(
+              (total - limit).clamp(0.0, double.infinity).toDouble(),
+            ),
+          ),
+        ],
         const SizedBox(height: 20),
         _StatsGrid(stats: _stats),
+      ],
+    );
+  }
+}
+
+class _FundingLimitAlert extends StatelessWidget {
+  const _FundingLimitAlert({
+    required this.kind,
+    required this.projectAmountLabel,
+    required this.totalInvestmentLabel,
+    required this.exceededAmountLabel,
+  });
+
+  final _FundingLimitAlertKind kind;
+  final String projectAmountLabel;
+  final String totalInvestmentLabel;
+  final String exceededAmountLabel;
+
+  bool get _isExceeded => kind == _FundingLimitAlertKind.exceeded;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _isExceeded ? AppColors.error : const Color(0xFFB86E00);
+    final background =
+        _isExceeded ? const Color(0xFFFDECEE) : const Color(0xFFFFF4E5);
+    final border = accent.withValues(alpha: 0.35);
+    final icon = _isExceeded
+        ? Icons.error_outline_rounded
+        : Icons.warning_amber_rounded;
+    final title = _isExceeded
+        ? 'Project Funding Exceeded'
+        : 'Project Funding Limit Reached';
+    final body = _isExceeded
+        ? 'Investor investments have exceeded the project funding amount.'
+        : 'The total investor investment has reached the project funding amount of $projectAmountLabel.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: accent, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textPrimary,
+                    height: 1.35,
+                  ),
+                ),
+                if (_isExceeded) ...[
+                  const SizedBox(height: 10),
+                  _AlertAmountRow(
+                    label: 'Project Amount',
+                    value: projectAmountLabel,
+                  ),
+                  const SizedBox(height: 4),
+                  _AlertAmountRow(
+                    label: 'Total Investor Investment',
+                    value: totalInvestmentLabel,
+                  ),
+                  const SizedBox(height: 4),
+                  _AlertAmountRow(
+                    label: 'Exceeded Amount',
+                    value: exceededAmountLabel,
+                    emphasize: true,
+                    emphasizeColor: accent,
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Text(
+                  'Please stop adding new investors or increase the project funding amount.',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertAmountRow extends StatelessWidget {
+  const _AlertAmountRow({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+    this.emphasizeColor,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasize;
+  final Color? emphasizeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final valueColor = emphasize
+        ? (emphasizeColor ?? AppColors.error)
+        : AppColors.textPrimary;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.5.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 10.sp,
+            fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
+            color: valueColor,
+          ),
+        ),
       ],
     );
   }

@@ -11,17 +11,19 @@ class InvestorsTableSection extends StatefulWidget {
     super.key,
     required this.investors,
     this.isLoading = false,
+    this.onEditInvestor,
   });
 
   final List<InvestorModel> investors;
   final bool isLoading;
+  final ValueChanged<InvestorModel>? onEditInvestor;
 
   @override
   State<InvestorsTableSection> createState() => _InvestorsTableSectionState();
 }
 
 class _InvestorsTableSectionState extends State<InvestorsTableSection> {
-  static const double _minTableWidth = 980;
+  static const double _minTableWidth = 1040;
 
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalController = ScrollController();
@@ -36,7 +38,7 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
     return widget.investors.where((investor) {
       final status = investor.isActive ? 'active' : 'inactive';
       return investor.fullName.toLowerCase().contains(query) ||
-          investor.email.toLowerCase().contains(query) ||
+          (investor.email?.toLowerCase().contains(query) ?? false) ||
           (investor.phoneNumber?.toLowerCase().contains(query) ?? false) ||
           (investor.investorType?.toLowerCase().contains(query) ?? false) ||
           (investor.investorCode?.toLowerCase().contains(query) ?? false) ||
@@ -54,8 +56,13 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
     super.dispose();
   }
 
+  String _displayOrNA(String? value) {
+    final text = value?.trim() ?? '';
+    return text.isEmpty ? 'N/A' : text;
+  }
+
   String _formatDate(DateTime? date) {
-    if (date == null) return '-';
+    if (date == null) return 'N/A';
     const months = [
       'Jan',
       'Feb',
@@ -184,12 +191,18 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
                                             final investor = investors[index];
                                             return _InvestorRow(
                                               index: index,
-                                              name: investor.fullName,
-                                              type:
-                                                  investor.investorType ?? '-',
-                                              mobile:
-                                                  investor.phoneNumber ?? '-',
-                                              email: investor.email,
+                                              name: _displayOrNA(
+                                                investor.fullName,
+                                              ),
+                                              type: _displayOrNA(
+                                                investor.investorType,
+                                              ),
+                                              mobile: _displayOrNA(
+                                                investor.phoneNumber,
+                                              ),
+                                              email: _displayOrNA(
+                                                investor.email,
+                                              ),
                                               investAmount: _formatAmount(
                                                 investor.totalInvestmentAmount,
                                               ),
@@ -204,6 +217,11 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
                                               ),
                                               profileImage:
                                                   investor.profileImageUrl,
+                                              onEdit: widget.onEditInvestor ==
+                                                      null
+                                                  ? null
+                                                  : () => widget
+                                                      .onEditInvestor!(investor),
                                             );
                                           },
                                         ),
@@ -358,6 +376,7 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('Paid Amt', flex: 2),
           _HeaderCell('Status', flex: 2),
           _HeaderCell('Joined Date', flex: 2),
+          _HeaderCell('Action', flex: 1, align: TextAlign.center),
         ],
       ),
     );
@@ -406,6 +425,7 @@ class _InvestorRow extends StatelessWidget {
     required this.status,
     required this.joinedDate,
     this.profileImage,
+    this.onEdit,
   });
 
   final int index;
@@ -418,6 +438,7 @@ class _InvestorRow extends StatelessWidget {
   final String status;
   final String joinedDate;
   final String? profileImage;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -521,6 +542,26 @@ class _InvestorRow extends StatelessWidget {
                 ),
               ),
               _Cell(joinedDate, flex: 2),
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: IconButton(
+                    tooltip: 'Edit investor',
+                    onPressed: onEdit,
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: AppColors.accent,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

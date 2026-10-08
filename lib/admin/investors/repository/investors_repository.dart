@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/core/constants/api_endpoints
 import '../model/investor_response_model.dart';
 import '../model/investor_type_model.dart';
 import '../model/register_investor_model.dart';
+import '../model/update_investor_model.dart';
 
 class InvestorsRepository {
   final Dio dio;
@@ -98,5 +99,39 @@ class InvestorsRepository {
     }
   }
 
+  ///update user details
+
+  Future<UpdateInvestorResponseModel> updateInvestor(
+      UpdateInvestorRequestModel request,
+      ) async {
+    try {
+      final formData = await request.toFormData();
+
+      final response = await dio.post(
+        ApiEndpoints.updateInvestor,
+        data: formData,
+      );
+
+      return UpdateInvestorResponseModel.fromJson(
+        response.data,
+      );
+    } on DioException catch (e) {
+      log(
+        'Update Investor Error: ${e.message}',
+      );
+
+      log(
+        'Update Investor Response: ${e.response?.data}',
+      );
+
+      rethrow;
+    } catch (e) {
+      log(
+        'Update Investor Error: $e',
+      );
+
+      rethrow;
+    }
+  }
 
 }

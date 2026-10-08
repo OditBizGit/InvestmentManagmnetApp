@@ -4,6 +4,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_type_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/update_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 
@@ -130,6 +131,45 @@ class InvestorsCubit extends Cubit<InvestorsState> {
       emit(
         RegisterInvestorFailure(
           ApiErrorMessage.from(e, fallback: 'Failed to register investor'),
+        ),
+      );
+    }
+  }
+
+  Future<void> updateInvestor(UpdateInvestorRequestModel request) async {
+    emit(UpdateInvestorLoading());
+    try {
+      final response = await _repository.updateInvestor(request);
+
+      if (!response.status) {
+        emit(
+          UpdateInvestorFailure(
+            response.message.isNotEmpty
+                ? response.message
+                : 'Failed to update investor',
+          ),
+        );
+        return;
+      }
+
+      emit(
+        UpdateInvestorSuccess(
+          message: response.message.isNotEmpty
+              ? response.message
+              : 'Investor updated successfully',
+          data: response.data,
+        ),
+      );
+    } on DioException catch (e) {
+      emit(
+        UpdateInvestorFailure(
+          ApiErrorMessage.from(e, fallback: 'Failed to update investor'),
+        ),
+      );
+    } catch (e) {
+      emit(
+        UpdateInvestorFailure(
+          ApiErrorMessage.from(e, fallback: 'Failed to update investor'),
         ),
       );
     }

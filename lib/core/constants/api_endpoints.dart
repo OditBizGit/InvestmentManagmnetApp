@@ -3,6 +3,7 @@ class ApiEndpoints {
   static const String login = "/api/User/Login";
   static const String investorsList = "/api/Investor/GetInvestors";
   static const String registerInvestor = "/api/Investor/RegisterInvestor";
+  static const String updateInvestor = "/api/Investor/UpdateInvestor";
   static const String investorTypes = "/api/Investor/GetInvestorTypes";
   static const String addInvestorPayment = "/api/Investor/AddInvestorPayment";
   static const String investorDetails = "/api/Investor/InvestorDetails/";
@@ -19,7 +20,6 @@ class ApiEndpoints {
   static const String markAsRead = "/api/Notification/MarkAsRead/";
   static const String markAllAsRead = "/api/Notification/MarkAllAsRead";
 
-  /// funding & payments
   static const String topInvestors = "/api/Investor/GetTopInvestors";
   static const String investorTransactionHistory = "/api/Investor/InvestorTransactionHistory/";
   static const String createProject = "/api/Project/CreateProject";

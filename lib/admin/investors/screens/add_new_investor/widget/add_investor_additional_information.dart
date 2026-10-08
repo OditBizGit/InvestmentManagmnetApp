@@ -24,6 +24,7 @@ class AddInvestorAdditionalInformation extends StatelessWidget {
     required this.formatDate,
     required this.nomineePhoneController,
     this.nomineePhoto,
+    this.existingNomineeImageUrl,
     required this.onPickNomineePhoto,
     required this.onClearNomineePhoto,
   });
@@ -44,6 +45,7 @@ class AddInvestorAdditionalInformation extends StatelessWidget {
   final String Function(DateTime) formatDate;
   final TextEditingController nomineePhoneController;
   final PickedPhoto? nomineePhoto;
+  final String? existingNomineeImageUrl;
   final VoidCallback onPickNomineePhoto;
   final VoidCallback onClearNomineePhoto;
 
@@ -82,6 +84,7 @@ class AddInvestorAdditionalInformation extends StatelessWidget {
           formatDate: formatDate,
           nomineePhoneController: nomineePhoneController,
           nomineePhoto: nomineePhoto,
+          existingNomineeImageUrl: existingNomineeImageUrl,
           onPickNomineePhoto: onPickNomineePhoto,
           onClearNomineePhoto: onClearNomineePhoto,
         ),
@@ -214,6 +217,7 @@ class _NomineeDetailsCard extends StatelessWidget {
     required this.formatDate,
     required this.nomineePhoneController,
     this.nomineePhoto,
+    this.existingNomineeImageUrl,
     required this.onPickNomineePhoto,
     required this.onClearNomineePhoto,
   });
@@ -229,15 +233,21 @@ class _NomineeDetailsCard extends StatelessWidget {
   final String Function(DateTime) formatDate;
   final TextEditingController nomineePhoneController;
   final PickedPhoto? nomineePhoto;
+  final String? existingNomineeImageUrl;
   final VoidCallback onPickNomineePhoto;
   final VoidCallback onClearNomineePhoto;
+
+  static final _phoneInputFormatters = <TextInputFormatter>[
+    FilteringTextInputFormatter.digitsOnly,
+    LengthLimitingTextInputFormatter(10),
+  ];
 
   String? _validateOptionalPhone(String? value) {
     final mobile = value?.trim() ?? '';
     if (mobile.isEmpty) return null;
     final digits = mobile.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 10) {
-      return 'Enter a valid phone number';
+    if (digits.length != 10) {
+      return 'Enter a valid 10-digit phone number';
     }
     return null;
   }
@@ -253,6 +263,7 @@ class _NomineeDetailsCard extends StatelessWidget {
         children: [
           AddInvestorPhotoUploadBox(
             photo: nomineePhoto,
+            existingImageUrl: existingNomineeImageUrl,
             onPick: onPickNomineePhoto,
             onClear: onClearNomineePhoto,
             uploadLabel: 'Upload Nominee Photo',
@@ -294,6 +305,7 @@ class _NomineeDetailsCard extends StatelessWidget {
                     controller: nomineePhoneController,
                     hint: 'Enter nominee phone number',
                     keyboardType: TextInputType.phone,
+                    inputFormatters: _phoneInputFormatters,
                     validator: _validateOptionalPhone,
                   ),
                 ),

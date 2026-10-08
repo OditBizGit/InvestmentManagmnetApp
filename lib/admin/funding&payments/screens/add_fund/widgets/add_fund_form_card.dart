@@ -103,6 +103,7 @@ class AddFundFormCard extends StatelessWidget {
 
                 final investorField = _LabeledField(
                   label: 'Investor',
+                  isRequired: true,
                   child: isLoadingInvestors
                       ? Container(
                           height: 48,
@@ -131,6 +132,12 @@ class AddFundFormCard extends StatelessWidget {
                           onChanged: onInvestorChanged,
                           enableSearch: true,
                           searchHint: 'Search investor',
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please select an investor';
+                            }
+                            return null;
+                          },
                         ),
                 );
                 final typeField = _LabeledField(
@@ -180,6 +187,7 @@ class AddFundFormCard extends StatelessWidget {
                 );
                 final payingNowField = _LabeledField(
                   label: 'Paying Now',
+                  isRequired: true,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -203,11 +211,18 @@ class AddFundFormCard extends StatelessWidget {
                 );
                 final paymentMethodField = _LabeledField(
                   label: 'Payment Method',
+                  isRequired: true,
                   child: _DropdownInput(
                     value: selectedPaymentMethod,
                     hint: 'Select payment method',
                     items: paymentMethodOptions,
                     onChanged: onPaymentMethodChanged,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please select a payment method';
+                      }
+                      return null;
+                    },
                   ),
                 );
                 final dateField = _LabeledField(
@@ -313,22 +328,37 @@ class _LabeledField extends StatelessWidget {
   const _LabeledField({
     required this.label,
     required this.child,
+    this.isRequired = false,
   });
 
   final String label;
   final Widget child;
+  final bool isRequired;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10.sp,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+        Text.rich(
+          TextSpan(
+            text: label,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+            children: [
+              if (isRequired)
+                TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
@@ -535,6 +565,7 @@ class _DropdownInput extends StatefulWidget {
     required this.onChanged,
     this.enableSearch = false,
     this.searchHint = 'Search',
+    this.validator,
   });
 
   final String? value;
@@ -543,6 +574,7 @@ class _DropdownInput extends StatefulWidget {
   final ValueChanged<String?> onChanged;
   final bool enableSearch;
   final String searchHint;
+  final String? Function(String?)? validator;
 
   @override
   State<_DropdownInput> createState() => _DropdownInputState();
@@ -552,6 +584,7 @@ class _DropdownInputState extends State<_DropdownInput> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   final TextEditingController _searchController = TextEditingController();
+  FormFieldState<String>? _field;
 
   bool get _isOpen => _overlayEntry != null;
 
@@ -694,6 +727,7 @@ class _DropdownInputState extends State<_DropdownInput> {
                                     return InkWell(
                                       onTap: () {
                                         widget.onChanged(item);
+                                        _field?.didChange(item);
                                         _closeDropdown();
                                       },
                                       child: Padding(
@@ -764,48 +798,76 @@ class _DropdownInputState extends State<_DropdownInput> {
 
   @override
   Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: GestureDetector(
-        onTap: _toggleDropdown,
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _isOpen ? AppColors.accent : AppColors.border,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.value ?? widget.hint,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w400,
-                    color: widget.value == null
-                        ? AppColors.hint
-                        : AppColors.textPrimary,
+    return FormField<String>(
+      key: ValueKey(widget.value),
+      initialValue: widget.value,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: (value) => widget.validator?.call(widget.value ?? value),
+      builder: (field) {
+        _field = field;
+        final hasError = field.hasError;
+        final borderColor = hasError
+            ? AppColors.error
+            : (_isOpen ? AppColors.accent : AppColors.border);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CompositedTransformTarget(
+              link: _layerLink,
+              child: GestureDetector(
+                onTap: _toggleDropdown,
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.value ?? widget.hint,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w400,
+                            color: widget.value == null
+                                ? AppColors.hint
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      AnimatedRotation(
+                        turns: _isOpen ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 22,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              AnimatedRotation(
-                turns: _isOpen ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 22,
-                  color: AppColors.textMuted,
+            ),
+            if (hasError) ...[
+              const SizedBox(height: 6),
+              Text(
+                field.errorText!,
+                style: TextStyle(
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.error,
                 ),
               ),
             ],
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
 }

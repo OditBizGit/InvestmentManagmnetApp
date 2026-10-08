@@ -5,7 +5,10 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/model
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_overview_section.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/screens/funding&payents/widgets/funding_transactions_table.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/widgets/funding_limit_warning_dialog.dart';
+import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/repository/create_project_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
@@ -38,6 +41,7 @@ class AdminFundingPaymentsScreen extends StatelessWidget {
         create: (context) => FundingPaymentsCubit(
           investorsRepository: context.read<InvestorsRepository>(),
           paymentRepository: context.read<InvestorPaymentRepository>(),
+          projectRepository: ProjectRepository(dio: getIt<Dio>()),
         )..fetchFundingInvestors(),
         child: _AdminFundingPaymentsView(isActive: isActive),
       ),
@@ -58,14 +62,48 @@ class _AdminFundingPaymentsView extends StatefulWidget {
 class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
   FundingTransaction? _selectedTransaction;
   bool _showAddFund = false;
+  bool _limitDialogShownForVisit = false;
 
   @override
   void didUpdateWidget(covariant _AdminFundingPaymentsView oldWidget) {
     super.didUpdateWidget(oldWidget);
     // IndexedStack keeps this screen alive — refresh when the tab is opened again.
     if (widget.isActive && !oldWidget.isActive) {
+      _limitDialogShownForVisit = false;
       context.read<FundingPaymentsCubit>().fetchFundingInvestors();
     }
+  }
+
+  Future<void> _maybeShowFundingLimitDialog({
+    required double? projectAmount,
+    required List<FundingInvestorModel> investors,
+  }) async {
+    if (!widget.isActive ||
+        _showAddFund ||
+        _selectedTransaction != null ||
+        _limitDialogShownForVisit) {
+      return;
+    }
+
+    final totalInvestment = investors.fold<double>(
+      0,
+      (sum, item) => sum + item.totalInvestmentAmount,
+    );
+    final kind = FundingLimitWarningDialog.resolveKind(
+      projectAmount: projectAmount,
+      totalInvestment: totalInvestment,
+    );
+    if (kind == null) return;
+
+    _limitDialogShownForVisit = true;
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted || !widget.isActive) return;
+
+    await FundingLimitWarningDialog.showIfNeeded(
+      context,
+      projectAmount: projectAmount,
+      totalInvestment: totalInvestment,
+    );
   }
 
   void _openTransaction(FundingTransaction transaction) {
@@ -187,7 +225,9 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
           offstage: _showAddFund || _selectedTransaction != null,
           child: BlocConsumer<FundingPaymentsCubit, FundingPaymentsState>(
             listenWhen: (previous, current) =>
-                current is TransactionHistoryFailure,
+                current is TransactionHistoryFailure ||
+                current is TransactionHistorySuccess ||
+                current is TransactionHistoryEmpty,
             buildWhen: (previous, current) =>
                 current is FundingPaymentsInitial ||
                 current is TransactionHistoryLoading ||
@@ -200,7 +240,25 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
                 if (!cubit.hasFundingInvestors) {
                   AppToast.error(state.message, context: context);
                 }
+                return;
               }
+
+              final cubit = context.read<FundingPaymentsCubit>();
+              final projectAmount = switch (state) {
+                TransactionHistorySuccess(:final projectTotalFund) =>
+                  projectTotalFund ?? cubit.projectTotalFund,
+                TransactionHistoryEmpty(:final projectTotalFund) =>
+                  projectTotalFund ?? cubit.projectTotalFund,
+                _ => cubit.projectTotalFund,
+              };
+              final investors = state is TransactionHistorySuccess
+                  ? state.investors
+                  : cubit.fundingInvestors;
+
+              _maybeShowFundingLimitDialog(
+                projectAmount: projectAmount,
+                investors: investors,
+              );
             },
             builder: (context, state) {
               final cubit = context.read<FundingPaymentsCubit>();
@@ -217,6 +275,14 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
               final source = state is TransactionHistorySuccess
                   ? state.investors
                   : cubit.fundingInvestors;
+
+              final projectAmount = switch (state) {
+                TransactionHistorySuccess(:final projectTotalFund) =>
+                  projectTotalFund ?? cubit.projectTotalFund,
+                TransactionHistoryEmpty(:final projectTotalFund) =>
+                  projectTotalFund ?? cubit.projectTotalFund,
+                _ => cubit.projectTotalFund,
+              };
 
               final transactions = isLoading || errorMessage != null
                   ? const <FundingTransaction>[]
@@ -262,6 +328,7 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
                                       isLoading || errorMessage != null
                                           ? const []
                                           : source,
+                                  projectAmount: projectAmount,
                                   onAddFunding: _openAddFund,
                                 ),
                                 const SizedBox(height: 20),

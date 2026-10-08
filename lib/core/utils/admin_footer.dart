@@ -18,7 +18,7 @@ class AdminFooter extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              '© 2026 Maribel Wellness Center. All rights reserved.',
+              '© 2026 Maribel Maternity Center. All rights reserved.',
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w400,

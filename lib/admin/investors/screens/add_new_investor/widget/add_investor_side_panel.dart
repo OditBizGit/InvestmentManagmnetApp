@@ -9,11 +9,13 @@ class AddInvestorSidePanel extends StatelessWidget {
     required this.onCancel,
     required this.onAdd,
     this.isLoading = false,
+    this.isEditing = false,
   });
 
   final VoidCallback onCancel;
   final VoidCallback onAdd;
   final bool isLoading;
+  final bool isEditing;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +28,7 @@ class AddInvestorSidePanel extends StatelessWidget {
           onCancel: onCancel,
           onAdd: onAdd,
           isLoading: isLoading,
+          isEditing: isEditing,
         ),
       ],
     );
@@ -39,11 +42,13 @@ class AddInvestorActionButtons extends StatelessWidget {
     required this.onCancel,
     required this.onAdd,
     this.isLoading = false,
+    this.isEditing = false,
   });
 
   final VoidCallback onCancel;
   final VoidCallback onAdd;
   final bool isLoading;
+  final bool isEditing;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +105,7 @@ class AddInvestorActionButtons extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      'Add Investor',
+                      isEditing ? 'Update Investor' : 'Add Investor',
                       style: TextStyle(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
@@ -126,7 +131,7 @@ class _NotesCard extends StatelessWidget {
     'Bank, KYC, and nominee details are optional additional information',
     'You can update investor details later from the Investors list',
     'Investment amount can be updated in the Funding & Payments section',
-    'An email notification can be sent to the investor after adding',
+    // 'An email notification can be sent to the investor after adding',
     'Choose the correct investor type to keep reports and filters accurate',
     'Profile photo is optional; JPEG or PNG up to 2MB is supported',
     'Use the organization field for companies, funds, or institutions',
