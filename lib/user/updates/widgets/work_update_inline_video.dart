@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:developer';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_construction_photos_videos/windows_video_play_support/win_video_support.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/updates/utils/work_update_media_cache.dart';
 import 'package:shimmer/shimmer.dart';
@@ -15,22 +18,29 @@ class WorkUpdateInlineVideo extends StatefulWidget {
     super.key,
     required this.videoUrl,
     this.title = '',
+    this.fileName = '',
   });
 
   final String videoUrl;
   final String title;
+  final String fileName;
 
   @override
   State<WorkUpdateInlineVideo> createState() => WorkUpdateInlineVideoState();
 }
 
 class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
+  static const String _logTag = 'WorkUpdateInlineVideo';
+
   VideoPlayerController? _controller;
+  String? _winFilePath;
   String? _error;
   bool _initializing = true;
   bool _showControls = true;
   bool _inFullscreen = false;
   bool _isSeeking = false;
+  bool _useWinPlayer = false;
+  bool _didAutoRetry = false;
   double? _seekValue;
   double _volumeBeforeMute = 1.0;
   Timer? _hideControlsTimer;
@@ -50,19 +60,119 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
     }
   }
 
-  Future<void> _initPlayer() async {
+  Future<void> _initPlayer({bool forceRedownload = false}) async {
     setState(() {
       _initializing = true;
       _error = null;
       _showControls = true;
+      _useWinPlayer = false;
+      _winFilePath = null;
     });
 
     try {
-      final file = await WorkUpdateMediaCache.getFile(widget.videoUrl);
-      if (!mounted) return;
+      await WorkUpdateVideoInitGate.run(() => _initPlayerBody(
+            forceRedownload: forceRedownload,
+          ));
+    } catch (e, stackTrace) {
+      log(
+        'Video init failed: $e',
+        name: _logTag,
+        stackTrace: stackTrace,
+      );
 
+      // One automatic recovery: drop bad cache and try again.
+      if (!_didAutoRetry && !forceRedownload && !kIsWeb && mounted) {
+        _didAutoRetry = true;
+        try {
+          await WorkUpdateMediaCache.invalidateVideoFile(
+            url: widget.videoUrl,
+            fileName: widget.fileName,
+          );
+          await WorkUpdateVideoInitGate.run(
+            () => _initPlayerBody(forceRedownload: true),
+          );
+          return;
+        } catch (retryError, retryStack) {
+          log(
+            'Video retry failed: $retryError',
+            name: _logTag,
+            stackTrace: retryStack,
+          );
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _controller = null;
+        _winFilePath = null;
+        _useWinPlayer = false;
+        _initializing = false;
+        _error = 'Unable to load preview';
+      });
+    }
+  }
+
+  Future<void> _initPlayerBody({required bool forceRedownload}) async {
+    // Web: stream with auth headers (same as admin).
+    if (kIsWeb) {
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+        httpHeaders: WorkUpdateMediaCache.authHeaders(),
+      );
+      await _attachStandardController(controller);
+      return;
+    }
+
+    // Desktop/mobile: download via Dio with a real file extension (admin path).
+    final file = await WorkUpdateMediaCache.downloadVideoFile(
+      url: widget.videoUrl,
+      fileName: widget.fileName,
+      forceRedownload: forceRedownload,
+    );
+    if (!mounted) return;
+
+    // Windows: Media Foundation player (same as admin construction media).
+    if (supportsWinVideoPlayer) {
+      if (!mounted) return;
+      setState(() {
+        _winFilePath = file.path;
+        _useWinPlayer = true;
+        _controller = null;
+        _initializing = false;
+        _error = null;
+      });
+      return;
+    }
+
+    try {
       final controller = VideoPlayerController.file(file);
+      await _attachStandardController(controller);
+    } catch (fileError, fileStack) {
+      log(
+        'File player failed, trying network stream: $fileError',
+        name: _logTag,
+        stackTrace: fileStack,
+      );
+      // Fallback used by admin on web — helps when local decode fails.
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+        httpHeaders: WorkUpdateMediaCache.authHeaders(),
+      );
+      await _attachStandardController(controller);
+    }
+  }
+
+  Future<void> _attachStandardController(
+    VideoPlayerController controller,
+  ) async {
+    try {
       await controller.initialize();
+      if (controller.value.hasError) {
+        throw StateError(
+          controller.value.errorDescription ??
+              'VideoPlayer reported hasError=true after initialize',
+        );
+      }
       final duration = controller.value.duration;
       if (duration > Duration.zero) {
         final previewAt = duration > const Duration(milliseconds: 300)
@@ -79,21 +189,25 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
       controller.addListener(_onTick);
       setState(() {
         _controller = controller;
+        _winFilePath = null;
+        _useWinPlayer = false;
         _initializing = false;
         _error = null;
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _controller = null;
-        _initializing = false;
-        _error = 'Unable to load preview';
-      });
+      await controller.dispose();
+      rethrow;
     }
   }
 
+  Future<void> _retryLoad() async {
+    _didAutoRetry = false;
+    _disposeController();
+    await _initPlayer(forceRedownload: true);
+  }
+
   void _onTick() {
-    if (!mounted || _isSeeking) return;
+    if (!mounted || _isSeeking || _useWinPlayer) return;
     final controller = _controller;
     if (controller == null) return;
 
@@ -209,6 +323,18 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
   /// Opens the fullscreen player once the inline controller is ready.
   /// On load failure, opens a fullscreen error page so View still works.
   Future<void> openFullscreen() async {
+    if (_useWinPlayer) {
+      final path = _winFilePath;
+      if (path == null) {
+        await _openFullscreenError(
+          message: _error ?? 'Unable to load preview',
+        );
+        return;
+      }
+      await _openWinFullscreen(path);
+      return;
+    }
+
     if (_controller == null || !_controller!.value.isInitialized) {
       if (_initializing) {
         // Wait briefly for an in-flight init to finish.
@@ -244,6 +370,35 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
         },
       ),
     );
+  }
+
+  Future<void> _openWinFullscreen(String filePath) async {
+    _hideControlsTimer?.cancel();
+    setState(() {
+      _inFullscreen = true;
+      _showControls = true;
+    });
+
+    await Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: true,
+        barrierColor: Colors.black,
+        pageBuilder: (_, animation, secondaryAnimation) =>
+            _FullscreenWinVideoPage(
+          filePath: filePath,
+          title: widget.title,
+        ),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _inFullscreen = false;
+      _showControls = true;
+    });
   }
 
   Future<void> _openFullscreen() async {
@@ -292,6 +447,8 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
       controller.dispose();
     }
     _controller = null;
+    _winFilePath = null;
+    _useWinPlayer = false;
   }
 
   @override
@@ -315,6 +472,46 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
 
   @override
   Widget build(BuildContext context) {
+    if (_useWinPlayer) {
+      final path = _winFilePath;
+      if (_error != null) {
+        return _ErrorPane(message: _error!, onRetry: _retryLoad);
+      }
+      if (_initializing || path == null) {
+        return const _VideoLoadingShimmer();
+      }
+      if (_inFullscreen) {
+        return Container(color: Colors.black);
+      }
+      return ColoredBox(
+        color: Colors.black,
+        child: WinLocalVideoPlayer(
+          filePath: path,
+          onLog: (message) => log(message, name: _logTag),
+          onFailed: (error, stackTrace) {
+            log(
+              'Win player failed: $error',
+              name: _logTag,
+              stackTrace: stackTrace,
+            );
+            if (!mounted) return;
+            if (!_didAutoRetry) {
+              _didAutoRetry = true;
+              _disposeController();
+              _initPlayer(forceRedownload: true);
+              return;
+            }
+            setState(() {
+              _error = 'Unable to load preview';
+              _useWinPlayer = false;
+              _winFilePath = null;
+              _initializing = false;
+            });
+          },
+        ),
+      );
+    }
+
     final controller = _controller;
     final isReady = controller != null && controller.value.isInitialized;
     final isPlaying = isReady && controller.value.isPlaying;
@@ -324,7 +521,7 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
       fit: StackFit.expand,
       children: [
         if (_error != null)
-          _ErrorPane(message: _error!)
+          _ErrorPane(message: _error!, onRetry: _retryLoad)
         else if (!isReady || _initializing)
           const _VideoLoadingShimmer()
         else if (_inFullscreen)
@@ -398,9 +595,13 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
 }
 
 class _ErrorPane extends StatelessWidget {
-  const _ErrorPane({required this.message});
+  const _ErrorPane({
+    required this.message,
+    this.onRetry,
+  });
 
   final String message;
+  final Future<void> Function()? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -426,6 +627,17 @@ class _ErrorPane extends StatelessWidget {
               color: Colors.grey[600],
             ),
           ),
+          if (onRetry != null) ...[
+            SizedBox(height: 1.h),
+            TextButton.icon(
+              onPressed: () => onRetry?.call(),
+              icon: Icon(Icons.refresh_rounded, size: 4.5.w),
+              label: Text(
+                'Retry',
+                style: TextStyle(fontSize: 11.5.sp),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1014,6 +1226,122 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
                 : const Center(
                     child: CircularProgressIndicator(color: Colors.white),
                   ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FullscreenWinVideoPage extends StatefulWidget {
+  const _FullscreenWinVideoPage({
+    required this.filePath,
+    required this.title,
+  });
+
+  final String filePath;
+  final String title;
+
+  @override
+  State<_FullscreenWinVideoPage> createState() =>
+      _FullscreenWinVideoPageState();
+}
+
+class _FullscreenWinVideoPageState extends State<_FullscreenWinVideoPage> {
+  bool _exiting = false;
+
+  static const _fullscreenOverlayStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.black,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.black,
+    systemNavigationBarIconBrightness: Brightness.light,
+    systemNavigationBarDividerColor: Colors.black,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    SystemChrome.setSystemUIOverlayStyle(_fullscreenOverlayStyle);
+  }
+
+  Future<void> _exitFullscreen() async {
+    if (_exiting) return;
+    _exiting = true;
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  @override
+  void dispose() {
+    if (!_exiting) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _fullscreenOverlayStyle,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _exitFullscreen();
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                WinLocalVideoPlayer(
+                  filePath: widget.filePath,
+                  onLog: (_) {},
+                  onFailed: (error, stackTrace) {},
+                ),
+                Positioned(
+                  top: 0.5.h,
+                  left: 1.w,
+                  right: 1.w,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: _exitFullscreen,
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (widget.title.isNotEmpty)
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

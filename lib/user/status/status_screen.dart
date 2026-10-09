@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -223,6 +224,7 @@ class _UserStatusViewState extends State<_UserStatusView> {
                             videoUrl: mediaUrl,
                             title: item.title,
                             description: item.description,
+                            fileName: item.fileName,
                             isActive: widget.isActive,
                             onCopy: () => _copyLink(context, mediaUrl),
                             onShare: () => AppSnackBar.show(
@@ -297,10 +299,16 @@ class _UserStatusViewState extends State<_UserStatusView> {
     if (_downloadingUrls.contains(url)) return;
 
     _downloadingUrls.add(url);
+    final cancelToken = CancelToken();
     final progress = AppSnackBar.showProgress(
       context,
       message: 'Downloading...',
       icon: Icons.download_rounded,
+      onCancel: () {
+        if (!cancelToken.isCancelled) {
+          cancelToken.cancel('Cancelled by user');
+        }
+      },
     );
 
     try {
@@ -309,13 +317,16 @@ class _UserStatusViewState extends State<_UserStatusView> {
         isVideo: isVideo,
         fileName: fileName,
         mimeType: mimeType,
+        cancelToken: cancelToken,
         onProgress: (value) {
-          if (!context.mounted) return;
+          if (!context.mounted || progress.isCancelled) return;
           if (value == null) {
             progress.update(null, message: 'Downloading...');
             return;
           }
           if (value >= 1) {
+            // Download finished — cancel is no longer useful while saving.
+            progress.setCancelEnabled(false);
             progress.update(1, message: 'Saving...');
             return;
           }
@@ -331,6 +342,22 @@ class _UserStatusViewState extends State<_UserStatusView> {
           StatusMediaSaveTarget.documents => 'Saved to Files',
         },
         icon: Icons.download_done_rounded,
+      );
+    } on DioException catch (error) {
+      if (!context.mounted) return;
+      if (error.type == DioExceptionType.cancel || CancelToken.isCancel(error)) {
+        AppSnackBar.show(
+          context,
+          message: 'Download cancelled',
+          icon: Icons.cancel_outlined,
+        );
+        return;
+      }
+      debugPrint('Status download failed: $error');
+      AppSnackBar.show(
+        context,
+        message: 'Could not download media. Please try again.',
+        icon: Icons.error_outline_rounded,
       );
     } on GalleryPermissionDeniedException {
       if (!context.mounted) return;

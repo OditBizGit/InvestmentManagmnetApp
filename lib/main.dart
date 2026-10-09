@@ -32,7 +32,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 // `true` → Admin interface · `false` → User interface
-const bool isAdmin = true;
+const bool isAdmin = false;
 
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();

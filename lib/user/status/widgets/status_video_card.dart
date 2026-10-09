@@ -9,6 +9,7 @@ class StatusVideoCard extends StatefulWidget {
     required this.videoUrl,
     this.title = '',
     this.description = '',
+    this.fileName = '',
     this.isActive = true,
     this.onCopy,
     this.onShare,
@@ -19,6 +20,7 @@ class StatusVideoCard extends StatefulWidget {
   final String videoUrl;
   final String title;
   final String description;
+  final String fileName;
   final bool isActive;
   final VoidCallback? onCopy;
   final VoidCallback? onShare;
@@ -69,6 +71,7 @@ class _StatusVideoCardState extends State<StatusVideoCard> {
                       key: _videoKey,
                       videoUrl: widget.videoUrl,
                       title: widget.title,
+                      fileName: widget.fileName,
                     )
                   : ColoredBox(
                       color: Colors.grey.shade300,

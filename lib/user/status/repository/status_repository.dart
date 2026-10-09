@@ -62,7 +62,7 @@ class StatusRepository {
     for (final item in statuses) {
       final url = item.resolvedFileUrl;
       if (url == null || url.isEmpty) continue;
-      WorkUpdateMediaCache.precache(url);
+      WorkUpdateMediaCache.precache(url, fileName: item.fileName);
     }
   }
 }

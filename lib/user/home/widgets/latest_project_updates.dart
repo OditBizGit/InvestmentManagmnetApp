@@ -152,6 +152,7 @@ class LatestProjectUpdates extends StatelessWidget {
         key: ValueKey('latest-update-video-${update.workUpdateId}'),
         videoUrl: mediaUrl,
         title: update.title,
+        fileName: update.fileName,
       );
     }
 

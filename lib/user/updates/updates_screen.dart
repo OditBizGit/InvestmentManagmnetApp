@@ -539,6 +539,7 @@ class _UpdateCard extends StatelessWidget {
         key: ValueKey('work-update-video-${update.workUpdateId}'),
         videoUrl: mediaUrl,
         title: update.title,
+        fileName: update.fileName,
       );
     }
 

@@ -62,7 +62,7 @@ class UpdatesRepository {
     for (final update in updates) {
       final url = update.resolvedFileUrl;
       if (url == null || url.isEmpty) continue;
-      WorkUpdateMediaCache.precache(url);
+      WorkUpdateMediaCache.precache(url, fileName: update.fileName);
     }
   }
 }

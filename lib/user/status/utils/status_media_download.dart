@@ -34,6 +34,7 @@ class StatusMediaDownload {
     String? fileName,
     String? mimeType,
     void Function(double? progress)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     if (kIsWeb) {
       throw UnsupportedError('Saving media is not supported on web');
@@ -56,7 +57,15 @@ class StatusMediaDownload {
       url: url,
       stampedName: stampedName,
       onProgress: onProgress,
+      cancelToken: cancelToken,
     );
+    if (cancelToken?.isCancelled == true) {
+      throw DioException(
+        requestOptions: RequestOptions(path: url),
+        type: DioExceptionType.cancel,
+        error: 'Cancelled by user',
+      );
+    }
     onProgress?.call(1);
 
     try {
@@ -107,67 +116,76 @@ class StatusMediaDownload {
     required String url,
     required String stampedName,
     void Function(double? progress)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final tempDir = await getTemporaryDirectory();
     final path =
         '${tempDir.path}${Platform.pathSeparator}status_dl_$stampedName';
     final partPath = '$path.part';
+    final partFile = File(partPath);
 
     var lastReportedPercent = -1;
 
-    final response = await getIt<Dio>().download(
-      url,
-      partPath,
-      options: Options(
-        headers: const {
-          'Accept': '*/*',
+    try {
+      final response = await getIt<Dio>().download(
+        url,
+        partPath,
+        cancelToken: cancelToken,
+        options: Options(
+          headers: const {
+            'Accept': '*/*',
+          },
+          responseType: ResponseType.bytes,
+          followRedirects: true,
+          validateStatus: (status) => status != null && status < 500,
+          receiveTimeout: const Duration(minutes: 5),
+          sendTimeout: const Duration(minutes: 2),
+        ),
+        onReceiveProgress: (received, total) {
+          if (onProgress == null) return;
+          if (total <= 0) {
+            onProgress(null);
+            return;
+          }
+          final percent = ((received / total) * 100).floor();
+          if (percent == lastReportedPercent) return;
+          lastReportedPercent = percent;
+          onProgress((received / total).clamp(0.0, 1.0));
         },
-        responseType: ResponseType.bytes,
-        followRedirects: true,
-        validateStatus: (status) => status != null && status < 500,
-        receiveTimeout: const Duration(minutes: 5),
-        sendTimeout: const Duration(minutes: 2),
-      ),
-      onReceiveProgress: (received, total) {
-        if (onProgress == null) return;
-        if (total <= 0) {
-          onProgress(null);
-          return;
-        }
-        final percent = ((received / total) * 100).floor();
-        if (percent == lastReportedPercent) return;
-        lastReportedPercent = percent;
-        onProgress((received / total).clamp(0.0, 1.0));
-      },
-    );
+      );
 
-    final partFile = File(partPath);
-    if (response.statusCode != 200 && response.statusCode != 206) {
-      if (await partFile.exists()) await partFile.delete();
-      throw StateError('Download failed with status ${response.statusCode}');
-    }
-
-    if (!await partFile.exists() || await partFile.length() <= 0) {
-      throw StateError('Downloaded file is empty');
-    }
-
-    // Reject JSON/HTML error bodies that sometimes come back as 200.
-    final size = await partFile.length();
-    if (size < 2048) {
-      final bytes = await partFile.readAsBytes();
-      final preview = String.fromCharCodes(bytes.take(256)).trimLeft();
-      if (preview.startsWith('{') ||
-          preview.startsWith('<') ||
-          preview.startsWith('[')) {
-        await partFile.delete();
-        throw StateError('Server returned an error payload instead of media');
+      if (response.statusCode != 200 && response.statusCode != 206) {
+        if (await partFile.exists()) await partFile.delete();
+        throw StateError('Download failed with status ${response.statusCode}');
       }
-    }
 
-    final out = File(path);
-    if (await out.exists()) await out.delete();
-    await partFile.rename(path);
-    return out;
+      if (!await partFile.exists() || await partFile.length() <= 0) {
+        throw StateError('Downloaded file is empty');
+      }
+
+      // Reject JSON/HTML error bodies that sometimes come back as 200.
+      final size = await partFile.length();
+      if (size < 2048) {
+        final bytes = await partFile.readAsBytes();
+        final preview = String.fromCharCodes(bytes.take(256)).trimLeft();
+        if (preview.startsWith('{') ||
+            preview.startsWith('<') ||
+            preview.startsWith('[')) {
+          await partFile.delete();
+          throw StateError('Server returned an error payload instead of media');
+        }
+      }
+
+      final out = File(path);
+      if (await out.exists()) await out.delete();
+      await partFile.rename(path);
+      return out;
+    } catch (_) {
+      try {
+        if (await partFile.exists()) await partFile.delete();
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   static Future<void> _saveToGallery({

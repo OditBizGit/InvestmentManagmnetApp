@@ -29,13 +29,41 @@ class WorkUpdateModel {
 
   String? get resolvedFileUrl => resolveMediaUrl(fileUrl);
 
-  bool get isVideo =>
-      fileType.toLowerCase() == 'video' ||
-      mimeType.toLowerCase().startsWith('video/');
+  bool get isVideo {
+    final mime = mimeType.toLowerCase().trim();
+    if (mime.startsWith('image/')) return false;
+    if (mime.startsWith('video/')) return true;
 
-  bool get isImage =>
-      fileType.toLowerCase() == 'image' ||
-      mimeType.toLowerCase().startsWith('image/');
+    final type = fileType.toLowerCase().trim();
+    if (type.contains('image')) return false;
+    if (type.contains('video')) return true;
+
+    final name = fileName.toLowerCase();
+    return name.endsWith('.mp4') ||
+        name.endsWith('.mov') ||
+        name.endsWith('.webm') ||
+        name.endsWith('.mkv') ||
+        name.endsWith('.avi') ||
+        name.endsWith('.m4v');
+  }
+
+  bool get isImage {
+    final mime = mimeType.toLowerCase().trim();
+    if (mime.startsWith('video/')) return false;
+    if (mime.startsWith('image/')) return true;
+
+    final type = fileType.toLowerCase().trim();
+    if (type.contains('video')) return false;
+    if (type.contains('image')) return true;
+
+    final name = fileName.toLowerCase();
+    return name.endsWith('.jpg') ||
+        name.endsWith('.jpeg') ||
+        name.endsWith('.png') ||
+        name.endsWith('.gif') ||
+        name.endsWith('.webp') ||
+        name.endsWith('.bmp');
+  }
 
   String get uploadedLabel {
     final date = createdDate;

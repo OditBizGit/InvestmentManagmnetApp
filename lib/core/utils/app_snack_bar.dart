@@ -32,13 +32,15 @@ class AppSnackBar {
 
   /// Shows a floating progress snackbar. Call [AppSnackBarProgressController.update]
   /// as bytes arrive, then [AppSnackBarProgressController.close] when finished.
+  /// Set [onCancel] to show a Cancel action while the download is running.
   static AppSnackBarProgressController showProgress(
     BuildContext context, {
     String message = 'Downloading...',
     IconData icon = Icons.download_rounded,
     EdgeInsetsGeometry? margin,
+    VoidCallback? onCancel,
   }) {
-    final controller = AppSnackBarProgressController._();
+    final controller = AppSnackBarProgressController._(onCancel: onCancel);
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -68,11 +70,17 @@ class AppSnackBar {
 }
 
 class AppSnackBarProgressController {
-  AppSnackBarProgressController._();
+  AppSnackBarProgressController._({this.onCancel})
+      : canCancel = ValueNotifier<bool>(onCancel != null);
 
+  final VoidCallback? onCancel;
   final ValueNotifier<double?> progress = ValueNotifier<double?>(null);
   final ValueNotifier<String?> label = ValueNotifier<String?>(null);
+  final ValueNotifier<bool> canCancel;
   bool _closed = false;
+  bool _cancelled = false;
+
+  bool get isCancelled => _cancelled;
 
   /// [value] is 0.0–1.0. Pass `null` for an indeterminate bar.
   void update(double? value, {String? message}) {
@@ -87,13 +95,29 @@ class AppSnackBarProgressController {
     }
   }
 
+  /// Hides the Cancel action (e.g. while writing to gallery after download).
+  void setCancelEnabled(bool enabled) {
+    if (_closed || _cancelled) return;
+    canCancel.value = enabled && onCancel != null;
+  }
+
+  void cancel() {
+    if (_closed || _cancelled || onCancel == null) return;
+    _cancelled = true;
+    canCancel.value = false;
+    label.value = 'Cancelling...';
+    onCancel!();
+  }
+
   void close() {
     if (_closed) return;
     _closed = true;
+    canCancel.value = false;
     // SnackBar reverse animation keeps content mounted briefly.
     Future.delayed(const Duration(milliseconds: 500), () {
       progress.dispose();
       label.dispose();
+      canCancel.dispose();
     });
   }
 }
@@ -215,6 +239,36 @@ class _AppSnackBarProgressContent extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: AppColors.accent,
                         ),
+                      ),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: controller.canCancel,
+                        builder: (context, showCancel, _) {
+                          if (!showCancel || controller.onCancel == null) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: EdgeInsets.only(left: 2.w),
+                            child: TextButton(
+                              onPressed: controller.cancel,
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 2.w,
+                                  vertical: 0.4.h,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 12.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
