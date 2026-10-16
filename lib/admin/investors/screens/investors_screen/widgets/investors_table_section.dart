@@ -376,7 +376,7 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('Paid Amt', flex: 2),
           _HeaderCell('Status', flex: 2),
           _HeaderCell('Joined Date', flex: 2),
-          _HeaderCell('Action', flex: 1, align: TextAlign.center),
+          _HeaderCell('Action', flex: 2, align: TextAlign.center),
         ],
       ),
     );
@@ -543,7 +543,7 @@ class _InvestorRow extends StatelessWidget {
               ),
               _Cell(joinedDate, flex: 2),
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: Center(
                   child: IconButton(
                     tooltip: 'Edit investor',
@@ -556,8 +556,8 @@ class _InvestorRow extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
+                      minWidth: 34,
+                      minHeight: 34,
                     ),
                   ),
                 ),
@@ -602,6 +602,10 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool active = status == 'Active';
+    final Color bg = active
+        ? AppColors.green.withValues(alpha: 0.12)
+        : AppColors.error.withValues(alpha: 0.10);
+    final Color fg = active ? AppColors.green : AppColors.error;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -609,9 +613,7 @@ class _StatusBadge extends StatelessWidget {
         vertical: 5,
       ),
       decoration: BoxDecoration(
-        color: active
-            ? AppColors.green.withValues(alpha: 0.12)
-            : AppColors.error.withValues(alpha: 0.10),
+        color: bg,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -619,7 +621,7 @@ class _StatusBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 8.5.sp,
           fontWeight: FontWeight.w600,
-          color: active ? AppColors.green : AppColors.error,
+          color: fg,
         ),
       ),
     );

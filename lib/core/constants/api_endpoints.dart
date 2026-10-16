@@ -45,6 +45,13 @@ class ApiEndpoints {
   static const String getDashboard = "/api/Dashboard/GetDashboard";
 
 
+  static const String staffList = "/api/Staff/GetStaffList";
+  static const String createStaff = "/api/Staff/CreateStaff";
+  static const String getInvestorByStaff = "/api/Staff/GetInvestorsByStaff/{staffId}";
+  static const String blockUser = "/api/Investor/UpdateInvestorStatus";
+
+
+
 
 
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_type_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/staff_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/update_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
@@ -15,11 +16,16 @@ class InvestorsCubit extends Cubit<InvestorsState> {
     required this._repository,
   }) : super(InvestorsInitial());
 
+  static const String _registerInvestorFailureMessage =
+      'Failed to register investor. Please try again.';
+
   final InvestorsRepository _repository;
 
   List<InvestorTypeModel> _investorTypes = [];
+  List<InvestorStaffModel> _staffList = [];
 
   List<InvestorTypeModel> get investorTypes => _investorTypes;
+  List<InvestorStaffModel> get staffList => _staffList;
 
   Future<void> fetchInvestors() async {
     emit(InvestorsLoading());
@@ -64,6 +70,39 @@ class InvestorsCubit extends Cubit<InvestorsState> {
     }
   }
 
+  Future<void> fetchStaffList() async {
+    emit(StaffListLoading());
+    try {
+      final response = await _repository.getStaffList();
+
+      if (!response.status && response.data.isEmpty) {
+        emit(
+          StaffListFailure(
+            response.message.isNotEmpty
+                ? response.message
+                : 'Failed to load staff list',
+          ),
+        );
+        return;
+      }
+
+      _staffList = response.data;
+      emit(StaffListSuccess(response.data));
+    } on DioException catch (e) {
+      emit(
+        StaffListFailure(
+          ApiErrorMessage.from(e, fallback: 'Failed to load staff list'),
+        ),
+      );
+    } catch (e) {
+      emit(
+        StaffListFailure(
+          ApiErrorMessage.from(e, fallback: 'Failed to load staff list'),
+        ),
+      );
+    }
+  }
+
   Future<void> fetchInvestorTypes() async {
     emit(InvestorTypesLoading());
     try {
@@ -98,16 +137,17 @@ class InvestorsCubit extends Cubit<InvestorsState> {
   }
 
   Future<void> registerInvestor(RegisterInvestorRequestModel request) async {
+    if (state is RegisterInvestorLoading) return;
+
     emit(RegisterInvestorLoading());
     try {
       final response = await _repository.registerInvestor(request);
 
-      if (!response.status) {
+      final succeeded = response.status || response.code == 200;
+      if (!succeeded) {
         emit(
           RegisterInvestorFailure(
-            response.message.isNotEmpty
-                ? response.message
-                : 'Failed to register investor',
+            _userFacingRegisterErrorMessage(response.message),
           ),
         );
         return;
@@ -124,16 +164,28 @@ class InvestorsCubit extends Cubit<InvestorsState> {
     } on DioException catch (e) {
       emit(
         RegisterInvestorFailure(
-          ApiErrorMessage.from(e, fallback: 'Failed to register investor'),
+          ApiErrorMessage.from(
+            e,
+            fallback: _registerInvestorFailureMessage,
+          ),
         ),
       );
     } catch (e) {
       emit(
         RegisterInvestorFailure(
-          ApiErrorMessage.from(e, fallback: 'Failed to register investor'),
+          ApiErrorMessage.from(
+            e,
+            fallback: _registerInvestorFailureMessage,
+          ),
         ),
       );
     }
+  }
+
+  String _userFacingRegisterErrorMessage(String? apiMessage) {
+    final message = apiMessage?.trim() ?? '';
+    if (message.isEmpty) return _registerInvestorFailureMessage;
+    return message;
   }
 
   Future<void> updateInvestor(UpdateInvestorRequestModel request) async {

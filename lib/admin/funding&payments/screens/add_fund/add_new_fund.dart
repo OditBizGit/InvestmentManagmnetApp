@@ -57,7 +57,9 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   final _totalPaidAmountController = TextEditingController();
   final _remainingAmountController = TextEditingController();
   final _payingNowController = TextEditingController();
+  final _discountController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _medicalAllowanceController = TextEditingController();
 
   InvestorModel? _selectedInvestor;
   DateTime _fundingDate = DateTime.now();
@@ -77,10 +79,20 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       _dueRemainingAmount > 0 &&
       _dueStatus != 'Completed';
 
+  double get _investmentRemainingAmount {
+    if (_selectedInvestor == null) return 0;
+    final remaining = _totalAmount - _basePaidAmount;
+    return remaining < 0 ? 0 : remaining;
+  }
+
+  bool get _canSettleFull =>
+      _selectedInvestor != null && _investmentRemainingAmount > 0;
+
   @override
   void initState() {
     super.initState();
     _payingNowController.addListener(_onPayingNowChanged);
+    _discountController.addListener(_onPayingNowChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<FundingPaymentsCubit>().fetchInvestors();
@@ -153,11 +165,23 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     if (_selectedInvestor == null) {
       return 'Please select an investor first';
     }
-    if (_dueRemainingAmount <= 0 || _dueStatus == 'Completed') {
-      return 'No remaining due amount to pay';
+    return null;
+  }
+
+  String? _validateDiscount(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+
+    final discount = _parseAmount(value);
+    if (discount == null) {
+      return 'Enter a valid discount';
     }
-    if (amount > _dueRemainingAmount) {
-      return 'Cannot exceed due of ${_formatCurrency(_dueRemainingAmount)}';
+    if (discount < 0) {
+      return 'Discount cannot be negative';
+    }
+
+    final deposit = _parseAmount(_payingNowController.text) ?? 0;
+    if (discount > deposit) {
+      return 'Discount cannot exceed deposit amount';
     }
     return null;
   }
@@ -165,11 +189,14 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   @override
   void dispose() {
     _payingNowController.removeListener(_onPayingNowChanged);
+    _discountController.removeListener(_onPayingNowChanged);
     _totalAmountController.dispose();
     _totalPaidAmountController.dispose();
     _remainingAmountController.dispose();
     _payingNowController.dispose();
+    _discountController.dispose();
     _descriptionController.dispose();
+    _medicalAllowanceController.dispose();
     super.dispose();
   }
 
@@ -184,6 +211,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     setState(() {
       _selectedInvestor = selected;
       _payingNowController.clear();
+      _discountController.clear();
       _selectedPaymentMethod = null;
       if (selected == null) {
         _resetDueState();
@@ -212,6 +240,25 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
     setState(() {
       _payingNowController.text = _amountInputText(_dueRemainingAmount);
+      _syncAmountDisplays();
+    });
+    _formKey.currentState?.validate();
+  }
+
+  void _handleSettleFull() {
+    if (!mounted) return;
+    if (_selectedInvestor == null) {
+      AppToast.error('Please select an investor', context: context);
+      return;
+    }
+
+    if (_investmentRemainingAmount <= 0) {
+      AppToast.error('Investment is already fully paid', context: context);
+      return;
+    }
+
+    setState(() {
+      _payingNowController.text = _amountInputText(_investmentRemainingAmount);
       _syncAmountDisplays();
     });
     _formKey.currentState?.validate();
@@ -262,9 +309,14 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    if (paidAmount > _dueRemainingAmount) {
+    final discount = _parseAmount(_discountController.text) ?? 0;
+    if (discount < 0) {
+      AppToast.error('Discount cannot be negative', context: context);
+      return;
+    }
+    if (discount > paidAmount) {
       AppToast.error(
-        'Cannot exceed due of ${_formatCurrency(_dueRemainingAmount)}',
+        'Discount cannot exceed deposit amount',
         context: context,
       );
       return;
@@ -281,6 +333,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       paidAmount: paidAmount,
       narration: _descriptionController.text.trim(),
       paymentMethod: _selectedPaymentMethod!,
+      discountAmount: discount,
+      medicalAllowanceDescription: _medicalAllowanceController.text.trim(),
     );
 
     await context.read<FundingPaymentsCubit>().addInvestorPayment(request);
@@ -408,6 +462,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 payingNowValidator: _validatePayingNow,
                 onPayDue: _handlePayDue,
                 canPayDue: _canPayDue,
+                onSettleFull: _handleSettleFull,
+                canSettleFull: _canSettleFull,
+                discountController: _discountController,
+                discountValidator: _validateDiscount,
+                medicalAllowanceController: _medicalAllowanceController,
                 paymentMethodOptions: kFundPaymentMethodOptions,
                 selectedPaymentMethod: _selectedPaymentMethod,
                 onPaymentMethodChanged: (value) =>

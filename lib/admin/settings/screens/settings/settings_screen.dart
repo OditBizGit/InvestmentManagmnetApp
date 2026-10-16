@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/screen/create_admin_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/create_project_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/staff_allocation/staff_and_allocation_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/widgets/settings_option_cards.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/user_complaints_screen.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
@@ -20,6 +21,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _showCreateProject = false;
   bool _showUserComplaints = false;
   bool _showCreateAdmin = false;
+  bool _showStaffAndAllocation = false;
 
   /// Defer tree swaps until after pointer/hover tracking finishes (Windows/desktop).
   void _navigate(VoidCallback action) {
@@ -38,6 +40,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         _showCreateProject = true;
         _showUserComplaints = false;
         _showCreateAdmin = false;
+        _showStaffAndAllocation = false;
       });
     });
   }
@@ -48,6 +51,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         _showUserComplaints = true;
         _showCreateProject = false;
         _showCreateAdmin = false;
+        _showStaffAndAllocation = false;
       });
     });
   }
@@ -58,6 +62,18 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         _showCreateAdmin = true;
         _showCreateProject = false;
         _showUserComplaints = false;
+        _showStaffAndAllocation = false;
+      });
+    });
+  }
+
+  void _openStaffAndAllocation() {
+    _navigate(() {
+      setState(() {
+        _showStaffAndAllocation = true;
+        _showCreateProject = false;
+        _showUserComplaints = false;
+        _showCreateAdmin = false;
       });
     });
   }
@@ -68,6 +84,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         _showCreateProject = false;
         _showUserComplaints = false;
         _showCreateAdmin = false;
+        _showStaffAndAllocation = false;
       });
     });
   }
@@ -75,6 +92,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   void _onOptionSelected(SettingsOptionType option) {
     if (option == SettingsOptionType.createProject) {
       _openCreateProject();
+      return;
+    }
+    if (option == SettingsOptionType.addStaffAndAllocation) {
+      _openStaffAndAllocation();
       return;
     }
     if (option == SettingsOptionType.userComplaints) {
@@ -102,6 +123,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
     if (_showCreateAdmin) {
       return CreateAdminScreen(onBack: _backToSettings);
+    }
+
+    if (_showStaffAndAllocation) {
+      return StaffAndAllocationScreen(onBack: _backToSettings);
     }
 
     return ColoredBox(

@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_entry.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_submit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/update_investor_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_additional_information.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_form_cards.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_side_panel.dart';
@@ -36,7 +39,8 @@ class AddNewInvestorScreen extends StatelessWidget {
       child: BlocProvider(
         create: (context) => InvestorsCubit(
           repository: context.read<InvestorsRepository>(),
-        )..fetchInvestorTypes(),
+        )..fetchInvestorTypes()
+          ..fetchStaffList(),
         child: _AddNewInvestorView(
           investorToEdit: investorToEdit,
           onBack: onBack,
@@ -84,6 +88,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   final _mobileController = TextEditingController();
   final _alternateMobileController = TextEditingController();
   final _emailController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
   final _amountController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -96,21 +101,19 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   final _bankNameController = TextEditingController();
   final _ifscController = TextEditingController();
   final _accountNumberController = TextEditingController();
-  final _nomineeNameController = TextEditingController();
-  final _nomineeAddressController = TextEditingController();
-  final _nomineePhoneController = TextEditingController();
-  final _nomineeAadhaarController = TextEditingController();
-  final _nomineePanController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  List<InvestorNomineeEntry> _nominees = [InvestorNomineeEntry()];
 
   String? _investorType;
+  int? _selectedStaffId;
+  String? _selectedStaffName;
   DateTime? _investmentDate = DateTime.now();
   PickedPhoto? _profilePhoto;
   String? _existingProfileImageUrl;
-  PickedPhoto? _nomineePhoto;
-  String? _existingNomineeImageUrl;
-  String? _nomineeRelationship;
-  DateTime? _nomineeDateOfBirth;
+  PickedPhoto? _aadhaarCardPhoto;
+  String? _existingAadhaarCardImageUrl;
+  PickedPhoto? _panCardPhoto;
+  String? _existingPanCardImageUrl;
   DateTime? _dateOfBirth;
 
   /// Set Due Date / Split Payment is always required.
@@ -143,10 +146,15 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       investor.alternativeNumber,
     );
     _emailController.text = investor.email ?? '';
+    _descriptionController.text = investor.description ?? '';
     _addressController.text = investor.address ?? '';
     _usernameController.text = investor.username;
     _investorType = investor.investorType;
+    _selectedStaffId = investor.staffId;
+    _selectedStaffName = investor.staffName;
     _existingProfileImageUrl = investor.profileImageUrl;
+    _existingAadhaarCardImageUrl = investor.aadhaarCardImageUrl;
+    _existingPanCardImageUrl = investor.panCardImageUrl;
     _dateOfBirth = investor.dateOfBirth;
 
     // KYC / bank — only prefill values that pass form validators so Update
@@ -215,35 +223,39 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       _intervalController.text = gap.toString();
     }
 
-    // Nominee
-    _nomineeNameController.text = investor.nomineeName ?? '';
-    _nomineeAddressController.text = investor.nomineeAddress ?? '';
-    _nomineePhoneController.text = _optionalDigitsPhone(
-      investor.nomineePhoneNumber,
-    );
-    if (_isValidAadhaar(investor.nomineeAadhaarNumber)) {
-      _nomineeAadhaarController.text = investor.nomineeAadhaarNumber!.trim();
+    _loadNomineesFromInvestor(investor);
+  }
+
+  void _loadNomineesFromInvestor(InvestorModel investor) {
+    for (final entry in _nominees) {
+      entry.dispose();
     }
-    if (_isValidPan(investor.nomineePanCardNumber)) {
-      _nomineePanController.text =
-          investor.nomineePanCardNumber!.trim().toUpperCase();
+
+    final records = nomineeRecordsFromInvestor(investor);
+    if (records.isEmpty) {
+      _nominees = [InvestorNomineeEntry()];
+      return;
     }
-    _nomineeDateOfBirth = investor.nomineeDateOfBirth;
-    _existingNomineeImageUrl = investor.nomineeProfilePhotoUrl;
-    _nomineeRelationship = _matchOption(
-      investor.nomineeRelationship,
-      const [
-        'Spouse',
-        'Father',
-        'Mother',
-        'Son',
-        'Daughter',
-        'Brother',
-        'Sister',
-        'Other',
-      ],
-      fallbackToOther: true,
-    );
+
+    _nominees = records.map((record) {
+      final entry = InvestorNomineeEntry()..applyFromRecord(record);
+      final phone = _optionalDigitsPhone(record.phoneNumber);
+      if (phone.isNotEmpty) {
+        entry.phoneController.text = phone;
+      }
+      if (_isValidAadhaar(record.aadhaarNumber)) {
+        entry.aadhaarController.text = record.aadhaarNumber!.trim();
+      }
+      if (_isValidPan(record.panCardNumber)) {
+        entry.panController.text = record.panCardNumber!.trim().toUpperCase();
+      }
+      entry.relationship = _matchOption(
+        entry.relationship,
+        AddInvestorAdditionalInformation.relationshipOptions,
+        fallbackToOther: true,
+      );
+      return entry;
+    }).toList();
   }
 
   static bool _isValidAadhaar(String? value) {
@@ -312,6 +324,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _mobileController.dispose();
     _alternateMobileController.dispose();
     _emailController.dispose();
+    _descriptionController.dispose();
     _addressController.dispose();
     _amountController.dispose();
     _usernameController.dispose();
@@ -324,11 +337,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _bankNameController.dispose();
     _ifscController.dispose();
     _accountNumberController.dispose();
-    _nomineeNameController.dispose();
-    _nomineeAddressController.dispose();
-    _nomineePhoneController.dispose();
-    _nomineeAadhaarController.dispose();
-    _nomineePanController.dispose();
+    for (final entry in _nominees) {
+      entry.dispose();
+    }
     super.dispose();
   }
 
@@ -538,6 +549,15 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       return;
     }
 
+    if (!_validateFilledNominees()) {
+      return;
+    }
+
+    if (_selectedStaffId == null || _selectedStaffId! <= 0) {
+      AppToast.error('Please select a staff member', context: context);
+      return;
+    }
+
     if (_investmentDate == null) {
       AppToast.error('Please select investment date', context: context);
       return;
@@ -608,20 +628,19 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       );
     }
 
-    MultipartFile? nomineeProfilePhoto;
-    if (_nomineePhoto != null) {
-      nomineeProfilePhoto = MultipartFile.fromBytes(
-        _nomineePhoto!.bytes,
-        filename: _nomineePhoto!.name,
-      );
-    }
+    final aadhaarCardImage = _multipartFromPhoto(_aadhaarCardPhoto);
+    final nomineePayload = _nomineeSubmitPayload();
+    final panCardImage = _multipartFromPhoto(_panCardPhoto);
 
     if (_isEditing) {
       final investor = widget.investorToEdit!;
       final updateRequest = UpdateInvestorRequestModel(
         userId: investor.userId,
+        staffId: _selectedStaffId,
+        staffName: _selectedStaffName,
         fullName: _fullNameController.text.trim(),
-        email: _optionalText(_emailController.text),
+        email: _emailController.text.trim(),
+        description: _optionalText(_descriptionController.text),
         phoneNumber: _optionalText(_mobileController.text),
         alternativeNumber: _optionalText(_alternateMobileController.text),
         investorType: _investorType?.trim(),
@@ -640,15 +659,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
         investmentSplitGap: _resolvedSplitGap,
         investmentAdvanceAmount: advance,
         paymentMethod: _optionalText(_selectedPaymentMode ?? ''),
-        nomineeName: _optionalText(_nomineeNameController.text),
-        nomineeRelationship: _optionalText(_nomineeRelationship ?? ''),
-        nomineeAddress: _optionalText(_nomineeAddressController.text),
-        nomineeDateOfBirth: _nomineeDateOfBirth,
-        nomineeAadhaarNumber: _optionalText(_nomineeAadhaarController.text),
-        nomineePanCardNumber: _optionalText(_nomineePanController.text),
-        nomineePhoneNumber: _optionalText(_nomineePhoneController.text),
+        nominees: nomineePayload,
         profileImage: profileImage,
-        nomineeProfilePhoto: nomineeProfilePhoto,
+        aadhaarCardImage: aadhaarCardImage,
+        panCardImage: panCardImage,
       );
 
       await context.read<InvestorsCubit>().updateInvestor(updateRequest);
@@ -660,14 +674,18 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       password: _passwordController.text,
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
+      description: _descriptionController.text.trim(),
       alternativeNumber: _alternateMobileController.text.trim(),
       phoneNumber: _mobileController.text.trim(),
       investorType: _investorType!.trim(),
+      staffId: _selectedStaffId!,
       organization: _organizationController.text.trim(),
       address: _addressController.text.trim(),
       investmentAmount: amount,
       investmentDate: _investmentDate!,
       profileImage: profileImage,
+      aadhaarCardImage: aadhaarCardImage,
+      panCardImage: panCardImage,
       investmentSplitMonths: count,
       investmentSplitType: _selectedFrequency,
       investmentSplitGap: _resolvedSplitGap,
@@ -678,15 +696,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       accountNumber: _accountNumberController.text.trim(),
       ifscCode: _ifscController.text.trim(),
       bankName: _bankNameController.text.trim(),
-      nomineeName: _nomineeNameController.text.trim(),
-      nomineeRelationship: _nomineeRelationship ?? '',
-      nomineeAddress: _nomineeAddressController.text.trim(),
-      nomineeDateOfBirth: _nomineeDateOfBirth,
-      nomineeAadhaarNumber: _nomineeAadhaarController.text.trim(),
-      nomineePanCardNumber: _nomineePanController.text.trim(),
       dateOfBirth: _dateOfBirth,
-      nomineePhoneNumber: _nomineePhoneController.text.trim(),
-      nomineeProfilePhoto: nomineeProfilePhoto,
+      nominees: nomineePayload,
     );
 
     await context.read<InvestorsCubit>().registerInvestor(request);
@@ -695,6 +706,95 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   static String? _optionalText(String value) {
     final text = value.trim();
     return text.isEmpty ? null : text;
+  }
+
+  static MultipartFile? _multipartFromPhoto(PickedPhoto? photo) {
+    if (photo == null) return null;
+    return MultipartFile.fromBytes(
+      photo.bytes,
+      filename: photo.name,
+    );
+  }
+
+  List<InvestorNomineeSubmitData> _nomineeSubmitPayload() {
+    return _nominees
+        .where((entry) => entry.hasAnyData)
+        .take(3)
+        .map(
+          (entry) => InvestorNomineeSubmitData(
+            name: entry.nameController.text.trim(),
+            relationship: entry.relationship?.trim() ?? '',
+            address: entry.addressController.text.trim(),
+            dateOfBirth: entry.dateOfBirth,
+            aadhaarNumber: entry.aadhaarController.text.trim(),
+            panCardNumber: entry.panController.text.trim(),
+            phoneNumber: entry.phoneController.text.trim(),
+            profilePhoto: _multipartFromPhoto(entry.profilePhoto),
+            aadhaarCardImage: _multipartFromPhoto(entry.aadhaarCardPhoto),
+            panCardImage: _multipartFromPhoto(entry.panCardPhoto),
+          ),
+        )
+        .toList();
+  }
+
+  bool _validateFilledNominees() {
+    for (var i = 0; i < _nominees.length; i++) {
+      final entry = _nominees[i];
+      if (!entry.hasAnyData) continue;
+
+      final label = 'Nominee ${i + 1}';
+      if (entry.nameController.text.trim().isEmpty) {
+        AppToast.error('$label: enter nominee name', context: context);
+        return false;
+      }
+      if (entry.relationship == null || entry.relationship!.trim().isEmpty) {
+        AppToast.error('$label: select relationship', context: context);
+        return false;
+      }
+      if (entry.phoneController.text.trim().length != 10) {
+        AppToast.error('$label: enter a valid 10-digit phone number', context: context);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _onStaffChanged(int? staffId) {
+    setState(() {
+      _selectedStaffId = staffId;
+      _selectedStaffName = _resolveStaffName(staffId);
+    });
+  }
+
+  String? _resolveStaffName(int? staffId) {
+    if (staffId == null || staffId <= 0) return null;
+
+    final staffMembers = context.read<InvestorsCubit>().staffList;
+    for (final member in staffMembers) {
+      if (member.staffId == staffId) {
+        return member.fullName;
+      }
+    }
+    return _selectedStaffName;
+  }
+
+  void _addNominee() {
+    if (_nominees.length >= 3) {
+      AppToast.error(
+        'You can add up to 3 nominees only',
+        context: context,
+      );
+      return;
+    }
+    setState(() => _nominees.add(InvestorNomineeEntry()));
+  }
+
+  void _removeNominee(int index) {
+    if (_nominees.length <= 1) return;
+    setState(() {
+      _nominees[index].dispose();
+      _nominees.removeAt(index);
+    });
   }
 
   Future<void> _pickProfilePhoto() async {
@@ -710,16 +810,68 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     });
   }
 
-  Future<void> _pickNomineePhoto() async {
+  Future<void> _pickAadhaarCardPhoto() async {
     final photo = await PhotoPickerHelper.pickProfilePhoto();
     if (photo == null || !mounted) return;
-    setState(() => _nomineePhoto = photo);
+    setState(() => _aadhaarCardPhoto = photo);
   }
 
-  void _clearNomineePhoto() {
+  void _clearAadhaarCardPhoto() {
     setState(() {
-      _nomineePhoto = null;
-      _existingNomineeImageUrl = null;
+      _aadhaarCardPhoto = null;
+      _existingAadhaarCardImageUrl = null;
+    });
+  }
+
+  Future<void> _pickPanCardPhoto() async {
+    final photo = await PhotoPickerHelper.pickProfilePhoto();
+    if (photo == null || !mounted) return;
+    setState(() => _panCardPhoto = photo);
+  }
+
+  void _clearPanCardPhoto() {
+    setState(() {
+      _panCardPhoto = null;
+      _existingPanCardImageUrl = null;
+    });
+  }
+
+  Future<void> _pickNomineeProfilePhoto(int index) async {
+    final photo = await PhotoPickerHelper.pickProfilePhoto();
+    if (photo == null || !mounted) return;
+    setState(() => _nominees[index].profilePhoto = photo);
+  }
+
+  void _clearNomineeProfilePhoto(int index) {
+    setState(() {
+      _nominees[index].profilePhoto = null;
+      _nominees[index].existingProfileImageUrl = null;
+    });
+  }
+
+  Future<void> _pickNomineeAadhaarCardPhoto(int index) async {
+    final photo = await PhotoPickerHelper.pickProfilePhoto();
+    if (photo == null || !mounted) return;
+    setState(() => _nominees[index].aadhaarCardPhoto = photo);
+  }
+
+  void _clearNomineeAadhaarCardPhoto(int index) {
+    setState(() {
+      _nominees[index].aadhaarCardPhoto = null;
+      _nominees[index].existingAadhaarCardImageUrl = null;
+    });
+  }
+
+  Future<void> _pickNomineePanCardPhoto(int index) async {
+    final photo = await PhotoPickerHelper.pickProfilePhoto();
+    if (photo == null || !mounted) return;
+    setState(() => _nominees[index].panCardPhoto = photo);
+  }
+
+  void _clearNomineePanCardPhoto(int index) {
+    setState(() {
+      _nominees[index].panCardPhoto = null;
+      _nominees[index].existingPanCardImageUrl = null;
     });
   }
 
@@ -747,11 +899,13 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     setState(() => _investmentDate = picked);
   }
 
-  Future<void> _pickNomineeDateOfBirth() async {
+  Future<void> _pickNomineeDateOfBirth(int index) async {
     final now = DateTime.now();
+    final initial =
+        _nominees[index].dateOfBirth ?? DateTime(now.year - 25);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _nomineeDateOfBirth ?? DateTime(now.year - 25),
+      initialDate: initial,
       firstDate: DateTime(1920),
       lastDate: now,
       builder: (context, child) {
@@ -768,7 +922,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       },
     );
     if (picked == null || !mounted) return;
-    setState(() => _nomineeDateOfBirth = picked);
+    setState(() => _nominees[index].dateOfBirth = picked);
   }
 
   String _formatDate(DateTime date) {
@@ -841,6 +995,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 mobileController: _mobileController,
                 alternateMobileController: _alternateMobileController,
                 emailController: _emailController,
+                descriptionController: _descriptionController,
                 addressController: _addressController,
                 amountController: _amountController,
                 usernameController: _usernameController,
@@ -848,6 +1003,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 investorType: _investorType,
                 onTypeChanged: (value) =>
                     setState(() => _investorType = value),
+                selectedStaffId: _selectedStaffId,
+                selectedStaffName: _selectedStaffName,
+                onStaffChanged: _onStaffChanged,
                 investmentDate: _investmentDate,
                 onPickDate: _pickDate,
                 formatDate: _formatDate,
@@ -875,21 +1033,28 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 bankNameController: _bankNameController,
                 ifscController: _ifscController,
                 accountNumberController: _accountNumberController,
-                nomineeNameController: _nomineeNameController,
-                nomineeAddressController: _nomineeAddressController,
-                nomineeRelationship: _nomineeRelationship,
-                onNomineeRelationshipChanged: (value) =>
-                    setState(() => _nomineeRelationship = value),
-                nomineeAadhaarController: _nomineeAadhaarController,
-                nomineePanController: _nomineePanController,
-                nomineeDateOfBirth: _nomineeDateOfBirth,
+                aadhaarCardPhoto: _aadhaarCardPhoto,
+                existingAadhaarCardImageUrl: _existingAadhaarCardImageUrl,
+                onPickAadhaarCardPhoto: _pickAadhaarCardPhoto,
+                onClearAadhaarCardPhoto: _clearAadhaarCardPhoto,
+                panCardPhoto: _panCardPhoto,
+                existingPanCardImageUrl: _existingPanCardImageUrl,
+                onPickPanCardPhoto: _pickPanCardPhoto,
+                onClearPanCardPhoto: _clearPanCardPhoto,
+                nominees: _nominees,
+                onAddNominee: _addNominee,
+                onRemoveNominee: _removeNominee,
+                onNomineeRelationshipChanged: (index, value) => setState(
+                  () => _nominees[index].relationship = value,
+                ),
                 dateOfBirth: _dateOfBirth,
                 onPickNomineeDateOfBirth: _pickNomineeDateOfBirth,
-                nomineePhoneController: _nomineePhoneController,
-                nomineePhoto: _nomineePhoto,
-                existingNomineeImageUrl: _existingNomineeImageUrl,
-                onPickNomineePhoto: _pickNomineePhoto,
-                onClearNomineePhoto: _clearNomineePhoto,
+                onPickNomineeProfilePhoto: _pickNomineeProfilePhoto,
+                onClearNomineeProfilePhoto: _clearNomineeProfilePhoto,
+                onPickNomineeAadhaarCardPhoto: _pickNomineeAadhaarCardPhoto,
+                onClearNomineeAadhaarCardPhoto: _clearNomineeAadhaarCardPhoto,
+                onPickNomineePanCardPhoto: _pickNomineePanCardPhoto,
+                onClearNomineePanCardPhoto: _clearNomineePanCardPhoto,
               );
 
               final sidePanel = AddInvestorSidePanel(

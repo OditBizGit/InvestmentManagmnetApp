@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_record.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_submit.dart';
 
 class RegisterInvestorRequestModel {
   final String username;
@@ -8,7 +12,9 @@ class RegisterInvestorRequestModel {
   final String phoneNumber;
   final String alternativeNumber;
   final String investorType;
+  final int staffId;
   final String organization;
+  final String description;
   final String address;
 
   final double? investmentAmount;
@@ -28,16 +34,11 @@ class RegisterInvestorRequestModel {
 
   final DateTime? dateOfBirth;
 
-  final String nomineeName;
-  final String nomineeRelationship;
-  final String nomineeAddress;
-  final DateTime? nomineeDateOfBirth;
-  final String nomineeAadhaarNumber;
-  final String nomineePanCardNumber;
-  final String nomineePhoneNumber;
+  final List<InvestorNomineeSubmitData> nominees;
 
   final MultipartFile? profileImage;
-  final MultipartFile? nomineeProfilePhoto;
+  final MultipartFile? aadhaarCardImage;
+  final MultipartFile? panCardImage;
 
   RegisterInvestorRequestModel({
     required this.username,
@@ -47,7 +48,9 @@ class RegisterInvestorRequestModel {
     required this.phoneNumber,
     required this.alternativeNumber,
     required this.investorType,
+    required this.staffId,
     required this.organization,
+    this.description = '',
     required this.address,
     this.investmentAmount,
     required this.investmentDate,
@@ -62,61 +65,61 @@ class RegisterInvestorRequestModel {
     required this.ifscCode,
     required this.bankName,
     this.dateOfBirth,
-    required this.nomineeName,
-    required this.nomineeRelationship,
-    required this.nomineeAddress,
-    this.nomineeDateOfBirth,
-    required this.nomineeAadhaarNumber,
-    required this.nomineePanCardNumber,
-    required this.nomineePhoneNumber,
+    this.nominees = const [],
     this.profileImage,
-    this.nomineeProfilePhoto,
+    this.aadhaarCardImage,
+    this.panCardImage,
   });
 
   Future<FormData> toFormData() async {
-    return FormData.fromMap({
-      'Username': username,
-      'Password': password,
-      'FullName': fullName,
-      'Email': email,
-      'PhoneNumber': phoneNumber,
-      'AlternativeNumber': alternativeNumber,
-      'InvestorType': investorType,
-      'Organization': organization,
-      'Address': address,
+    final formData = FormData();
 
-      'InvestmentAmount': investmentAmount,
-      'InvestmentDate': investmentDate.toIso8601String(),
+    formData.fields.addAll([
+      MapEntry('Username', username),
+      MapEntry('Password', password),
+      MapEntry('FullName', fullName),
+      MapEntry('StaffId', staffId.toString()),
+      MapEntry('Email', email),
+      MapEntry('PhoneNumber', phoneNumber),
+      MapEntry('AlternativeNumber', alternativeNumber),
+      MapEntry('InvestorType', investorType),
+      MapEntry('Organization', organization),
+      MapEntry('Description', description.trim()),
+      MapEntry('Address', address),
+      MapEntry(
+        'InvestmentAmount',
+        (investmentAmount ?? 0).toString(),
+      ),
+      MapEntry('InvestmentDate', investmentDate.toIso8601String()),
+      MapEntry('InvestmentSplitMonths', investmentSplitMonths.toString()),
+      MapEntry('InvestmentSplitType', investmentSplitType),
+      MapEntry('InvestmentSplitGap', investmentSplitGap.toString()),
+      MapEntry('InvestmentAdvanceAmount', investmentAdvanceAmount.toString()),
+      MapEntry('PaymentMethod', paymentMethod),
+      MapEntry('AadhaarNumber', aadhaarNumber),
+      MapEntry('PanCardNumber', panCardNumber),
+      MapEntry('AccountNumber', accountNumber),
+      MapEntry('IFSCCode', ifscCode),
+      MapEntry('BankName', bankName),
+      MapEntry(
+        'DateOfBirth',
+        dateOfBirth?.toIso8601String() ?? '',
+      ),
+    ]);
 
-      'InvestmentSplitMonths': investmentSplitMonths,
-      'InvestmentSplitType': investmentSplitType,
-      'InvestmentSplitGap': investmentSplitGap,
-      'InvestmentAdvanceAmount': investmentAdvanceAmount,
-      'PaymentMethod': paymentMethod,
+    if (profileImage != null) {
+      formData.files.add(MapEntry('ProfileImage', profileImage!));
+    }
+    if (aadhaarCardImage != null) {
+      formData.files.add(MapEntry('AadhaarPhoto', aadhaarCardImage!));
+    }
+    if (panCardImage != null) {
+      formData.files.add(MapEntry('PanCardPhoto', panCardImage!));
+    }
 
-      'AadhaarNumber': aadhaarNumber,
-      'PanCardNumber': panCardNumber,
-      'AccountNumber': accountNumber,
-      'IFSCCode': ifscCode,
-      'BankName': bankName,
+    appendRegisterInvestorNomineesToFormData(formData, nominees);
 
-      if (dateOfBirth != null) 'DateOfBirth': dateOfBirth!.toIso8601String(),
-
-      'NomineeName': nomineeName,
-      'NomineeRelationship': nomineeRelationship,
-      'NomineeAddress': nomineeAddress,
-      if (nomineeDateOfBirth != null)
-        'NomineeDateOfBirth': nomineeDateOfBirth!.toIso8601String(),
-      'NomineeAadhaarNumber': nomineeAadhaarNumber,
-      'NomineePanCardNumber': nomineePanCardNumber,
-      'NomineePhoneNumber': nomineePhoneNumber,
-
-      if (profileImage != null)
-        'ProfileImage': profileImage,
-
-      if (nomineeProfilePhoto != null)
-        'NomineeProfilePhoto': nomineeProfilePhoto,
-    });
+    return formData;
   }
 }
 
@@ -134,123 +137,95 @@ class RegisterInvestorResponseModel {
   });
 
   factory RegisterInvestorResponseModel.fromJson(
-      Map<String, dynamic> json,
-      ) {
+    Map<String, dynamic> json,
+  ) {
     return RegisterInvestorResponseModel(
-      status: json['status'] ?? false,
-      message: json['message'] ?? '',
-      data: json['data'] != null
-          ? RegisterInvestorDataModel.fromJson(json['data'])
+      status: _readBool(json['status'] ?? json['Status']),
+      message: (json['message'] ?? json['Message'] ?? '').toString(),
+      data: _readDataMap(json) != null
+          ? RegisterInvestorDataModel.fromJson(_readDataMap(json)!)
           : null,
-      code: json['code'] ?? 0,
+      code: _readInt(json['code'] ?? json['Code']),
     );
+  }
+
+  static Map<String, dynamic>? _readDataMap(Map<String, dynamic> json) {
+    final raw = json['data'] ?? json['Data'];
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return null;
+  }
+
+  static bool _readBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' || normalized == '1' || normalized == 'success';
+    }
+    return false;
+  }
+
+  static int _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }
 
 class RegisterInvestorDataModel {
-  final int userId;
-  final String username;
-  final String fullName;
-  final String email;
-  final String? phoneNumber;
-  final String? profileImage;
-  final String? investorCode;
-  final String? investorType;
-  final String? organization;
-  final String? address;
-
-  final int investmentSplitMonths;
-  final double monthlyInvestmentAmount;
-  final DateTime? investmentStartDate;
-
-  final String userRole;
-  final bool isActive;
-  final DateTime? createdDate;
-
   RegisterInvestorDataModel({
-    required this.userId,
-    required this.username,
-    required this.fullName,
-    required this.email,
-    this.phoneNumber,
-    this.profileImage,
-    this.investorCode,
-    this.investorType,
-    this.organization,
-    this.address,
-    required this.investmentSplitMonths,
-    required this.monthlyInvestmentAmount,
-    this.investmentStartDate,
-    required this.userRole,
-    required this.isActive,
-    this.createdDate,
+    this.nomineesJson,
+    this.isValidJson,
+    this.parsedNominees = const [],
   });
 
-  factory RegisterInvestorDataModel.fromJson(
-      Map<String, dynamic> json,
-      ) {
+  final String? nomineesJson;
+  final int? isValidJson;
+  final List<InvestorNomineeRecord> parsedNominees;
+
+  factory RegisterInvestorDataModel.fromJson(Map<String, dynamic> json) {
+    final nomineesRaw = json['NomineesJson'] ??
+        json['nomineesJson'] ??
+        json['NomineesJSON'];
+    final nomineesJson = nomineesRaw?.toString();
+
     return RegisterInvestorDataModel(
-      userId: json['UserId'] ?? json['userId'] ?? 0,
-
-      username: json['Username'] ?? json['username'] ?? '',
-
-      fullName: json['FullName'] ?? json['fullName'] ?? '',
-
-      email: json['Email'] ?? json['email'] ?? '',
-
-      phoneNumber:
-      json['PhoneNumber'] ?? json['phoneNumber'],
-
-      profileImage:
-      json['ProfileImage'] ?? json['profileImage'],
-
-      investorCode:
-      json['InvestorCode'] ?? json['investorCode'],
-
-      investorType:
-      json['InvestorType'] ?? json['investorType'],
-
-      organization:
-      json['Organization'] ?? json['organization'],
-
-      address:
-      json['Address'] ?? json['address'],
-
-      investmentSplitMonths:
-      json['InvestmentSplitMonths'] ??
-          json['investmentSplitMonths'] ??
-          0,
-
-      monthlyInvestmentAmount:
-      (json['MonthlyInvestmentAmount'] ??
-          json['monthlyInvestmentAmount'] ??
-          0)
-          .toDouble(),
-
-      investmentStartDate:
-      (json['InvestmentStartDate'] ??
-          json['investmentStartDate']) !=
-          null
-          ? DateTime.tryParse(
-        json['InvestmentStartDate'] ??
-            json['investmentStartDate'],
-      )
-          : null,
-
-      userRole:
-      json['UserRole'] ?? json['userRole'] ?? '',
-
-      isActive:
-      json['IsActive'] ?? json['isActive'] ?? false,
-
-      createdDate:
-      (json['CreatedDate'] ?? json['createdDate']) !=
-          null
-          ? DateTime.tryParse(
-        json['CreatedDate'] ??
-            json['createdDate'],
-      )
-          : null,
+      nomineesJson: nomineesJson,
+      isValidJson: _readOptionalInt(
+        json['IsValidJson'] ?? json['isValidJson'],
+      ),
+      parsedNominees: _parseNomineesJson(nomineesJson),
     );
+  }
+
+  static int? _readOptionalInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim());
+    return null;
+  }
+
+  static List<InvestorNomineeRecord> _parseNomineesJson(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+
+      return decoded
+          .whereType<Map>()
+          .map(
+            (item) => InvestorNomineeRecord.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .where((record) => !record.isEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 }

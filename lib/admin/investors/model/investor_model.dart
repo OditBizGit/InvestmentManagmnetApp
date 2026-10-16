@@ -1,3 +1,4 @@
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_record.dart';
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 
 class InvestorModel {
@@ -10,12 +11,17 @@ class InvestorModel {
   final String? profileImage;
   final String? investorCode;
   final String? investorType;
+  final int? staffId;
+  final String? staffName;
   final String? organization;
+  final String? description;
   final String? address;
 
   // Personal / KYC
   final String? aadhaarNumber;
+  final String? aadhaarCardImage;
   final String? panCardNumber;
+  final String? panCardImage;
   final String? accountNumber;
   final String? ifscCode;
   final String? bankName;
@@ -54,6 +60,9 @@ class InvestorModel {
   final String? nomineePanCardNumber;
   final String? nomineePhoneNumber;
   final String? nomineeProfilePhoto;
+  final String? nomineeAadhaarCardImage;
+  final String? nomineePanCardImage;
+  final List<InvestorNomineeRecord> nominees;
 
   InvestorModel({
     required this.userId,
@@ -65,12 +74,17 @@ class InvestorModel {
     this.profileImage,
     this.investorCode,
     this.investorType,
+    this.staffId,
+    this.staffName,
     this.organization,
+    this.description,
     this.address,
 
     // Personal / KYC
     this.aadhaarNumber,
+    this.aadhaarCardImage,
     this.panCardNumber,
+    this.panCardImage,
     this.accountNumber,
     this.ifscCode,
     this.bankName,
@@ -109,6 +123,9 @@ class InvestorModel {
     this.nomineePanCardNumber,
     this.nomineePhoneNumber,
     this.nomineeProfilePhoto,
+    this.nomineeAadhaarCardImage,
+    this.nomineePanCardImage,
+    this.nominees = const [],
   });
 
   /// Absolute URL for [profileImage].
@@ -117,6 +134,19 @@ class InvestorModel {
   /// Absolute URL for [nomineeProfilePhoto].
   String? get nomineeProfilePhotoUrl =>
       resolveMediaUrl(nomineeProfilePhoto);
+
+  /// Absolute URL for [nomineeAadhaarCardImage].
+  String? get nomineeAadhaarCardImageUrl =>
+      resolveMediaUrl(nomineeAadhaarCardImage);
+
+  /// Absolute URL for [nomineePanCardImage].
+  String? get nomineePanCardImageUrl => resolveMediaUrl(nomineePanCardImage);
+
+  /// Absolute URL for [aadhaarCardImage].
+  String? get aadhaarCardImageUrl => resolveMediaUrl(aadhaarCardImage);
+
+  /// Absolute URL for [panCardImage].
+  String? get panCardImageUrl => resolveMediaUrl(panCardImage);
 
   factory InvestorModel.fromJson(Map<String, dynamic> json) {
     return InvestorModel(
@@ -160,8 +190,23 @@ class InvestorModel {
         json['investorType'] ?? json['InvestorType'],
       ),
 
+      staffId: _readNullableInt(
+        json['staffId'] ?? json['StaffId'],
+      ),
+
+      staffName: _readString(
+        json['staffName'] ?? json['StaffName'],
+      ),
+
       organization: _readString(
         json['organization'] ?? json['Organization'],
+      ),
+
+      description: _readString(
+        json['description'] ??
+            json['Description'] ??
+            json['investorDescription'] ??
+            json['InvestorDescription'],
       ),
 
       address: _readString(
@@ -173,8 +218,22 @@ class InvestorModel {
         json['aadhaarNumber'] ?? json['AadhaarNumber'],
       ),
 
+      aadhaarCardImage: _readString(
+        json['aadhaarCardImage'] ??
+            json['AadhaarCardImage'] ??
+            json['aadhaarImage'] ??
+            json['AadhaarImage'],
+      ),
+
       panCardNumber: _readString(
         json['panCardNumber'] ?? json['PanCardNumber'],
+      ),
+
+      panCardImage: _readString(
+        json['panCardImage'] ??
+            json['PanCardImage'] ??
+            json['panImage'] ??
+            json['PanImage'],
       ),
 
       accountNumber: _readString(
@@ -316,7 +375,40 @@ class InvestorModel {
         json['nomineeProfilePhoto'] ??
             json['NomineeProfilePhoto'],
       ),
+
+      nomineeAadhaarCardImage: _readString(
+        json['nomineeAadhaarCardImage'] ??
+            json['NomineeAadhaarCardImage'],
+      ),
+
+      nomineePanCardImage: _readString(
+        json['nomineePanCardImage'] ??
+            json['NomineePanCardImage'],
+      ),
+
+      nominees: _readNomineesList(json),
     );
+  }
+
+  static List<InvestorNomineeRecord> _readNomineesList(
+    Map<String, dynamic> json,
+  ) {
+    final raw = json['nominees'] ?? json['Nominees'];
+    if (raw is! List) return const [];
+
+    final records = <InvestorNomineeRecord>[];
+    for (final item in raw) {
+      if (item is Map<String, dynamic>) {
+        final record = InvestorNomineeRecord.fromJson(item);
+        if (!record.isEmpty) records.add(record);
+      } else if (item is Map) {
+        final record = InvestorNomineeRecord.fromJson(
+          Map<String, dynamic>.from(item),
+        );
+        if (!record.isEmpty) records.add(record);
+      }
+    }
+    return records;
   }
 
   static String? _readProfileImage(
@@ -353,6 +445,12 @@ class InvestorModel {
     }
 
     return 0;
+  }
+
+  static int? _readNullableInt(dynamic value) {
+    if (value == null) return null;
+    final parsed = _readInt(value);
+    return parsed > 0 ? parsed : null;
   }
 
   static double _readDouble(dynamic value) {

@@ -305,9 +305,9 @@ class _NotesCard extends StatelessWidget {
 
   static const _notes = [
     'Select an investor to auto-fill type, total, paid, remaining, and due details.',
-    'Tap Pay Due to auto-fill the full due amount into Paying Now.',
-    'You can edit Paying Now for a partial payment — cannot exceed the due.',
-    'When the full due is paid, status changes to Completed.',
+    'Pay Due fills the installment due; Settle Full fills the remaining investment balance.',
+    'Deposit amount is recorded as entered — discount is stored separately.',
+    'Add medical allowance notes in the dedicated description field when applicable.',
   ];
 
   @override

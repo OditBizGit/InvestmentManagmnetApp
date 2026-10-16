@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/staff_model.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_entry.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_additional_information.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
@@ -49,12 +51,16 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.mobileController,
     required this.alternateMobileController,
     required this.emailController,
+    required this.descriptionController,
     required this.addressController,
     required this.amountController,
     required this.usernameController,
     required this.passwordController,
     required this.investorType,
     required this.onTypeChanged,
+    this.selectedStaffId,
+    this.selectedStaffName,
+    required this.onStaffChanged,
     required this.investmentDate,
     required this.onPickDate,
     required this.formatDate,
@@ -81,19 +87,25 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.bankNameController,
     required this.ifscController,
     required this.accountNumberController,
-    required this.nomineeNameController,
-    required this.nomineeAddressController,
-    required this.nomineeRelationship,
+    this.aadhaarCardPhoto,
+    this.existingAadhaarCardImageUrl,
+    required this.onPickAadhaarCardPhoto,
+    required this.onClearAadhaarCardPhoto,
+    this.panCardPhoto,
+    this.existingPanCardImageUrl,
+    required this.onPickPanCardPhoto,
+    required this.onClearPanCardPhoto,
+    required this.nominees,
+    required this.onAddNominee,
+    required this.onRemoveNominee,
     required this.onNomineeRelationshipChanged,
-    required this.nomineeAadhaarController,
-    required this.nomineePanController,
-    required this.nomineeDateOfBirth,
     required this.onPickNomineeDateOfBirth,
-    required this.nomineePhoneController,
-    this.nomineePhoto,
-    this.existingNomineeImageUrl,
-    required this.onPickNomineePhoto,
-    required this.onClearNomineePhoto,
+    required this.onPickNomineeProfilePhoto,
+    required this.onClearNomineeProfilePhoto,
+    required this.onPickNomineeAadhaarCardPhoto,
+    required this.onClearNomineeAadhaarCardPhoto,
+    required this.onPickNomineePanCardPhoto,
+    required this.onClearNomineePanCardPhoto,
     DateTime? dateOfBirth,
   });
 
@@ -104,12 +116,16 @@ class AddInvestorFormCards extends StatelessWidget {
   final TextEditingController mobileController;
   final TextEditingController alternateMobileController;
   final TextEditingController emailController;
+  final TextEditingController descriptionController;
   final TextEditingController addressController;
   final TextEditingController amountController;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final String? investorType;
   final ValueChanged<String?> onTypeChanged;
+  final int? selectedStaffId;
+  final String? selectedStaffName;
+  final ValueChanged<int?> onStaffChanged;
   final DateTime? investmentDate;
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
@@ -136,19 +152,25 @@ class AddInvestorFormCards extends StatelessWidget {
   final TextEditingController bankNameController;
   final TextEditingController ifscController;
   final TextEditingController accountNumberController;
-  final TextEditingController nomineeNameController;
-  final TextEditingController nomineeAddressController;
-  final String? nomineeRelationship;
-  final ValueChanged<String?> onNomineeRelationshipChanged;
-  final TextEditingController nomineeAadhaarController;
-  final TextEditingController nomineePanController;
-  final DateTime? nomineeDateOfBirth;
-  final VoidCallback onPickNomineeDateOfBirth;
-  final TextEditingController nomineePhoneController;
-  final PickedPhoto? nomineePhoto;
-  final String? existingNomineeImageUrl;
-  final VoidCallback onPickNomineePhoto;
-  final VoidCallback onClearNomineePhoto;
+  final PickedPhoto? aadhaarCardPhoto;
+  final String? existingAadhaarCardImageUrl;
+  final VoidCallback onPickAadhaarCardPhoto;
+  final VoidCallback onClearAadhaarCardPhoto;
+  final PickedPhoto? panCardPhoto;
+  final String? existingPanCardImageUrl;
+  final VoidCallback onPickPanCardPhoto;
+  final VoidCallback onClearPanCardPhoto;
+  final List<InvestorNomineeEntry> nominees;
+  final VoidCallback onAddNominee;
+  final ValueChanged<int> onRemoveNominee;
+  final void Function(int index, String? value) onNomineeRelationshipChanged;
+  final ValueChanged<int> onPickNomineeDateOfBirth;
+  final ValueChanged<int> onPickNomineeProfilePhoto;
+  final ValueChanged<int> onClearNomineeProfilePhoto;
+  final ValueChanged<int> onPickNomineeAadhaarCardPhoto;
+  final ValueChanged<int> onClearNomineeAadhaarCardPhoto;
+  final ValueChanged<int> onPickNomineePanCardPhoto;
+  final ValueChanged<int> onClearNomineePanCardPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -163,9 +185,13 @@ class AddInvestorFormCards extends StatelessWidget {
             mobileController: mobileController,
             alternateMobileController: alternateMobileController,
             emailController: emailController,
+            descriptionController: descriptionController,
             addressController: addressController,
             investorType: investorType,
             onTypeChanged: onTypeChanged,
+            selectedStaffId: selectedStaffId,
+            selectedStaffName: selectedStaffName,
+            onStaffChanged: onStaffChanged,
             profilePhoto: profilePhoto,
             existingProfileImageUrl: existingProfileImageUrl,
             onPickProfilePhoto: onPickProfilePhoto,
@@ -205,20 +231,26 @@ class AddInvestorFormCards extends StatelessWidget {
             bankNameController: bankNameController,
             ifscController: ifscController,
             accountNumberController: accountNumberController,
-            nomineeNameController: nomineeNameController,
-            nomineeAddressController: nomineeAddressController,
-            nomineeRelationship: nomineeRelationship,
+            aadhaarCardPhoto: aadhaarCardPhoto,
+            existingAadhaarCardImageUrl: existingAadhaarCardImageUrl,
+            onPickAadhaarCardPhoto: onPickAadhaarCardPhoto,
+            onClearAadhaarCardPhoto: onClearAadhaarCardPhoto,
+            panCardPhoto: panCardPhoto,
+            existingPanCardImageUrl: existingPanCardImageUrl,
+            onPickPanCardPhoto: onPickPanCardPhoto,
+            onClearPanCardPhoto: onClearPanCardPhoto,
+            nominees: nominees,
+            onAddNominee: onAddNominee,
+            onRemoveNominee: onRemoveNominee,
             onNomineeRelationshipChanged: onNomineeRelationshipChanged,
-            nomineeAadhaarController: nomineeAadhaarController,
-            nomineePanController: nomineePanController,
-            nomineeDateOfBirth: nomineeDateOfBirth,
             onPickNomineeDateOfBirth: onPickNomineeDateOfBirth,
             formatDate: formatDate,
-            nomineePhoneController: nomineePhoneController,
-            nomineePhoto: nomineePhoto,
-            existingNomineeImageUrl: existingNomineeImageUrl,
-            onPickNomineePhoto: onPickNomineePhoto,
-            onClearNomineePhoto: onClearNomineePhoto,
+            onPickNomineeProfilePhoto: onPickNomineeProfilePhoto,
+            onClearNomineeProfilePhoto: onClearNomineeProfilePhoto,
+            onPickNomineeAadhaarCardPhoto: onPickNomineeAadhaarCardPhoto,
+            onClearNomineeAadhaarCardPhoto: onClearNomineeAadhaarCardPhoto,
+            onPickNomineePanCardPhoto: onPickNomineePanCardPhoto,
+            onClearNomineePanCardPhoto: onClearNomineePanCardPhoto,
           ),
         ],
       ),
@@ -234,9 +266,13 @@ class _BasicInformationCard extends StatelessWidget {
     required this.mobileController,
     required this.alternateMobileController,
     required this.emailController,
+    required this.descriptionController,
     required this.addressController,
     required this.investorType,
     required this.onTypeChanged,
+    this.selectedStaffId,
+    this.selectedStaffName,
+    required this.onStaffChanged,
     this.profilePhoto,
     this.existingProfileImageUrl,
     required this.onPickProfilePhoto,
@@ -249,9 +285,13 @@ class _BasicInformationCard extends StatelessWidget {
   final TextEditingController mobileController;
   final TextEditingController alternateMobileController;
   final TextEditingController emailController;
+  final TextEditingController descriptionController;
   final TextEditingController addressController;
   final String? investorType;
   final ValueChanged<String?> onTypeChanged;
+  final int? selectedStaffId;
+  final String? selectedStaffName;
+  final ValueChanged<int?> onStaffChanged;
   final PickedPhoto? profilePhoto;
   final String? existingProfileImageUrl;
   final VoidCallback onPickProfilePhoto;
@@ -280,6 +320,21 @@ class _BasicInformationCard extends StatelessWidget {
     final digits = mobile.replaceAll(RegExp(r'\D'), '');
     if (digits.length != 10) {
       return 'Enter a valid 10-digit mobile number';
+    }
+    return null;
+  }
+
+  static final _emailPattern = RegExp(
+    r'^[\w.+-]+@[\w-]+\.[\w.-]+$',
+  );
+
+  String? _validateRequiredEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) {
+      return 'Please enter email address';
+    }
+    if (!_emailPattern.hasMatch(email)) {
+      return 'Enter a valid email address';
     }
     return null;
   }
@@ -328,6 +383,16 @@ class _BasicInformationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     AddInvestorLabeledField(
+                      label: isEditing ? 'Assigned Staff' : 'Choose Staff',
+                      isRequired: true,
+                      child: _StaffDropdown(
+                        selectedStaffId: selectedStaffId,
+                        selectedStaffName: selectedStaffName,
+                        onChanged: onStaffChanged,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    AddInvestorLabeledField(
                       label: 'Organization',
                       child: AddInvestorTextInput(
                         controller: organizationController,
@@ -360,10 +425,12 @@ class _BasicInformationCard extends StatelessWidget {
                     const SizedBox(height: 14),
                     AddInvestorLabeledField(
                       label: 'Email Address',
+                      isRequired: true,
                       child: AddInvestorTextInput(
                         controller: emailController,
                         hint: 'Enter email address',
                         keyboardType: TextInputType.emailAddress,
+                        validator: _validateRequiredEmail,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -380,6 +447,15 @@ class _BasicInformationCard extends StatelessWidget {
                           }
                           return null;
                         },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    AddInvestorLabeledField(
+                      label: 'Description About Investor',
+                      child: AddInvestorTextInput(
+                        controller: descriptionController,
+                        hint: 'Enter description about investor',
+                        maxLines: 3,
                       ),
                     ),
                   ],
@@ -418,6 +494,16 @@ class _BasicInformationCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 14),
+                  AddInvestorLabeledField(
+                    label: isEditing ? 'Assigned Staff' : 'Choose Staff',
+                    isRequired: true,
+                    child: _StaffDropdown(
+                      selectedStaffId: selectedStaffId,
+                      selectedStaffName: selectedStaffName,
+                      onChanged: onStaffChanged,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Row(
@@ -468,10 +554,12 @@ class _BasicInformationCard extends StatelessWidget {
                       Expanded(
                         child: AddInvestorLabeledField(
                           label: 'Email Address',
+                          isRequired: true,
                           child: AddInvestorTextInput(
                             controller: emailController,
                             hint: 'Enter email address',
                             keyboardType: TextInputType.emailAddress,
+                            validator: _validateRequiredEmail,
                           ),
                         ),
                       ),
@@ -491,6 +579,15 @@ class _BasicInformationCard extends StatelessWidget {
                         }
                         return null;
                       },
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  AddInvestorLabeledField(
+                    label: 'Description About Investor',
+                    child: AddInvestorTextInput(
+                      controller: descriptionController,
+                      hint: 'Enter description about investor',
+                      maxLines: 3,
                     ),
                   ),
                 ],
@@ -556,6 +653,132 @@ class _InvestorTypeDropdown extends StatelessWidget {
               : 'Select investor type',
           items: types,
           onChanged: onChanged,
+        );
+      },
+    );
+  }
+}
+
+class _StaffDropdown extends StatelessWidget {
+  const _StaffDropdown({
+    required this.selectedStaffId,
+    this.selectedStaffName,
+    required this.onChanged,
+  });
+
+  final int? selectedStaffId;
+  final String? selectedStaffName;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<InvestorsCubit, InvestorsState>(
+      listener: (context, state) {
+        if (state is StaffListFailure) {
+          AppToast.error(state.message, context: context);
+        }
+      },
+      builder: (context, state) {
+        final cubit = context.read<InvestorsCubit>();
+        final isLoading = state is StaffListLoading ||
+            (state is InvestorsInitial && cubit.staffList.isEmpty);
+        final staffMembers = state is StaffListSuccess
+            ? state.staff
+            : cubit.staffList;
+
+        if (isLoading) {
+          return Container(
+            height: 48,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.newBorder, width: 1),
+            ),
+            child: const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+
+        var labels = staffMembers.map((s) => s.dropdownLabel).toList();
+        String? selectedLabel;
+        if (selectedStaffId != null) {
+          for (final member in staffMembers) {
+            if (member.staffId == selectedStaffId) {
+              selectedLabel = member.dropdownLabel;
+              break;
+            }
+          }
+        }
+
+        final fallbackName = selectedStaffName?.trim();
+        if (selectedLabel == null &&
+            selectedStaffId != null &&
+            fallbackName != null &&
+            fallbackName.isNotEmpty) {
+          selectedLabel = fallbackName;
+          if (!labels.contains(selectedLabel)) {
+            labels = [...labels, selectedLabel];
+          }
+        }
+
+        return FormField<int>(
+          initialValue: selectedStaffId,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (value) {
+            if (value == null || value <= 0) {
+              return 'Please select a staff member';
+            }
+            return null;
+          },
+          builder: (field) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AddInvestorDropdownInput(
+                  value: selectedLabel,
+                  hint: labels.isEmpty
+                      ? 'No staff available'
+                      : 'Select staff member',
+                  items: labels,
+                  onChanged: (label) {
+                    if (label == null) {
+                      field.didChange(null);
+                      onChanged(null);
+                      return;
+                    }
+                    InvestorStaffModel? match;
+                    for (final member in staffMembers) {
+                      if (member.dropdownLabel == label ||
+                          member.fullName == label) {
+                        match = member;
+                        break;
+                      }
+                    }
+                    final staffId = match?.staffId ??
+                        (label == fallbackName ? selectedStaffId : null);
+                    field.didChange(staffId);
+                    onChanged(staffId);
+                  },
+                ),
+                if (field.hasError) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    field.errorText!,
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         );
       },
     );

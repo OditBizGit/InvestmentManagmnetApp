@@ -32,6 +32,10 @@ class AddFundFormCard extends StatelessWidget {
     required this.payingNowController,
     required this.payingNowValidator,
     required this.onPayDue,
+    required this.onSettleFull,
+    required this.discountController,
+    required this.discountValidator,
+    required this.medicalAllowanceController,
     required this.paymentMethodOptions,
     required this.selectedPaymentMethod,
     required this.onPaymentMethodChanged,
@@ -41,6 +45,7 @@ class AddFundFormCard extends StatelessWidget {
     required this.descriptionController,
     this.isLoadingInvestors = false,
     this.canPayDue = false,
+    this.canSettleFull = false,
   });
 
   final GlobalKey<FormState> formKey;
@@ -57,6 +62,10 @@ class AddFundFormCard extends StatelessWidget {
   final TextEditingController payingNowController;
   final String? Function(String?) payingNowValidator;
   final VoidCallback onPayDue;
+  final VoidCallback onSettleFull;
+  final TextEditingController discountController;
+  final String? Function(String?) discountValidator;
+  final TextEditingController medicalAllowanceController;
   final List<String> paymentMethodOptions;
   final String? selectedPaymentMethod;
   final ValueChanged<String?> onPaymentMethodChanged;
@@ -66,6 +75,7 @@ class AddFundFormCard extends StatelessWidget {
   final TextEditingController descriptionController;
   final bool isLoadingInvestors;
   final bool canPayDue;
+  final bool canSettleFull;
 
   @override
   Widget build(BuildContext context) {
@@ -186,27 +196,51 @@ class AddFundFormCard extends StatelessWidget {
                   ),
                 );
                 final payingNowField = _LabeledField(
-                  label: 'Paying Now',
+                  label: 'Deposit Amount (Paying Now)',
                   isRequired: true,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: _TextInput(
-                          controller: payingNowController,
-                          hint: 'Enter amount (partial OK)',
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          validator: payingNowValidator,
+                      _TextInput(
+                        controller: payingNowController,
+                        hint: 'Enter deposit amount',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
                         ),
+                        validator: payingNowValidator,
                       ),
-                      const SizedBox(width: 10),
-                      _PayDueButton(
-                        enabled: canPayDue,
-                        onTap: onPayDue,
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _QuickAmountButton(
+                              label: 'Pay Due',
+                              enabled: canPayDue,
+                              onTap: onPayDue,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _QuickAmountButton(
+                              label: 'Settle Full',
+                              enabled: canSettleFull,
+                              onTap: onSettleFull,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
+                  ),
+                );
+                final discountField = _LabeledField(
+                  label: 'Discount',
+                  child: _TextInput(
+                    controller: discountController,
+                    hint: 'Optional — does not reduce deposit recorded',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: discountValidator,
                   ),
                 );
                 final paymentMethodField = _LabeledField(
@@ -237,8 +271,16 @@ class AddFundFormCard extends StatelessWidget {
                   label: 'Description',
                   child: _TextInput(
                     controller: descriptionController,
-                    hint: 'Enter description',
-                    maxLines: 4,
+                    hint: 'Enter payment description / narration',
+                    maxLines: 3,
+                  ),
+                );
+                final medicalAllowanceField = _LabeledField(
+                  label: 'Medical Allowance Description',
+                  child: _TextInput(
+                    controller: medicalAllowanceController,
+                    hint: 'Enter medical allowance details (optional)',
+                    maxLines: 3,
                   ),
                 );
 
@@ -261,11 +303,15 @@ class AddFundFormCard extends StatelessWidget {
                       const SizedBox(height: 14),
                       payingNowField,
                       const SizedBox(height: 14),
+                      discountField,
+                      const SizedBox(height: 14),
                       paymentMethodField,
                       const SizedBox(height: 14),
                       dateField,
                       const SizedBox(height: 14),
                       descriptionField,
+                      const SizedBox(height: 14),
+                      medicalAllowanceField,
                     ],
                   );
                 }
@@ -303,6 +349,8 @@ class AddFundFormCard extends StatelessWidget {
                     const SizedBox(height: 14),
                     payingNowField,
                     const SizedBox(height: 14),
+                    discountField,
+                    const SizedBox(height: 14),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -313,6 +361,8 @@ class AddFundFormCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     descriptionField,
+                    const SizedBox(height: 14),
+                    medicalAllowanceField,
                   ],
                 );
               },
@@ -447,19 +497,21 @@ class _DueAmountField extends StatelessWidget {
   }
 }
 
-class _PayDueButton extends StatelessWidget {
-  const _PayDueButton({
+class _QuickAmountButton extends StatelessWidget {
+  const _QuickAmountButton({
+    required this.label,
     required this.enabled,
     required this.onTap,
   });
 
+  final String label;
   final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: 44,
       child: ElevatedButton(
         onPressed: enabled ? onTap : null,
         style: ElevatedButton.styleFrom(
@@ -468,13 +520,13 @@ class _PayDueButton extends StatelessWidget {
           disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.45),
           disabledForegroundColor: AppColors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
         child: Text(
-          'Pay Due',
+          label,
           style: TextStyle(
             fontSize: 10.sp,
             fontWeight: FontWeight.w600,

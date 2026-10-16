@@ -36,6 +36,20 @@ final class InvestorTypesFailure extends InvestorsState {
   final String message;
 }
 
+final class StaffListLoading extends InvestorsState {}
+
+final class StaffListSuccess extends InvestorsState {
+  StaffListSuccess(this.staff);
+
+  final List<InvestorStaffModel> staff;
+}
+
+final class StaffListFailure extends InvestorsState {
+  StaffListFailure(this.message);
+
+  final String message;
+}
+
 final class RegisterInvestorLoading extends InvestorsState {}
 
 final class RegisterInvestorSuccess extends InvestorsState {

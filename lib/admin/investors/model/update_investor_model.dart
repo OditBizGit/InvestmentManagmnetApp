@@ -1,13 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_submit.dart';
 
 class UpdateInvestorRequestModel {
   final int userId;
+  final int? staffId;
+  final String? staffName;
   final String fullName;
   final String? email;
   final String? phoneNumber;
   final String? alternativeNumber;
   final String? investorType;
   final String? organization;
+  final String? description;
   final String? address;
 
   // KYC / Bank
@@ -27,27 +31,24 @@ class UpdateInvestorRequestModel {
   final double investmentAdvanceAmount;
   final String? paymentMethod;
 
-  // Nominee
-  final String? nomineeName;
-  final String? nomineeRelationship;
-  final String? nomineeAddress;
-  final DateTime? nomineeDateOfBirth;
-  final String? nomineeAadhaarNumber;
-  final String? nomineePanCardNumber;
-  final String? nomineePhoneNumber;
+  final List<InvestorNomineeSubmitData> nominees;
 
   // Images
   final MultipartFile? profileImage;
-  final MultipartFile? nomineeProfilePhoto;
+  final MultipartFile? aadhaarCardImage;
+  final MultipartFile? panCardImage;
 
   UpdateInvestorRequestModel({
     required this.userId,
+    this.staffId,
+    this.staffName,
     required this.fullName,
     this.email,
     this.phoneNumber,
     this.alternativeNumber,
     this.investorType,
     this.organization,
+    this.description,
     this.address,
     this.aadhaarNumber,
     this.panCardNumber,
@@ -62,15 +63,10 @@ class UpdateInvestorRequestModel {
     this.investmentSplitGap = 0,
     this.investmentAdvanceAmount = 0,
     this.paymentMethod,
-    this.nomineeName,
-    this.nomineeRelationship,
-    this.nomineeAddress,
-    this.nomineeDateOfBirth,
-    this.nomineeAadhaarNumber,
-    this.nomineePanCardNumber,
-    this.nomineePhoneNumber,
+    this.nominees = const [],
     this.profileImage,
-    this.nomineeProfilePhoto,
+    this.aadhaarCardImage,
+    this.panCardImage,
   });
 
   Future<FormData> toFormData() async {
@@ -79,6 +75,9 @@ class UpdateInvestorRequestModel {
     formData.fields.addAll([
       MapEntry('UserId', userId.toString()),
       MapEntry('FullName', fullName),
+
+      if (staffId != null && staffId! > 0)
+        MapEntry('StaffId', staffId.toString()),
 
       if (_hasValue(email))
         MapEntry('Email', email!),
@@ -94,6 +93,9 @@ class UpdateInvestorRequestModel {
 
       if (_hasValue(organization))
         MapEntry('Organization', organization!),
+
+      if (_hasValue(description))
+        MapEntry('Description', description!),
 
       if (_hasValue(address))
         MapEntry('Address', address!),
@@ -158,46 +160,6 @@ class UpdateInvestorRequestModel {
           'PaymentMethod',
           paymentMethod!,
         ),
-
-      // Nominee
-      if (_hasValue(nomineeName))
-        MapEntry('NomineeName', nomineeName!),
-
-      if (_hasValue(nomineeRelationship))
-        MapEntry(
-          'NomineeRelationship',
-          nomineeRelationship!,
-        ),
-
-      if (_hasValue(nomineeAddress))
-        MapEntry(
-          'NomineeAddress',
-          nomineeAddress!,
-        ),
-
-      if (nomineeDateOfBirth != null)
-        MapEntry(
-          'NomineeDateOfBirth',
-          nomineeDateOfBirth!.toIso8601String(),
-        ),
-
-      if (_hasValue(nomineeAadhaarNumber))
-        MapEntry(
-          'NomineeAadhaarNumber',
-          nomineeAadhaarNumber!,
-        ),
-
-      if (_hasValue(nomineePanCardNumber))
-        MapEntry(
-          'NomineePanCardNumber',
-          nomineePanCardNumber!,
-        ),
-
-      if (_hasValue(nomineePhoneNumber))
-        MapEntry(
-          'NomineePhoneNumber',
-          nomineePhoneNumber!,
-        ),
     ]);
 
     if (profileImage != null) {
@@ -206,10 +168,20 @@ class UpdateInvestorRequestModel {
       );
     }
 
-    if (nomineeProfilePhoto != null) {
+    if (aadhaarCardImage != null) {
       formData.files.add(
-        MapEntry('NomineeProfilePhoto', nomineeProfilePhoto!),
+        MapEntry('AadhaarCardImage', aadhaarCardImage!),
       );
+    }
+
+    if (panCardImage != null) {
+      formData.files.add(
+        MapEntry('PanCardImage', panCardImage!),
+      );
+    }
+
+    if (nominees.isNotEmpty) {
+      appendNomineesToFormData(formData, nominees);
     }
 
     return formData;

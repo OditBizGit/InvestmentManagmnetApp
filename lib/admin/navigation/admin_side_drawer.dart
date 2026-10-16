@@ -11,6 +11,8 @@ enum AdminDrawerItem {
   fundingPayments,
   workProgress,
   reports,
+  manageUsers,
+  duePayments,
   settings,
 }
 
@@ -56,7 +58,7 @@ class AdminSideDrawer extends StatelessWidget {
     ),
     _DrawerDestination(
       item: AdminDrawerItem.fundingPayments,
-      label: 'Funding & Payments',
+      label: 'Payments',
       icon: ImageConstants.addPayment,
     ),
     _DrawerDestination(
@@ -68,6 +70,22 @@ class AdminSideDrawer extends StatelessWidget {
       item: AdminDrawerItem.reports,
       label: 'Reports',
       icon: ImageConstants.reports,
+    ),
+    _DrawerDestination(
+      label: 'User Management',
+      icon: ImageConstants.username,
+      children: [
+        _DrawerDestination(
+          item: AdminDrawerItem.manageUsers,
+          label: 'Manage Users',
+          icon: ImageConstants.investors,
+        ),
+        _DrawerDestination(
+          item: AdminDrawerItem.duePayments,
+          label: 'Due Payments',
+          icon: ImageConstants.addPayment,
+        ),
+      ],
     ),
     _DrawerDestination(
       item: AdminDrawerItem.settings,
@@ -130,13 +148,21 @@ class AdminSideDrawer extends StatelessWidget {
                       separatorBuilder: (_, _) => const SizedBox(height: 4),
                       itemBuilder: (context, index) {
                         final destination = _destinations[index];
+                        if (destination.isGroup) {
+                          return _ExpandableDrawerGroup(
+                            destination: destination,
+                            selectedItem: selectedItem,
+                            showLabel: showLabels,
+                            onItemSelected: onItemSelected,
+                          );
+                        }
 
                         return _DrawerNavTile(
                           icon: destination.icon,
                           label: destination.label,
                           isSelected: destination.item == selectedItem,
                           showLabel: showLabels,
-                          onTap: () => onItemSelected(destination.item),
+                          onTap: () => onItemSelected(destination.item!),
                         );
                       },
                     ),
@@ -162,14 +188,157 @@ class AdminSideDrawer extends StatelessWidget {
 
 class _DrawerDestination {
   const _DrawerDestination({
-    required this.item,
+    this.item,
     required this.label,
     required this.icon,
+    this.children = const [],
   });
 
-  final AdminDrawerItem item;
+  final AdminDrawerItem? item;
   final String label;
   final String icon;
+  final List<_DrawerDestination> children;
+
+  bool get isGroup => children.isNotEmpty;
+}
+
+class _ExpandableDrawerGroup extends StatefulWidget {
+  const _ExpandableDrawerGroup({
+    required this.destination,
+    required this.selectedItem,
+    required this.showLabel,
+    required this.onItemSelected,
+  });
+
+  final _DrawerDestination destination;
+  final AdminDrawerItem selectedItem;
+  final bool showLabel;
+  final ValueChanged<AdminDrawerItem> onItemSelected;
+
+  @override
+  State<_ExpandableDrawerGroup> createState() => _ExpandableDrawerGroupState();
+}
+
+class _ExpandableDrawerGroupState extends State<_ExpandableDrawerGroup> {
+  late bool _expanded = _isChildSelected;
+
+  bool get _isChildSelected => widget.destination.children.any(
+        (child) => child.item == widget.selectedItem,
+      );
+
+  @override
+  void didUpdateWidget(covariant _ExpandableDrawerGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_isChildSelected && !_expanded) {
+      _expanded = true;
+    }
+  }
+
+  Future<void> _showCollapsedMenu() async {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    final offset = box.localToGlobal(Offset.zero);
+    final selected = await showMenu<AdminDrawerItem>(
+      context: context,
+      color: AppColors.white,
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      position: RelativeRect.fromLTRB(
+        offset.dx + box.size.width + 8,
+        offset.dy,
+        offset.dx + box.size.width + 180,
+        offset.dy + box.size.height,
+      ),
+      items: [
+        for (final child in widget.destination.children)
+          if (child.item != null)
+            PopupMenuItem<AdminDrawerItem>(
+              value: child.item,
+              child: Text(
+                child.label,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: child.item == widget.selectedItem
+                      ? FontWeight.w600
+                      : FontWeight.w400,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+      ],
+    );
+
+    if (selected != null) {
+      widget.onItemSelected(selected);
+    }
+  }
+
+  void _onParentTap() {
+    if (!widget.showLabel) {
+      _showCollapsedMenu();
+      return;
+    }
+    setState(() => _expanded = !_expanded);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parentTile = _DrawerNavTile(
+      icon: widget.destination.icon,
+      label: widget.destination.label,
+      isSelected: _isChildSelected,
+      showLabel: widget.showLabel,
+      trailing: widget.showLabel
+          ? AnimatedRotation(
+              turns: _expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 20,
+                color: _isChildSelected
+                    ? AppColors.textPrimary
+                    : AppColors.textMuted,
+              ),
+            )
+          : null,
+      onTap: _onParentTap,
+    );
+
+    if (!widget.showLabel || !_expanded) {
+      return parentTile;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        parentTile,
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 18),
+          child: Column(
+            children: [
+              for (final child in widget.destination.children) ...[
+                _DrawerNavTile(
+                  icon: child.icon,
+                  label: child.label,
+                  isSelected: child.item == widget.selectedItem,
+                  showLabel: true,
+                  compact: true,
+                  onTap: () {
+                    if (child.item != null) {
+                      widget.onItemSelected(child.item!);
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _AppVersionLabel extends StatelessWidget {
@@ -230,6 +399,8 @@ class _DrawerNavTile extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.showLabel,
+    this.trailing,
+    this.compact = false,
   });
 
   final String icon;
@@ -237,10 +408,13 @@ class _DrawerNavTile extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final bool showLabel;
+  final Widget? trailing;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final color = isSelected ? AppColors.textPrimary : AppColors.textMuted;
+    final iconSize = compact ? 20.0 : 24.0;
 
     final tile = Material(
       color: isSelected ? AppColors.cardBg : Colors.transparent,
@@ -251,7 +425,7 @@ class _DrawerNavTile extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: showLabel ? 12 : 0,
-            vertical: 11,
+            vertical: compact ? 8 : 11,
           ),
           child: Row(
             mainAxisAlignment:
@@ -259,8 +433,8 @@ class _DrawerNavTile extends StatelessWidget {
             children: [
               SvgPicture.asset(
                 icon,
-                width: 24,
-                height: 24,
+                width: iconSize,
+                height: iconSize,
                 colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
               ),
               if (showLabel) ...[
@@ -272,13 +446,14 @@ class _DrawerNavTile extends StatelessWidget {
                     softWrap: false,
                     overflow: TextOverflow.clip,
                     style: TextStyle(
-                      fontSize: 11.sp,
+                      fontSize: compact ? 10.5.sp : 11.sp,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: color,
                     ),
                   ),
                 ),
+                ?trailing,
               ],
             ],
           ),

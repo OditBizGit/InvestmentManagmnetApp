@@ -5,6 +5,7 @@ import 'package:maribel_wellness_centre_application/core/constants/api_endpoints
 
 import '../model/investor_response_model.dart';
 import '../model/investor_type_model.dart';
+import '../model/staff_model.dart';
 import '../model/register_investor_model.dart';
 import '../model/update_investor_model.dart';
 
@@ -33,6 +34,32 @@ class InvestorsRepository {
     } catch (e) {
       log(
         'Get Investors Error: $e',
+      );
+
+      rethrow;
+    }
+  }
+
+  Future<StaffListResponseModel> getStaffList() async {
+    try {
+      final response = await dio.get(
+        ApiEndpoints.staffList,
+      );
+
+      return StaffListResponseModel.fromJson(
+        response.data is Map<String, dynamic>
+            ? response.data as Map<String, dynamic>
+            : Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      log(
+        'Get Staff List Error: ${e.message}',
+      );
+
+      rethrow;
+    } catch (e) {
+      log(
+        'Get Staff List Error: $e',
       );
 
       rethrow;
@@ -77,16 +104,16 @@ class InvestorsRepository {
         data: formData,
       );
 
-      return RegisterInvestorResponseModel.fromJson(
-        response.data,
-      );
+      final payload = response.data is Map<String, dynamic>
+          ? response.data as Map<String, dynamic>
+          : Map<String, dynamic>.from(response.data as Map);
+
+      log('Register Investor completed with status code ${response.statusCode}');
+
+      return RegisterInvestorResponseModel.fromJson(payload);
     } on DioException catch (e) {
       log(
-        'Register Investor Error: ${e.message}',
-      );
-
-      log(
-        'Register Investor Response: ${e.response?.data}',
+        'Register Investor Error: ${e.message} (status ${e.response?.statusCode})',
       );
 
       rethrow;

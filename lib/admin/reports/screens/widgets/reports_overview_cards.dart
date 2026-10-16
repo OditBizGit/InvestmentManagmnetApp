@@ -38,7 +38,7 @@ class ReportsOverviewCards extends StatelessWidget {
             iconBg: const Color(0xFFF0EBF6),
           ),
           _StatCardData(
-            label: 'Total Investment By Investors',
+            label: 'Total Commitment By Investors',
             value: isLoading
                 ? '—'
                 : CurrencyFormatter.format(

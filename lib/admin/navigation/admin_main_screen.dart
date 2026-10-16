@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/investors_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/settings_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/cubit/user_management_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/due_payments/due_payments_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/manage_users_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_footer.dart';
 import 'package:maribel_wellness_centre_application/core/utils/logout_confirm_dialog.dart';
@@ -86,6 +89,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
         return AdminReportsScreen(
           isActive: _selectedItem == AdminDrawerItem.reports,
         );
+      case AdminDrawerItem.manageUsers:
+        return const ManageUsersScreen();
+      case AdminDrawerItem.duePayments:
+        return const DuePaymentsScreen();
       case AdminDrawerItem.settings:
         return const AdminSettingsScreen();
     }
@@ -93,11 +100,13 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _syncCollapsedForWidth(constraints.maxWidth);
+    return BlocProvider(
+      create: (_) => UserManagementCubit(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          _syncCollapsedForWidth(constraints.maxWidth);
 
-        return Scaffold(
+          return Scaffold(
           backgroundColor: AppColors.screenBg,
           body: NotificationListener<AdminNavigateNotification>(
             onNotification: (notification) {
@@ -140,8 +149,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               ),
             ),
           ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

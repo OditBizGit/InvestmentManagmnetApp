@@ -6,6 +6,7 @@ import 'package:sizer/sizer.dart';
 
 enum SettingsOptionType {
   createProject,
+  addStaffAndAllocation,
   addAdmin,
   userComplaints,
 }
@@ -26,6 +27,14 @@ class SettingsOptionCards extends StatelessWidget {
       icon: ImageConstants.profile,
       iconColor: Color(0xFF9B7EBF),
       iconBg: Color(0xFFF0EBF6),
+    ),
+    _OptionData(
+      type: SettingsOptionType.addStaffAndAllocation,
+      title: 'Add Staff and Allocation',
+      description: 'Manage staff and view investor assignments',
+      icon: ImageConstants.investors,
+      iconColor: Color(0xFFE8A838),
+      iconBg: Color(0xFFFFF4E0),
     ),
     _OptionData(
       type: SettingsOptionType.addAdmin,
