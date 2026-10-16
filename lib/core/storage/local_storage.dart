@@ -22,6 +22,7 @@ class LocalStorage {
   static const String _investorCodeKey = 'investor_code';
   static const String _profileImageKey = 'profile_image';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String _isActiveKey = 'is_active';
   static const String _fundingTransactionHistoryKey =
       'funding_transaction_history';
   static const String _fundingInvestorsListKey = 'funding_investors_list_v2';
@@ -84,6 +85,19 @@ class LocalStorage {
 
   bool getIsLoggedIn() => _prefs.getBool(_isLoggedInKey) ?? false;
 
+  Future<bool> setIsActive(bool value) =>
+      _prefs.setBool(_isActiveKey, value);
+
+  /// Returns the persisted account-active flag.
+  ///
+  /// Defaults to `true` when the key is missing so older sessions are not
+  /// treated as blocked until an API response confirms otherwise.
+  bool getIsActive() => _prefs.getBool(_isActiveKey) ?? true;
+
+  /// `null` when [isActive] has never been written for this session.
+  bool? getIsActiveOrNull() =>
+      _prefs.containsKey(_isActiveKey) ? _prefs.getBool(_isActiveKey) : null;
+
   // ── Funding / payments cache ──────────────────────────────────────
 
   Future<bool> setFundingTransactionHistoryJson(String json) =>
@@ -124,6 +138,7 @@ class LocalStorage {
     String? userEmail,
     String? investorCode,
     String? profileImage,
+    bool? isActive,
   }) async {
     await clearSession();
     await setAuthToken(authToken);
@@ -139,6 +154,7 @@ class LocalStorage {
     if (profileImage != null && profileImage.isNotEmpty) {
       await setProfileImage(profileImage);
     }
+    if (isActive != null) await setIsActive(isActive);
     await setIsLoggedIn(true);
   }
 
@@ -155,6 +171,7 @@ class LocalStorage {
       _prefs.remove(_investorCodeKey),
       _prefs.remove(_profileImageKey),
       _prefs.remove(_isLoggedInKey),
+      _prefs.remove(_isActiveKey),
       _prefs.remove(_fundingTransactionHistoryKey),
     ]);
   }

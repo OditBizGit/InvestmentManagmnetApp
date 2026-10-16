@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
@@ -50,6 +53,10 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
     return BlocConsumer<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state is LoginSuccess) {
+          if (AuthNavigationGuard.suppressAuthenticatedNavigation ||
+              !getIt<LocalStorage>().hasValidSession()) {
+            return;
+          }
           final message = state.response.message.isNotEmpty
               ? state.response.message
               : 'Logged in successfully';

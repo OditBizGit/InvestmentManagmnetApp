@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_status_monitor.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -39,6 +40,7 @@ class UserUpdatesScreen extends StatelessWidget {
           silent: hasCache,
           forceRefresh: true,
         );
+        AccountStatusMonitor.refresh();
         return cubit;
       },
       child: _UserUpdatesView(isActive: isActive),
@@ -86,6 +88,7 @@ class _UserUpdatesViewState extends State<_UserUpdatesView> {
               silent: true,
               forceRefresh: true,
             );
+        AccountStatusMonitor.refresh();
       });
     } else {
       _stopSilentRefresh();
@@ -137,10 +140,13 @@ class _UserUpdatesViewState extends State<_UserUpdatesView> {
 
     _isSilentRefreshing = true;
     try {
-      await context.read<UpdatesCubit>().loadUpdates(
-            silent: true,
-            forceRefresh: true,
-          );
+      await Future.wait<void>([
+        context.read<UpdatesCubit>().loadUpdates(
+              silent: true,
+              forceRefresh: true,
+            ),
+        AccountStatusMonitor.refresh(),
+      ]);
     } finally {
       _isSilentRefreshing = false;
     }
@@ -229,9 +235,14 @@ class _UserUpdatesViewState extends State<_UserUpdatesView> {
                   return Stack(
                     children: [
                       RefreshIndicator(
-                        onRefresh: () => context
-                            .read<UpdatesCubit>()
-                            .loadUpdates(forceRefresh: true),
+                        onRefresh: () async {
+                          await Future.wait<void>([
+                            context.read<UpdatesCubit>().loadUpdates(
+                                  forceRefresh: true,
+                                ),
+                            AccountStatusMonitor.refresh(),
+                          ]);
+                        },
                         child: ListView.builder(
                           controller: _scrollController,
                           padding: EdgeInsets.only(

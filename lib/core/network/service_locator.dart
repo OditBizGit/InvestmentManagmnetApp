@@ -11,6 +11,8 @@ import 'package:maribel_wellness_centre_application/admin/settings/screens/creat
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_status_monitor.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
@@ -60,6 +62,9 @@ Future<void> setupDi() async {
   // ── Core ──────────────────────────────────────────────────────────
   final localStorage = await LocalStorage.init();
   getIt.registerSingleton<LocalStorage>(localStorage);
+  getIt.registerSingleton<AccountBlockCubit>(
+    AccountBlockCubit(localStorage: localStorage),
+  );
 
   // Named base URL for repositories / API clients resolved via GetIt.
   getIt.registerLazySingleton<String>(
@@ -118,6 +123,7 @@ Future<void> setupDi() async {
             );
           }
 
+          AccountStatusMonitor.onResponse(response);
           handler.next(response);
         },
         onError: (error, handler) {

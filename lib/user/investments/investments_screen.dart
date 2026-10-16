@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_status_monitor.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -26,6 +28,7 @@ class UserInvestmentsScreen extends StatelessWidget {
   static const Color _green = Color(0xFF1BA752);
   static const Color _greenSoft = Color(0xFFE6F6EC);
   static const Color _red = Color(0xFFE05A4F);
+  static const Color _redSoft = Color(0xFFFDECEA);
   static const Color _border = Color(0xFFE8E4EE);
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
@@ -145,7 +148,10 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
 
     _isSilentRefreshing = true;
     try {
-      await context.read<InvestmentsCubit>().loadInvestments(silent: true);
+      await Future.wait<void>([
+        context.read<InvestmentsCubit>().loadInvestments(silent: true),
+        AccountStatusMonitor.refresh(),
+      ]);
     } finally {
       _isSilentRefreshing = false;
     }
@@ -179,9 +185,14 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
               children: [
                 Padding(
                   padding: EdgeInsets.fromLTRB(4.w, 1.5.h, 4.w, 0.8.h),
-                  child: _InvestmentsHeader(
-                    investorCode: data?.investorCode,
-                    isLoading: isLoading,
+                  child: BlocBuilder<AccountBlockCubit, AccountBlockState>(
+                    builder: (context, blockState) {
+                      return _InvestmentsHeader(
+                        investorCode: data?.investorCode,
+                        isActive: blockState is! AccountBlocked,
+                        isLoading: isLoading,
+                      );
+                    },
                   ),
                 ),
                 Expanded(
@@ -189,8 +200,12 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
                     children: [
                       RefreshIndicator(
                         color: AppColors.accent,
-                        onRefresh: () =>
+                        onRefresh: () async {
+                          await Future.wait<void>([
                             context.read<InvestmentsCubit>().loadInvestments(),
+                            AccountStatusMonitor.refresh(),
+                          ]);
+                        },
                         child: SingleChildScrollView(
                           controller: _scrollController,
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -248,14 +263,22 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
 class _InvestmentsHeader extends StatelessWidget {
   const _InvestmentsHeader({
     this.investorCode,
+    this.isActive = false,
     this.isLoading = false,
   });
 
   final String? investorCode;
+  final bool isActive;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final statusBackground = isActive
+        ? UserInvestmentsScreen._greenSoft
+        : UserInvestmentsScreen._redSoft;
+    final statusColor =
+        isActive ? UserInvestmentsScreen._green : UserInvestmentsScreen._red;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -283,11 +306,11 @@ class _InvestmentsHeader extends StatelessWidget {
               ),
               const Spacer(),
               _StatusChip(
-                background: UserInvestmentsScreen._greenSoft,
+                background: statusBackground,
                 iconPath: ImageConstants.active,
-                iconColor: UserInvestmentsScreen._green,
-                label: 'Active',
-                labelColor: UserInvestmentsScreen._green,
+                iconColor: statusColor,
+                label: isActive ? 'Active' : 'Inactive',
+                labelColor: statusColor,
               ),
             ],
           ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_routes.dart';
+import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -88,17 +91,30 @@ class _SplashScreenState extends State<SplashScreen>
     await Future<void>.delayed(_delayBeforeNavigate);
     if (!mounted) return;
 
-    final hasSession = getIt<LocalStorage>().hasValidSession();
+    final storage = getIt<LocalStorage>();
+    final hasSession = storage.hasValidSession() &&
+        !AuthNavigationGuard.suppressAuthenticatedNavigation;
+    final role = storage.getUserRole()?.toLowerCase();
+
+    // Apply persisted block state before the shell mounts so the overlay
+    // is present on the first frame when the account was already blocked.
+    if (hasSession &&
+        role == 'investor' &&
+        getIt.isRegistered<AccountBlockCubit>()) {
+      getIt<AccountBlockCubit>().syncFromStorage();
+    }
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
+        settings: hasSession
+            ? const RouteSettings()
+            : const RouteSettings(name: AccountBlockRoutes.login),
         builder: (_) => hasSession
             ? widget.homeAfterLogin
             : LoginScreen(home: widget.homeAfterLogin),
       ),
     );
 
-    final role = getIt<LocalStorage>().getUserRole()?.toLowerCase();
     if (hasSession && role == 'investor') {
       getIt<NotificationService>().handlePendingInitialMessage();
     }

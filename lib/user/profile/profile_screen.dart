@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/login_screen.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_routes.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -60,6 +61,7 @@ class _UserProfileView extends StatelessWidget {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AccountBlockRoutes.login),
         builder: (_) => const LoginScreen(
           home: UserMainScreen(),
           snackBarMessage: 'Logged out successfully',

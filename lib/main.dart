@@ -11,6 +11,10 @@ import 'package:maribel_wellness_centre_application/admin/work_progress/screens/
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
 import 'package:maribel_wellness_centre_application/auth/splash_screen.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_routes.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_blocked_overlay.dart';
+import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
@@ -32,7 +36,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 // `true` → Admin interface · `false` → User interface
-const bool isAdmin = true;
+const bool isAdmin = false;
 
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -130,6 +134,10 @@ class MyApp extends StatelessWidget {
           BlocProvider<DashboardCubit>(
             create: (_) => getIt<DashboardCubit>(),
           ),
+          if (!isAdmin)
+            BlocProvider<AccountBlockCubit>.value(
+              value: getIt<AccountBlockCubit>(),
+            ),
         ],
         child: Sizer(
           builder: (context, orientation, screenType) {
@@ -146,6 +154,48 @@ class MyApp extends StatelessWidget {
                   textTheme: baseTextTheme,
                   primaryTextTheme: basePrimaryTextTheme,
                 ),
+                navigatorObservers: isAdmin
+                    ? const <NavigatorObserver>[]
+                    : <NavigatorObserver>[accountBlockNavigatorObserver],
+                builder: isAdmin
+                    ? null
+                    : (context, child) {
+                        return ValueListenableBuilder<bool>(
+                          valueListenable:
+                              AuthNavigationGuard.holdBlockedOverlay,
+                          builder: (context, holdOverlay, _) {
+                            return ValueListenableBuilder<bool>(
+                              valueListenable:
+                                  accountBlockNavigatorObserver.onAuthRoute,
+                              builder: (context, onAuthRoute, _) {
+                                return BlocBuilder<AccountBlockCubit,
+                                    AccountBlockState>(
+                                  builder: (context, state) {
+                                    // Stay covered until login replaces the
+                                    // authenticated stack. Splash and login
+                                    // do not.
+                                    final isBlocked = !onAuthRoute &&
+                                        (state is AccountBlocked ||
+                                            holdOverlay);
+                                    return Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        IgnorePointer(
+                                          ignoring: isBlocked,
+                                          child:
+                                              child ?? const SizedBox.shrink(),
+                                        ),
+                                        if (isBlocked)
+                                          const AccountBlockedOverlay(),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
                 home: SplashScreen(
                   homeAfterLogin: isAdmin
                       ? const AdminMainScreen()

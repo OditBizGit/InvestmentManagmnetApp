@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/auth/model/login_response_model.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 
@@ -10,21 +13,20 @@ class LoginCubit extends Cubit<LoginState> {
   LoginCubit({
     required this._authRepository,
     required this._localStorage,
-    // required this._notificationService,
     required this._notificationService,
-  })  : super(LoginInitial());
+  }) : super(LoginInitial());
 
   final AuthRepository _authRepository;
   final LocalStorage _localStorage;
-  // final NotificationService _notificationService;
   final NotificationService? _notificationService;
-
 
   Future<void> login({
     required String username,
     required String password,
     String? requiredRole,
   }) async {
+    AuthNavigationGuard.suppressAuthenticatedNavigation = false;
+    AuthNavigationGuard.holdBlockedOverlay.value = false;
     emit(LoginLoading());
     try {
       final response = await _authRepository.login(
@@ -71,12 +73,16 @@ class LoginCubit extends Cubit<LoginState> {
             (profileImage != null && profileImage.isNotEmpty)
                 ? profileImage
                 : null,
+        isActive: data.isActive,
       );
 
-      // FCM device registration is investor/user-side only.
-      // if (data.userRole.toLowerCase() == 'investor') {
-      //   _notificationService.registerDeviceToken();
-      // }
+      // Ensure block state matches login even if the Dio monitor raced
+      // with [saveSession]'s clear-then-write sequence.
+      if (data.userRole.toLowerCase() == 'investor' &&
+          getIt.isRegistered<AccountBlockCubit>()) {
+        await getIt<AccountBlockCubit>().applyIsActive(data.isActive);
+      }
+
       if (data.userRole.toLowerCase() == 'investor') {
         await _notificationService?.registerDeviceToken();
       }
@@ -91,9 +97,16 @@ class LoginCubit extends Cubit<LoginState> {
     }
   }
 
-  /// Clears the stored auth token and all session data, then resets state.
+  /// Clears SharedPreferences first, then resets auth state.
+  ///
+  /// Sets [AuthNavigationGuard.suppressAuthenticatedNavigation] before the
+  /// first await so in-flight listeners cannot open the home shell.
   Future<void> logout() async {
+    AuthNavigationGuard.suppressAuthenticatedNavigation = true;
     await _localStorage.clearSession();
+    if (getIt.isRegistered<AccountBlockCubit>()) {
+      getIt<AccountBlockCubit>().reset();
+    }
     emit(LoginInitial());
   }
 }

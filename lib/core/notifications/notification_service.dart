@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/user/home/notification_screen.dart';
 import 'package:maribel_wellness_centre_application/user/home/repository/notifications_repository.dart';
@@ -214,6 +215,11 @@ class NotificationService {
   }
 
   void _openNotificationScreen() {
+    if (AuthNavigationGuard.suppressAuthenticatedNavigation ||
+        !_isInvestorSession()) {
+      return;
+    }
+
     final navigator = notificationNavigatorKey.currentState;
     if (navigator == null) return;
 

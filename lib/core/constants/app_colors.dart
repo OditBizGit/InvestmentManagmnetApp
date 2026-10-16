@@ -17,4 +17,5 @@ class AppColors {
   static const Color error = Colors.redAccent;
   static const Color newBorder = Color(0x1A727475);
   static const Color successBg = Color(0xFFA28CC1);
+  static const Color disabled = Color(0xFF35051C);
 }

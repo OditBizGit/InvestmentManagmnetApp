@@ -33,6 +33,7 @@ class LoginDataModel {
   final String? profileImage;
   final String userRole;
   final String token;
+  final bool isActive;
 
   LoginDataModel({
     required this.userId,
@@ -44,6 +45,7 @@ class LoginDataModel {
     this.profileImage,
     required this.userRole,
     required this.token,
+    required this.isActive,
   });
 
   factory LoginDataModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,7 @@ class LoginDataModel {
       profileImage: json['profileImage'],
       userRole: json['userRole'] ?? '',
       token: json['token'] ?? '',
+      isActive: json['isActive'] ?? false,
     );
   }
 }

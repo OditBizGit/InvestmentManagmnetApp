@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/core/account/account_status_monitor.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
@@ -38,6 +39,7 @@ class UserStatusScreen extends StatelessWidget {
           silent: hasCache,
           forceRefresh: true,
         );
+        AccountStatusMonitor.refresh();
         return cubit;
       },
       child: _UserStatusView(isActive: isActive),
@@ -83,6 +85,7 @@ class _UserStatusViewState extends State<_UserStatusView> {
               silent: true,
               forceRefresh: true,
             );
+        AccountStatusMonitor.refresh();
       });
     } else {
       _stopSilentRefresh();
@@ -114,10 +117,13 @@ class _UserStatusViewState extends State<_UserStatusView> {
 
     _isSilentRefreshing = true;
     try {
-      await context.read<StatusCubit>().loadStatuses(
-            silent: true,
-            forceRefresh: true,
-          );
+      await Future.wait<void>([
+        context.read<StatusCubit>().loadStatuses(
+              silent: true,
+              forceRefresh: true,
+            ),
+        AccountStatusMonitor.refresh(),
+      ]);
     } finally {
       _isSilentRefreshing = false;
     }
@@ -200,9 +206,14 @@ class _UserStatusViewState extends State<_UserStatusView> {
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => context
-                        .read<StatusCubit>()
-                        .loadStatuses(forceRefresh: true),
+                    onRefresh: () async {
+                      await Future.wait<void>([
+                        context.read<StatusCubit>().loadStatuses(
+                              forceRefresh: true,
+                            ),
+                        AccountStatusMonitor.refresh(),
+                      ]);
+                    },
                     child: ListView.separated(
                       controller: _scrollController,
                       padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 1.5.h),
