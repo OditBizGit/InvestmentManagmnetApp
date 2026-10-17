@@ -443,6 +443,16 @@ class _InvestmentDetailsScreenState extends State<InvestmentDetailsScreen> {
   static String _formatCurrency(double amount) =>
       CurrencyFormatter.format(amount);
 
+  String _lastPaymentLabel() {
+    final amount = details?.lastPaymentAmount ?? 0;
+    final date = details?.lastPaymentDate;
+    final amountText = amount > 0 ? _formatCurrency(amount) : '';
+    if (date == null) return 'Last Payment: $amountText';
+    final dateText = _formatDate(date);
+    if (amountText.isEmpty) return 'Last Payment: $dateText';
+    return 'Last Payment: $amountText · $dateText';
+  }
+
   @override
   Widget build(BuildContext context) {
     final payments = _payments;
@@ -558,6 +568,29 @@ class _InvestmentDetailsScreenState extends State<InvestmentDetailsScreen> {
                                 : AppColors.error,
                           ),
                         ),
+                        if ((details?.discountAmount ?? 0) > 0) ...[
+                          SizedBox(height: 0.4.h),
+                          Text(
+                            'Discount: ${_formatCurrency(details!.discountAmount)}',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ],
+                        if ((details?.lastPaymentAmount ?? 0) > 0 ||
+                            details?.lastPaymentDate != null) ...[
+                          SizedBox(height: 0.3.h),
+                          Text(
+                            _lastPaymentLabel(),
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
                         SizedBox(height: 0.1.h),
                         _InvestmentMetaRow(
                           installmentCount: _resolvedInstallmentCount,

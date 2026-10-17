@@ -20,6 +20,7 @@ import 'package:maribel_wellness_centre_application/user/profile/register_compla
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
@@ -181,7 +182,9 @@ class _UserProfileView extends StatelessWidget {
                       color: AppColors.error,
                       onTap: () => _onLogout(context),
                     ),
-                    SizedBox(height: 0.5.h),
+                    SizedBox(height: 2.h),
+                    const _SocialMediaRow(),
+                    SizedBox(height: 1.5.h),
                     const _AppVersionLabel(),
                   ],
                 ),
@@ -686,6 +689,93 @@ class _PlaceholderLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SocialMediaRow extends StatelessWidget {
+  const _SocialMediaRow();
+
+  static const String _youtubeUrl = 'https://www.youtube.com/@maribelcare';
+  static const String _whatsappUrl = 'https://wa.me/917891008002';
+  static const String _instagramUrl =
+      'https://www.instagram.com/maribelwellnesscentre/';
+  static const String _websiteUrl = 'https://maribel.in/';
+
+  static const Color _youtubeBg = Color(0xFFFFE8EC);
+  static const Color _whatsappBg = Color(0xFFE6F7EA);
+  static const Color _instagramBg = Color(0xFFFCE8F0);
+  static const Color _googleBg = Color(0xFFE8F1FF);
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _SocialIconButton(
+          iconPath: ImageConstants.youtube,
+          backgroundColor: _youtubeBg,
+          onTap: () => _openUrl(_youtubeUrl),
+        ),
+        SizedBox(width: 4.5.w),
+        _SocialIconButton(
+          iconPath: ImageConstants.whatsapp,
+          backgroundColor: _whatsappBg,
+          onTap: () => _openUrl(_whatsappUrl),
+        ),
+        SizedBox(width: 4.5.w),
+        _SocialIconButton(
+          iconPath: ImageConstants.instagram,
+          backgroundColor: _instagramBg,
+          onTap: () => _openUrl(_instagramUrl),
+        ),
+        SizedBox(width: 4.5.w),
+        _SocialIconButton(
+          iconPath: ImageConstants.google,
+          backgroundColor: _googleBg,
+          onTap: () => _openUrl(_websiteUrl),
+        ),
+      ],
+    );
+  }
+}
+
+class _SocialIconButton extends StatelessWidget {
+  const _SocialIconButton({
+    required this.iconPath,
+    required this.backgroundColor,
+    required this.onTap,
+  });
+
+  final String iconPath;
+  final Color backgroundColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: backgroundColor,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 12.w,
+          height: 12.w,
+          child: Center(
+            child: SvgPicture.asset(
+              iconPath,
+              width: 5.5.w,
+              height: 5.5.w,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

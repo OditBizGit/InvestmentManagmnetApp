@@ -1,6 +1,7 @@
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investment_due_date_model.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/investor_nominee_model.dart';
 
 class InvestorDetailsModel {
   final int userId;
@@ -9,6 +10,9 @@ class InvestorDetailsModel {
   final String email;
   final String? phoneNumber;
   final String? alternativeNumber;
+  final int? staffId;
+  final String? staffName;
+  final String? staffPhoneNumber;
   final String? profileImage;
   final String? investorCode;
   final String? investorType;
@@ -16,10 +20,14 @@ class InvestorDetailsModel {
   final String? address;
   final String? aadhaarNumber;
   final String? panCardNumber;
+  final String? aadhaarPhoto;
+  final String? panCardPhoto;
   final String? accountNumber;
   final String? ifscCode;
   final String? bankName;
   final DateTime? dateOfBirth;
+  final String? description;
+  final double? medicalAllowance;
   final double investmentAmount;
   final DateTime? investmentDate;
   final double investmentAdvanceAmount;
@@ -28,14 +36,10 @@ class InvestorDetailsModel {
   final String? investmentSplitType;
   final double totalPaidAmount;
   final double totalPendingAmount;
-  final String? nomineeName;
-  final String? nomineeRelationship;
-  final String? nomineeAddress;
-  final DateTime? nomineeDateOfBirth;
-  final String? nomineeAadhaarNumber;
-  final String? nomineePanCardNumber;
-  final String? nomineePhoneNumber;
-  final String? nomineeProfilePhoto;
+  final double discountAmount;
+  final double lastPaymentAmount;
+  final DateTime? lastPaymentDate;
+  final List<InvestorNomineeModel> nominees;
   final List<InvestmentDueDateModel> dueDates;
   final bool isActive;
   final DateTime? createdDate;
@@ -49,6 +53,9 @@ class InvestorDetailsModel {
     required this.email,
     this.phoneNumber,
     this.alternativeNumber,
+    this.staffId,
+    this.staffName,
+    this.staffPhoneNumber,
     this.profileImage,
     this.investorCode,
     this.investorType,
@@ -56,10 +63,14 @@ class InvestorDetailsModel {
     this.address,
     this.aadhaarNumber,
     this.panCardNumber,
+    this.aadhaarPhoto,
+    this.panCardPhoto,
     this.accountNumber,
     this.ifscCode,
     this.bankName,
     this.dateOfBirth,
+    this.description,
+    this.medicalAllowance,
     this.investmentAmount = 0,
     this.investmentDate,
     this.investmentAdvanceAmount = 0,
@@ -68,14 +79,10 @@ class InvestorDetailsModel {
     this.investmentSplitType,
     this.totalPaidAmount = 0,
     this.totalPendingAmount = 0,
-    this.nomineeName,
-    this.nomineeRelationship,
-    this.nomineeAddress,
-    this.nomineeDateOfBirth,
-    this.nomineeAadhaarNumber,
-    this.nomineePanCardNumber,
-    this.nomineePhoneNumber,
-    this.nomineeProfilePhoto,
+    this.discountAmount = 0,
+    this.lastPaymentAmount = 0,
+    this.lastPaymentDate,
+    this.nominees = const [],
     this.dueDates = const [],
     required this.isActive,
     this.createdDate,
@@ -86,8 +93,9 @@ class InvestorDetailsModel {
   /// Absolute URL for [profileImage] (handles relative API paths).
   String? get profileImageUrl => resolveMediaUrl(profileImage);
 
-  /// Absolute URL for [nomineeProfilePhoto] (handles relative API paths).
-  String? get nomineeProfilePhotoUrl => resolveMediaUrl(nomineeProfilePhoto);
+  String? get aadhaarPhotoUrl => resolveMediaUrl(aadhaarPhoto);
+
+  String? get panCardPhotoUrl => resolveMediaUrl(panCardPhoto);
 
   factory InvestorDetailsModel.fromJson(Map<String, dynamic> json) {
     return InvestorDetailsModel(
@@ -103,6 +111,11 @@ class InvestorDetailsModel {
       alternativeNumber: _readString(
         json['alternativeNumber'] ?? json['AlternativeNumber'],
       ),
+      staffId: _readNullableInt(json['staffId'] ?? json['StaffId']),
+      staffName: _readName(json['staffName'] ?? json['StaffName']),
+      staffPhoneNumber: _readString(
+        json['staffPhoneNumber'] ?? json['StaffPhoneNumber'],
+      ),
       profileImage: _readString(json['profileImage'] ?? json['ProfileImage']),
       investorCode: _readString(json['investorCode'] ?? json['InvestorCode']),
       investorType: _readString(json['investorType'] ?? json['InvestorType']),
@@ -110,10 +123,26 @@ class InvestorDetailsModel {
       address: _readString(json['address'] ?? json['Address']),
       aadhaarNumber: _readString(json['aadhaarNumber'] ?? json['AadhaarNumber']),
       panCardNumber: _readString(json['panCardNumber'] ?? json['PanCardNumber']),
+      aadhaarPhoto: _readString(
+        json['aadhaarPhoto'] ??
+            json['AadhaarPhoto'] ??
+            json['aadhaarCardImage'] ??
+            json['AadhaarCardImage'],
+      ),
+      panCardPhoto: _readString(
+        json['panCardPhoto'] ??
+            json['PanCardPhoto'] ??
+            json['panCardImage'] ??
+            json['PanCardImage'],
+      ),
       accountNumber: _readString(json['accountNumber'] ?? json['AccountNumber']),
       ifscCode: _readString(json['ifscCode'] ?? json['IfscCode']),
       bankName: _readString(json['bankName'] ?? json['BankName']),
       dateOfBirth: _readDate(json['dateOfBirth'] ?? json['DateOfBirth']),
+      description: _readString(json['description'] ?? json['Description']),
+      medicalAllowance: _readNullableDouble(
+        json['medicalAllowance'] ?? json['MedicalAllowance'],
+      ),
       investmentAmount: _readDouble(
         json['investmentAmount'] ??
             json['InvestmentAmount'] ??
@@ -141,34 +170,40 @@ class InvestorDetailsModel {
       totalPendingAmount: _readDouble(
         json['totalPendingAmount'] ?? json['TotalPendingAmount'],
       ),
-      nomineeName: _readString(json['nomineeName'] ?? json['NomineeName']),
-      nomineeRelationship: _readString(
-        json['nomineeRelationship'] ?? json['NomineeRelationship'],
+      discountAmount: _readDouble(
+        json['discountAmount'] ?? json['DiscountAmount'],
       ),
-      nomineeAddress: _readString(
-        json['nomineeAddress'] ?? json['NomineeAddress'],
+      lastPaymentAmount: _readDouble(
+        json['lastPaymentAmount'] ?? json['LastPaymentAmount'],
       ),
-      nomineeDateOfBirth: _readDate(
-        json['nomineeDateOfBirth'] ?? json['NomineeDateOfBirth'],
+      lastPaymentDate: _readDate(
+        json['lastPaymentDate'] ?? json['LastPaymentDate'],
       ),
-      nomineeAadhaarNumber: _readString(
-        json['nomineeAadhaarNumber'] ?? json['NomineeAadhaarNumber'],
-      ),
-      nomineePanCardNumber: _readString(
-        json['nomineePanCardNumber'] ?? json['NomineePanCardNumber'],
-      ),
-      nomineePhoneNumber: _readString(
-        json['nomineePhoneNumber'] ?? json['NomineePhoneNumber'],
-      ),
-      nomineeProfilePhoto: _readString(
-        json['nomineeProfilePhoto'] ?? json['NomineeProfilePhoto'],
-      ),
+      nominees: _readNominees(json),
       dueDates: _readDueDates(json['dueDates'] ?? json['DueDates']),
       isActive: _readBool(json['isActive'] ?? json['IsActive']),
       createdDate: _readDate(json['createdDate'] ?? json['CreatedDate']),
       modifiedDate: _readDate(json['modifiedDate'] ?? json['ModifiedDate']),
       userRole: (json['userRole'] ?? json['UserRole'] ?? '').toString(),
     );
+  }
+
+  static List<InvestorNomineeModel> _readNominees(Map<String, dynamic> json) {
+    final raw = json['nominees'] ?? json['Nominees'];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map(
+            (item) => InvestorNomineeModel.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .where((nominee) => !nominee.isEmpty)
+          .toList();
+    }
+
+    final flat = InvestorNomineeModel.fromFlatInvestor(json);
+    return flat.isEmpty ? const [] : [flat];
   }
 
   static List<InvestmentDueDateModel> _readDueDates(dynamic value) {
@@ -189,6 +224,23 @@ class InvestorDetailsModel {
     return text.isEmpty ? null : text;
   }
 
+  static String? _readName(dynamic value) {
+    final text = _readString(value);
+    return text?.toTitleCase;
+  }
+
+  static int? _readNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final text = value.trim();
+      if (text.isEmpty) return null;
+      return int.tryParse(text);
+    }
+    return null;
+  }
+
   static int _readInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
@@ -197,10 +249,18 @@ class InvestorDetailsModel {
   }
 
   static double _readDouble(dynamic value) {
-    if (value is double) return value;
+    return _readNullableDouble(value) ?? 0;
+  }
+
+  static double? _readNullableDouble(dynamic value) {
+    if (value == null) return null;
     if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0;
-    return 0;
+    if (value is String) {
+      final text = value.trim();
+      if (text.isEmpty) return null;
+      return double.tryParse(text);
+    }
+    return null;
   }
 
   static bool _readBool(dynamic value) {

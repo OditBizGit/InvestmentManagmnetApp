@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/investor_nominee_model.dart';
+import 'package:maribel_wellness_centre_application/user/profile/widgets/document_fullscreen_image.dart';
 import 'package:sizer/sizer.dart';
 
 class DocumentsScreen extends StatelessWidget {
@@ -149,7 +151,20 @@ class DocumentsScreen extends StatelessWidget {
                             value: _displayValue(details?.email),
                             isVerified: _hasValue(details?.email),
                           ),
-                          SizedBox(height: 0.6.h),
+                          _DocumentPhotoRow(
+                            photos: [
+                              if (_hasValue(details?.aadhaarPhotoUrl))
+                                _DocumentPhotoData(
+                                  label: 'Aadhaar Photo',
+                                  imageUrl: details!.aadhaarPhotoUrl!,
+                                ),
+                              if (_hasValue(details?.panCardPhotoUrl))
+                                _DocumentPhotoData(
+                                  label: 'PAN Photo',
+                                  imageUrl: details!.panCardPhotoUrl!,
+                                ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -189,48 +204,7 @@ class DocumentsScreen extends StatelessWidget {
                     _SectionCard(
                       iconPath: ImageConstants.nomineeDetails,
                       title: 'Nominee Details',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 0.6.h),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: _PhotoAvatar(
-                                imageUrl: details?.nomineeProfilePhotoUrl,
-                              ),
-                            ),
-                          ),
-                          _VerifiedField(
-                            label: 'Nominee Full Name',
-                            value: _displayValue(details?.nomineeName),
-                            isVerified: _hasValue(details?.nomineeName),
-                          ),
-                          _VerifiedField(
-                            label: 'Relationship',
-                            value: _displayValue(details?.nomineeRelationship),
-                            isVerified: _hasValue(details?.nomineeRelationship),
-                          ),
-                          _VerifiedField(
-                            label: 'Aadhaar Card',
-                            value: _formatAadhaar(details?.nomineeAadhaarNumber),
-                            isVerified: _hasValue(details?.nomineeAadhaarNumber),
-                          ),
-                          _VerifiedField(
-                            label: 'Pan Card',
-                            value: _displayValue(details?.nomineePanCardNumber),
-                            isVerified: _hasValue(
-                              details?.nomineePanCardNumber,
-                            ),
-                          ),
-                          _VerifiedField(
-                            label: 'Date of Birth',
-                            value: _formatDate(details?.nomineeDateOfBirth),
-                            isVerified: details?.nomineeDateOfBirth != null,
-                          ),
-                          SizedBox(height: 0.6.h),
-                        ],
-                      ),
+                      child: _NomineeDetails(nominees: details?.nominees ?? const []),
                     ),
                   ],
                 ),
@@ -270,6 +244,209 @@ class DocumentsScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NomineeDetails extends StatelessWidget {
+  const _NomineeDetails({required this.nominees});
+
+  final List<InvestorNomineeModel> nominees;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = nominees.isEmpty
+        ? const [InvestorNomineeModel()]
+        : nominees;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0)
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: AppColors.border,
+              indent: 4.w,
+              endIndent: 4.w,
+            ),
+          if (items.length > 1)
+            Padding(
+              padding: EdgeInsets.fromLTRB(4.w, 1.4.h, 4.w, 0),
+              child: Text(
+                'Nominee ${i + 1}',
+                style: TextStyle(
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.accent,
+                ),
+              ),
+            ),
+          _NomineeBlock(nominee: items[i]),
+        ],
+        SizedBox(height: 0.6.h),
+      ],
+    );
+  }
+}
+
+class _NomineeBlock extends StatelessWidget {
+  const _NomineeBlock({required this.nominee});
+
+  final InvestorNomineeModel nominee;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 0.6.h),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _PhotoAvatar(imageUrl: nominee.nomineeProfilePhotoUrl),
+          ),
+        ),
+        _VerifiedField(
+          label: 'Nominee Full Name',
+          value: DocumentsScreen._displayValue(nominee.nomineeName),
+          isVerified: DocumentsScreen._hasValue(nominee.nomineeName),
+        ),
+        _VerifiedField(
+          label: 'Relationship',
+          value: DocumentsScreen._displayValue(nominee.nomineeRelationship),
+          isVerified: DocumentsScreen._hasValue(nominee.nomineeRelationship),
+        ),
+        _VerifiedField(
+          label: 'Phone Number',
+          value: DocumentsScreen._displayValue(nominee.nomineePhoneNumber),
+          isVerified: DocumentsScreen._hasValue(nominee.nomineePhoneNumber),
+        ),
+        _VerifiedField(
+          label: 'Address',
+          value: DocumentsScreen._displayValue(nominee.nomineeAddress),
+          isVerified: DocumentsScreen._hasValue(nominee.nomineeAddress),
+        ),
+        _VerifiedField(
+          label: 'Aadhaar Card',
+          value: DocumentsScreen._formatAadhaar(nominee.nomineeAadhaarNumber),
+          isVerified: DocumentsScreen._hasValue(nominee.nomineeAadhaarNumber),
+        ),
+        _VerifiedField(
+          label: 'Pan Card',
+          value: DocumentsScreen._displayValue(nominee.nomineePanCardNumber),
+          isVerified: DocumentsScreen._hasValue(nominee.nomineePanCardNumber),
+        ),
+        _DocumentPhotoRow(
+          photos: [
+            if (DocumentsScreen._hasValue(nominee.nomineeAadhaarPhotoUrl))
+              _DocumentPhotoData(
+                label: 'Aadhaar Photo',
+                imageUrl: nominee.nomineeAadhaarPhotoUrl!,
+              ),
+            if (DocumentsScreen._hasValue(nominee.nomineePanCardPhotoUrl))
+              _DocumentPhotoData(
+                label: 'PAN Photo',
+                imageUrl: nominee.nomineePanCardPhotoUrl!,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DocumentPhotoData {
+  const _DocumentPhotoData({
+    required this.label,
+    required this.imageUrl,
+  });
+
+  final String label;
+  final String imageUrl;
+}
+
+class _DocumentPhotoRow extends StatelessWidget {
+  const _DocumentPhotoRow({required this.photos});
+
+  final List<_DocumentPhotoData> photos;
+
+  @override
+  Widget build(BuildContext context) {
+    if (photos.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(4.w, 0.6.h, 4.w, 1.6.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < photos.length; i++) ...[
+            if (i > 0) SizedBox(width: 3.w),
+            Expanded(
+              child: _DocumentPhoto(
+                label: photos[i].label,
+                imageUrl: photos[i].imageUrl,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentPhoto extends StatelessWidget {
+  const _DocumentPhoto({
+    required this.label,
+    required this.imageUrl,
+  });
+
+  final String label;
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textMuted,
+          ),
+        ),
+        SizedBox(height: 0.6.h),
+        GestureDetector(
+          onTap: () => DocumentFullscreenImage.open(
+            context,
+            imageUrl: imageUrl,
+            title: label,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2.w),
+            child: Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: 12.h,
+              fit: BoxFit.fill,
+              errorBuilder: (_, _, _) => Container(
+                width: double.infinity,
+                height: 16.h,
+                color: AppColors.cardBg,
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: AppColors.hint,
+                  size: 6.w,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

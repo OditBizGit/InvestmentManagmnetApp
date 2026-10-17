@@ -77,4 +77,11 @@ class ImageConstants {
   static const String meribelIcon = '$_logoPath/Meribel icon.svg';
   static const String maribelLogo = '$_logoPath/maribelLogo.png';
   static const String appIcon = '$_logoPath/maribelAppIcon.png';
+
+  //social media
+  static const String whatsapp = '$_svgPath/whatsapp.svg';
+  static const String gmail = '$_svgPath/gmail.svg';
+  static const String youtube = '$_svgPath/youtube.svg';
+  static const String instagram = '$_svgPath/instagram.svg';
+  static const String google = '$_svgPath/google.svg';
 }
