@@ -108,13 +108,13 @@ class RegisterInvestorRequestModel {
     ]);
 
     if (profileImage != null) {
-      formData.files.add(MapEntry('ProfileImage', profileImage!));
+      formData.files.add(MapEntry('ProfileImage', profileImage!.clone()));
     }
     if (aadhaarCardImage != null) {
-      formData.files.add(MapEntry('AadhaarPhoto', aadhaarCardImage!));
+      formData.files.add(MapEntry('AadhaarPhoto', aadhaarCardImage!.clone()));
     }
     if (panCardImage != null) {
-      formData.files.add(MapEntry('PanCardPhoto', panCardImage!));
+      formData.files.add(MapEntry('PanCardPhoto', panCardImage!.clone()));
     }
 
     appendRegisterInvestorNomineesToFormData(formData, nominees);

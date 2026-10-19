@@ -3,6 +3,7 @@ import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 /// Nominee data from API (flat or list item).
 class InvestorNomineeRecord {
   const InvestorNomineeRecord({
+    this.nomineeId,
     this.name,
     this.relationship,
     this.address,
@@ -15,6 +16,7 @@ class InvestorNomineeRecord {
     this.panCardImage,
   });
 
+  final int? nomineeId;
   final String? name;
   final String? relationship;
   final String? address;
@@ -45,6 +47,12 @@ class InvestorNomineeRecord {
 
   factory InvestorNomineeRecord.fromJson(Map<String, dynamic> json) {
     return InvestorNomineeRecord(
+      nomineeId: _readInt(
+        json['nomineeId'] ??
+            json['NomineeId'] ??
+            json['id'] ??
+            json['Id'],
+      ),
       name: _readString(
         json['nomineeName'] ??
             json['NomineeName'] ??
@@ -123,5 +131,17 @@ class InvestorNomineeRecord {
     final text = value.toString().trim();
     if (text.isEmpty) return null;
     return DateTime.tryParse(text);
+  }
+
+  static int? _readInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value > 0 ? value : null;
+    if (value is num) {
+      final parsed = value.toInt();
+      return parsed > 0 ? parsed : null;
+    }
+    final parsed = int.tryParse(value.toString().trim());
+    if (parsed == null || parsed <= 0) return null;
+    return parsed;
   }
 }

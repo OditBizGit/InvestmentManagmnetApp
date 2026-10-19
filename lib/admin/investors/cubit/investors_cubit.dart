@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_response_model.dart';
@@ -47,6 +50,16 @@ class InvestorsCubit extends Cubit<InvestorsState> {
           ),
         );
         return;
+      }
+
+      if (kDebugMode) {
+        for (final investor in response.data) {
+          log(
+            'GetInvestors image ${investor.fullName}: '
+            'raw=${investor.profileImage} url=${investor.profileImageUrl}',
+            name: 'InvestorsCubit',
+          );
+        }
       }
 
       emit(

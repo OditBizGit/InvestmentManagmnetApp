@@ -19,20 +19,6 @@ extension DocumentProcessStatusX on DocumentProcessStatus {
   }
 }
 
-class DummyPaymentEntry {
-  const DummyPaymentEntry({
-    required this.date,
-    required this.amount,
-    required this.method,
-    required this.reference,
-  });
-
-  final DateTime date;
-  final double amount;
-  final String method;
-  final String reference;
-}
-
 class ManagedUserModel {
   const ManagedUserModel({
     required this.userId,
@@ -45,7 +31,6 @@ class ManagedUserModel {
     this.joinedDate,
     this.lastPaymentDate,
     this.nextDueDate,
-    this.payments = const [],
     this.mouStatus = DocumentProcessStatus.pending,
     this.llpStatus = DocumentProcessStatus.pending,
     this.depositDiscountAmount = 0,
@@ -63,7 +48,6 @@ class ManagedUserModel {
   final DateTime? joinedDate;
   final DateTime? lastPaymentDate;
   final DateTime? nextDueDate;
-  final List<DummyPaymentEntry> payments;
   final DocumentProcessStatus mouStatus;
   final DocumentProcessStatus llpStatus;
   final double depositDiscountAmount;
@@ -112,7 +96,6 @@ class ManagedUserModel {
       joinedDate: joinedDate,
       lastPaymentDate: lastPaymentDate,
       nextDueDate: nextDueDate,
-      payments: payments,
       mouStatus: mouStatus ?? this.mouStatus,
       llpStatus: llpStatus ?? this.llpStatus,
       depositDiscountAmount: depositDiscountAmount,

@@ -8,6 +8,7 @@ enum SettingsOptionType {
   createProject,
   addStaffAndAllocation,
   addAdmin,
+  adminSettings,
   userComplaints,
 }
 
@@ -44,6 +45,15 @@ class SettingsOptionCards extends StatelessWidget {
       iconColor: Color(0xFF2CB5A8),
       iconBg: Color(0xFFE6F7F5),
       usePersonAddIcon: true,
+    ),
+    _OptionData(
+      type: SettingsOptionType.adminSettings,
+      title: 'Admin Settings',
+      description: 'Assign which screens each staff member can use',
+      icon: ImageConstants.updates,
+      iconColor: Color(0xFF7C5EAE),
+      iconBg: Color(0xFFF0EBF6),
+      useAdminSettingsIcon: true,
     ),
     _OptionData(
       type: SettingsOptionType.userComplaints,
@@ -105,6 +115,7 @@ class _OptionData {
     required this.iconColor,
     required this.iconBg,
     this.usePersonAddIcon = false,
+    this.useAdminSettingsIcon = false,
   });
 
   final SettingsOptionType type;
@@ -114,6 +125,7 @@ class _OptionData {
   final Color iconColor;
   final Color iconBg;
   final bool usePersonAddIcon;
+  final bool useAdminSettingsIcon;
 }
 
 class _OptionTile extends StatelessWidget {
@@ -160,6 +172,12 @@ class _OptionTile extends StatelessWidget {
                 child: data.usePersonAddIcon
                     ? Icon(
                         Icons.person_add_alt_1_rounded,
+                        size: 22,
+                        color: data.iconColor,
+                      )
+                    : data.useAdminSettingsIcon
+                    ? Icon(
+                        Icons.admin_panel_settings_rounded,
                         size: 22,
                         color: data.iconColor,
                       )

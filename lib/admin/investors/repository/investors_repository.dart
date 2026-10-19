@@ -139,6 +139,13 @@ class InvestorsRepository {
         data: formData,
       );
 
+      if (response.statusCode == 200) {
+        log(
+          'Update Investor request body:\n${_formDataForLog(formData)}',
+          name: 'InvestorsRepository',
+        );
+      }
+
       return UpdateInvestorResponseModel.fromJson(
         response.data,
       );
@@ -159,6 +166,26 @@ class InvestorsRepository {
 
       rethrow;
     }
+  }
+
+  String _formDataForLog(FormData formData) {
+    final buffer = StringBuffer();
+    buffer.writeln('fields:');
+    for (final field in formData.fields) {
+      buffer.writeln('  ${field.key}: ${field.value}');
+    }
+    buffer.writeln('files:');
+    if (formData.files.isEmpty) {
+      buffer.writeln('  (none)');
+    } else {
+      for (final file in formData.files) {
+        buffer.writeln(
+          '  ${file.key}: ${file.value.filename ?? 'unnamed'} '
+          '(${file.value.length} bytes)',
+        );
+      }
+    }
+    return buffer.toString();
   }
 
 }

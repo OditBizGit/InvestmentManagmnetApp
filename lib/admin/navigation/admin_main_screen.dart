@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/investors_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/settings_screen.dart';
-import 'package:maribel_wellness_centre_application/admin/user_management/cubit/user_management_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/due_payments/due_payments_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/manage_users_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
@@ -16,6 +15,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 
 import '../dashboard/dashboard_screen.dart';
 import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
+import '../pending_requests/screens/pending_requests/pending_requests_screen.dart';
 import '../reports/screens/reports_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
@@ -90,9 +90,17 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           isActive: _selectedItem == AdminDrawerItem.reports,
         );
       case AdminDrawerItem.manageUsers:
-        return const ManageUsersScreen();
+        return ManageUsersScreen(
+          isActive: _selectedItem == AdminDrawerItem.manageUsers,
+        );
       case AdminDrawerItem.duePayments:
-        return const DuePaymentsScreen();
+        return DuePaymentsScreen(
+          isActive: _selectedItem == AdminDrawerItem.duePayments,
+        );
+      case AdminDrawerItem.pendingRequests:
+        return PendingRequestsScreen(
+          isActive: _selectedItem == AdminDrawerItem.pendingRequests,
+        );
       case AdminDrawerItem.settings:
         return const AdminSettingsScreen();
     }
@@ -100,13 +108,11 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => UserManagementCubit(),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          _syncCollapsedForWidth(constraints.maxWidth);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _syncCollapsedForWidth(constraints.maxWidth);
 
-          return Scaffold(
+        return Scaffold(
           backgroundColor: AppColors.screenBg,
           body: NotificationListener<AdminNavigateNotification>(
             onNotification: (notification) {
@@ -149,9 +155,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               ),
             ),
           ),
-          );
-        },
-      ),
+        );
+      },
     );
   }
 }

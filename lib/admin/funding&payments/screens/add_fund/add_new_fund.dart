@@ -51,7 +51,11 @@ class _AddNewFundView extends StatefulWidget {
   State<_AddNewFundView> createState() => _AddNewFundViewState();
 }
 
+enum _FundPaymentAction { none, settleFull }
+
 class _AddNewFundViewState extends State<_AddNewFundView> {
+  static const _amountEpsilon = 0.009;
+
   final _formKey = GlobalKey<FormState>();
   final _totalAmountController = TextEditingController();
   final _totalPaidAmountController = TextEditingController();
@@ -59,9 +63,10 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   final _payingNowController = TextEditingController();
   final _discountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _medicalAllowanceController = TextEditingController();
 
   InvestorModel? _selectedInvestor;
+  _FundPaymentAction _paymentAction = _FundPaymentAction.none;
+  bool _programmaticPayingNowUpdate = false;
   DateTime _fundingDate = DateTime.now();
   String? _selectedPaymentMethod;
 
@@ -70,37 +75,67 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   DateTime? _dueDate;
   String _dueStatus = 'Pending';
 
-  double get _totalAmount => _selectedInvestor?.totalInvestmentAmount ?? 0;
-
   double get _basePaidAmount => _selectedInvestor?.totalPaidAmount ?? 0;
 
-  bool get _canPayDue =>
-      _selectedInvestor != null &&
-      _dueRemainingAmount > 0 &&
-      _dueStatus != 'Completed';
-
-  double get _investmentRemainingAmount {
+  /// Current outstanding balance for the selected investor.
+  double get _outstandingBalance {
     if (_selectedInvestor == null) return 0;
-    final remaining = _totalAmount - _basePaidAmount;
-    return remaining < 0 ? 0 : remaining;
+    final investor = _selectedInvestor!;
+    final computed = investor.totalInvestmentAmount - investor.totalPaidAmount;
+    final balance = computed < 0 ? 0.0 : computed;
+    if (investor.totalPendingAmount > 0) {
+      return investor.totalPendingAmount;
+    }
+    return balance;
   }
 
   bool get _canSettleFull =>
-      _selectedInvestor != null && _investmentRemainingAmount > 0;
+      _selectedInvestor != null && _outstandingBalance > 0;
+
+  bool _amountsEqual(double a, double b) => (a - b).abs() < _amountEpsilon;
+
+  double get _currentDiscount {
+    final discount = _parseAmount(_discountController.text);
+    return discount == null || discount < 0 ? 0 : discount;
+  }
 
   @override
   void initState() {
     super.initState();
-    _payingNowController.addListener(_onPayingNowChanged);
-    _discountController.addListener(_onPayingNowChanged);
+    _payingNowController.addListener(_onPayingNowAmountChanged);
+    _discountController.addListener(_onDiscountChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<FundingPaymentsCubit>().fetchInvestors();
     });
   }
 
-  void _onPayingNowChanged() {
+  void _onPayingNowAmountChanged() {
     if (!mounted) return;
+    _syncAmountDisplays();
+    setState(() {});
+  }
+
+  void _onDiscountChanged() {
+    if (!mounted) return;
+    if (_paymentAction == _FundPaymentAction.settleFull &&
+        _selectedInvestor != null) {
+      final deposit = _outstandingBalance - _currentDiscount;
+      if (deposit < 0) {
+        _syncAmountDisplays();
+        setState(() {});
+        return;
+      }
+      _setPayingNowAmount(deposit);
+    }
+    _syncAmountDisplays();
+    setState(() {});
+  }
+
+  void _setPayingNowAmount(double amount) {
+    _programmaticPayingNowUpdate = true;
+    _payingNowController.text = _amountInputText(amount < 0 ? 0 : amount);
+    _programmaticPayingNowUpdate = false;
     _syncAmountDisplays();
     setState(() {});
   }
@@ -120,13 +155,15 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     }
 
     final payingNow = _parseAmount(_payingNowController.text);
-    final addAmount = (payingNow != null && payingNow > 0) ? payingNow : 0.0;
-    final projectedPaid = _basePaidAmount + addAmount;
-    final remaining = _totalAmount - projectedPaid;
+    final deposit = (payingNow != null && payingNow > 0) ? payingNow : 0.0;
+    final discount = _currentDiscount;
+    final outstanding = _outstandingBalance;
+    final projectedPaid = _basePaidAmount + deposit;
+    final remainingAfterPayment = outstanding - deposit - discount;
 
     _totalPaidAmountController.text = _formatCurrency(projectedPaid);
     _remainingAmountController.text = _formatCurrency(
-      remaining < 0 ? 0 : remaining,
+      remainingAfterPayment < 0 ? 0 : remainingAfterPayment,
     );
   }
 
@@ -165,6 +202,20 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     if (_selectedInvestor == null) {
       return 'Please select an investor first';
     }
+
+    final outstanding = _outstandingBalance;
+    final discount = _currentDiscount;
+    final totalApplied = amount + discount;
+
+    if (totalApplied - outstanding > _amountEpsilon) {
+      return 'Payment plus discount cannot exceed outstanding balance';
+    }
+
+    if (_paymentAction == _FundPaymentAction.settleFull &&
+        !_amountsEqual(totalApplied, outstanding)) {
+      return 'Full settlement requires deposit plus discount to equal outstanding balance';
+    }
+
     return null;
   }
 
@@ -180,23 +231,36 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     }
 
     final deposit = _parseAmount(_payingNowController.text) ?? 0;
-    if (discount > deposit) {
-      return 'Discount cannot exceed deposit amount';
+    final outstanding = _outstandingBalance;
+    final totalApplied = deposit + discount;
+
+    if (totalApplied - outstanding > _amountEpsilon) {
+      return 'Payment plus discount cannot exceed outstanding balance';
     }
+
+    if (_paymentAction == _FundPaymentAction.settleFull) {
+      final expectedDeposit = outstanding - discount;
+      if (expectedDeposit < 0) {
+        return 'Discount cannot exceed outstanding balance';
+      }
+      if (!_amountsEqual(deposit, expectedDeposit)) {
+        return 'Adjust deposit or discount so they equal the outstanding balance';
+      }
+    }
+
     return null;
   }
 
   @override
   void dispose() {
-    _payingNowController.removeListener(_onPayingNowChanged);
-    _discountController.removeListener(_onPayingNowChanged);
+    _payingNowController.removeListener(_onPayingNowAmountChanged);
+    _discountController.removeListener(_onDiscountChanged);
     _totalAmountController.dispose();
     _totalPaidAmountController.dispose();
     _remainingAmountController.dispose();
     _payingNowController.dispose();
     _discountController.dispose();
     _descriptionController.dispose();
-    _medicalAllowanceController.dispose();
     super.dispose();
   }
 
@@ -210,6 +274,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
     setState(() {
       _selectedInvestor = selected;
+      _paymentAction = _FundPaymentAction.none;
       _payingNowController.clear();
       _discountController.clear();
       _selectedPaymentMethod = null;
@@ -226,25 +291,6 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     });
   }
 
-  void _handlePayDue() {
-    if (!mounted) return;
-    if (_selectedInvestor == null) {
-      AppToast.error('Please select an investor', context: context);
-      return;
-    }
-
-    if (_dueRemainingAmount <= 0 || _dueStatus == 'Completed') {
-      AppToast.error('No remaining due amount to pay', context: context);
-      return;
-    }
-
-    setState(() {
-      _payingNowController.text = _amountInputText(_dueRemainingAmount);
-      _syncAmountDisplays();
-    });
-    _formKey.currentState?.validate();
-  }
-
   void _handleSettleFull() {
     if (!mounted) return;
     if (_selectedInvestor == null) {
@@ -252,15 +298,13 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    if (_investmentRemainingAmount <= 0) {
+    if (_outstandingBalance <= 0) {
       AppToast.error('Investment is already fully paid', context: context);
       return;
     }
 
-    setState(() {
-      _payingNowController.text = _amountInputText(_investmentRemainingAmount);
-      _syncAmountDisplays();
-    });
+    setState(() => _paymentAction = _FundPaymentAction.settleFull);
+    _setPayingNowAmount(_outstandingBalance - _currentDiscount);
     _formKey.currentState?.validate();
   }
 
@@ -292,6 +336,10 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
 
   Future<void> _handleSave() async {
     if (!mounted) return;
+
+    final cubit = context.read<FundingPaymentsCubit>();
+    if (cubit.state is AddPaymentLoading) return;
+
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       setState(() {});
@@ -314,9 +362,21 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       AppToast.error('Discount cannot be negative', context: context);
       return;
     }
-    if (discount > paidAmount) {
+
+    final outstanding = _outstandingBalance;
+    final totalApplied = paidAmount + discount;
+    if (totalApplied - outstanding > _amountEpsilon) {
       AppToast.error(
-        'Discount cannot exceed deposit amount',
+        'Payment plus discount cannot exceed outstanding balance',
+        context: context,
+      );
+      return;
+    }
+
+    final isFullSettlement = _paymentAction == _FundPaymentAction.settleFull;
+    if (isFullSettlement && !_amountsEqual(totalApplied, outstanding)) {
+      AppToast.error(
+        'Full settlement requires deposit plus discount to equal outstanding balance',
         context: context,
       );
       return;
@@ -333,11 +393,12 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       paidAmount: paidAmount,
       narration: _descriptionController.text.trim(),
       paymentMethod: _selectedPaymentMethod!,
+      isFullSettlement: isFullSettlement,
       discountAmount: discount,
-      medicalAllowanceDescription: _medicalAllowanceController.text.trim(),
+      remarks: '',
     );
 
-    await context.read<FundingPaymentsCubit>().addInvestorPayment(request);
+    await cubit.addInvestorPayment(request);
   }
 
   Future<void> _pickDate() async {
@@ -460,13 +521,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 dueStatus: _selectedInvestor == null ? null : _dueStatus,
                 payingNowController: _payingNowController,
                 payingNowValidator: _validatePayingNow,
-                onPayDue: _handlePayDue,
-                canPayDue: _canPayDue,
                 onSettleFull: _handleSettleFull,
                 canSettleFull: _canSettleFull,
                 discountController: _discountController,
                 discountValidator: _validateDiscount,
-                medicalAllowanceController: _medicalAllowanceController,
+                descriptionController: _descriptionController,
                 paymentMethodOptions: kFundPaymentMethodOptions,
                 selectedPaymentMethod: _selectedPaymentMethod,
                 onPaymentMethodChanged: (value) =>
@@ -474,7 +533,6 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 fundingDate: _fundingDate,
                 onPickDate: _pickDate,
                 formatDate: _formatDate,
-                descriptionController: _descriptionController,
                 isLoadingInvestors: isLoadingInvestors,
               );
 

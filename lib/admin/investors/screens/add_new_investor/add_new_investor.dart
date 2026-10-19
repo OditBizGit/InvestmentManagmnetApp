@@ -155,6 +155,12 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _existingProfileImageUrl = investor.profileImageUrl;
     _existingAadhaarCardImageUrl = investor.aadhaarCardImageUrl;
     _existingPanCardImageUrl = investor.panCardImageUrl;
+    debugPrint(
+      'Edit investor images ${investor.fullName}: '
+      'profile=$_existingProfileImageUrl '
+      'aadhaar=$_existingAadhaarCardImageUrl '
+      'pan=$_existingPanCardImageUrl',
+    );
     _dateOfBirth = investor.dateOfBirth;
 
     // KYC / bank — only prefill values that pass form validators so Update
@@ -659,10 +665,13 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
         investmentSplitGap: _resolvedSplitGap,
         investmentAdvanceAmount: advance,
         paymentMethod: _optionalText(_selectedPaymentMode ?? ''),
+        nomineeId: nomineePayload.isEmpty
+            ? 0
+            : nomineePayload.first.resolvedNomineeId,
         nominees: nomineePayload,
         profileImage: profileImage,
-        aadhaarCardImage: aadhaarCardImage,
-        panCardImage: panCardImage,
+        aadhaarPhoto: aadhaarCardImage,
+        panCardPhoto: panCardImage,
       );
 
       await context.read<InvestorsCubit>().updateInvestor(updateRequest);
@@ -722,6 +731,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
         .take(3)
         .map(
           (entry) => InvestorNomineeSubmitData(
+            nomineeId: (entry.nomineeId != null && entry.nomineeId! > 0)
+                ? entry.nomineeId
+                : 0,
             name: entry.nameController.text.trim(),
             relationship: entry.relationship?.trim() ?? '',
             address: entry.addressController.text.trim(),
@@ -786,7 +798,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       );
       return;
     }
-    setState(() => _nominees.add(InvestorNomineeEntry()));
+    setState(() => _nominees.add(InvestorNomineeEntry()..nomineeId = 0));
   }
 
   void _removeNominee(int index) {

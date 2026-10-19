@@ -305,9 +305,9 @@ class _NotesCard extends StatelessWidget {
 
   static const _notes = [
     'Select an investor to auto-fill type, total, paid, remaining, and due details.',
-    'Pay Due fills the installment due; Settle Full fills the remaining investment balance.',
-    'Deposit amount is recorded as entered — discount is stored separately.',
-    'Add medical allowance notes in the dedicated description field when applicable.',
+    'Enter any deposit up to the outstanding balance, or use Settle Full.',
+    'Settle Full sets deposit to outstanding balance minus discount.',
+    'Remaining amount = outstanding balance − deposit − discount.',
   ];
 
   @override

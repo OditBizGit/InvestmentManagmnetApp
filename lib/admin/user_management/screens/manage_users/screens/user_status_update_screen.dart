@@ -4,6 +4,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/model/
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/cubit/manage_users_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_benefits_summary_card.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_refund_card.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_status_checkbox_card.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_status_update_header.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
@@ -14,10 +15,14 @@ class UserStatusUpdateScreen extends StatelessWidget {
   const UserStatusUpdateScreen({
     super.key,
     required this.userId,
+    required this.committedAmount,
+    required this.paidAmount,
     required this.onBack,
   });
 
   final int userId;
+  final double committedAmount;
+  final double paidAmount;
   final VoidCallback onBack;
 
   @override
@@ -29,7 +34,28 @@ class UserStatusUpdateScreen extends StatelessWidget {
           final horizontalPadding =
               constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-          return BlocBuilder<ManageUsersCubit, ManageUsersState>(
+          return BlocConsumer<ManageUsersCubit, ManageUsersState>(
+            listener: (context, state) {
+              if (state is! ManageUsersSuccess) return;
+              final feedback = state.statusFeedback;
+              if (feedback == null) return;
+
+              if (feedback.isSuccess) {
+                AppToast.success(
+                  feedback.message,
+                  title: feedback.title ?? 'Success',
+                  context: context,
+                );
+              } else {
+                AppToast.error(
+                  feedback.message,
+                  title: feedback.title ?? 'Error',
+                  context: context,
+                );
+              }
+
+              context.read<ManageUsersCubit>().clearStatusFeedback();
+            },
             builder: (context, state) {
               final user = state is ManageUsersSuccess
                   ? _userById(state.users, userId)
@@ -62,6 +88,8 @@ class UserStatusUpdateScreen extends StatelessWidget {
               final llpStatus = state is ManageUsersSuccess
                   ? state.llpStatus[user.id] ?? DocumentProcessStatus.pending
                   : DocumentProcessStatus.pending;
+              final isRefundSaving = state is ManageUsersSuccess &&
+                  state.refundUpdatingUserId == user.id;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,7 +119,19 @@ class UserStatusUpdateScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          UserBenefitsSummaryCard(amountPaid: user.amountPaid),
+                          UserBenefitsSummaryCard(
+                            amountPaid: user.amountPaid,
+                            depositDiscountAmount: user.depositDiscountAmount,
+                            medicalAllowanceNote:
+                                user.medicalAllowanceDescription,
+                          ),
+                          const SizedBox(height: 20),
+                          UserRefundCard(
+                            user: user,
+                            committedAmount: user.totalPayable,
+                            paidAmount: user.amountPaid,
+                            isSaving: isRefundSaving,
+                          ),
                           const SizedBox(height: 20),
                           Text(
                             'Document status',

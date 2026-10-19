@@ -114,6 +114,8 @@ class ManageUsersInvestor {
     required this.totalPendingAmount,
     required this.isActive,
     this.joinedDate,
+    this.depositDiscountAmount = 0,
+    this.medicalAllowanceDescription = '',
   });
 
   final int id;
@@ -126,6 +128,8 @@ class ManageUsersInvestor {
   final double totalPendingAmount;
   final bool isActive;
   final DateTime? joinedDate;
+  final double depositDiscountAmount;
+  final String medicalAllowanceDescription;
 
   String get userId => id > 0 ? '$id' : '';
 
@@ -142,7 +146,11 @@ class ManageUsersInvestor {
 
   bool get hasPendingDues => outstandingBalance > 0.01;
 
-  ManageUsersInvestor copyWith({bool? isActive}) {
+  ManageUsersInvestor copyWith({
+    bool? isActive,
+    double? amountPaid,
+    double? totalPendingAmount,
+  }) {
     return ManageUsersInvestor(
       id: id,
       username: username,
@@ -150,10 +158,12 @@ class ManageUsersInvestor {
       email: email,
       phoneNumber: phoneNumber,
       totalPayable: totalPayable,
-      amountPaid: amountPaid,
-      totalPendingAmount: totalPendingAmount,
+      amountPaid: amountPaid ?? this.amountPaid,
+      totalPendingAmount: totalPendingAmount ?? this.totalPendingAmount,
       isActive: isActive ?? this.isActive,
       joinedDate: joinedDate,
+      depositDiscountAmount: depositDiscountAmount,
+      medicalAllowanceDescription: medicalAllowanceDescription,
     );
   }
 
@@ -189,6 +199,23 @@ class ManageUsersInvestor {
       ),
       isActive: _readBool(json['isActive'] ?? json['IsActive']),
       joinedDate: _readDate(json['createdDate'] ?? json['CreatedDate']),
+      depositDiscountAmount: _readDouble(
+        json['discountAmount'] ??
+            json['DiscountAmount'] ??
+            json['depositDiscountAmount'] ??
+            json['DepositDiscountAmount'] ??
+            json['totalDiscountAmount'] ??
+            json['TotalDiscountAmount'],
+      ),
+      medicalAllowanceDescription: _readString(
+            json['medicalAllowanceDescription'] ??
+                json['MedicalAllowanceDescription'] ??
+                json['medicalAllowanceNote'] ??
+                json['MedicalAllowanceNote'] ??
+                json['medicalAllowance'] ??
+                json['MedicalAllowance'],
+          ) ??
+          '',
     );
   }
 }

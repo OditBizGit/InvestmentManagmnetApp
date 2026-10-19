@@ -13,6 +13,7 @@ enum AdminDrawerItem {
   reports,
   manageUsers,
   duePayments,
+  pendingRequests,
   settings,
 }
 
@@ -70,6 +71,11 @@ class AdminSideDrawer extends StatelessWidget {
       item: AdminDrawerItem.reports,
       label: 'Reports',
       icon: ImageConstants.reports,
+    ),
+    _DrawerDestination(
+      item: AdminDrawerItem.pendingRequests,
+      label: 'Pending Requests',
+      icon: ImageConstants.documents,
     ),
     _DrawerDestination(
       label: 'User Management',

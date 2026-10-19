@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/screen
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
 import '../model/block_user_request_model.dart';
+import '../model/refund_investor_request_model.dart';
 
 class ManageUsersRepository {
   ManageUsersRepository({required this.dio});
@@ -89,6 +90,66 @@ class ManageUsersRepository {
     } catch (error) {
       log(
         'Block user failed: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    }
+  }
+
+  Future<RefundInvestorResponseModel> refundInvestor({
+    required int userId,
+    required double refundAmount,
+    required String paymentMethod,
+    required String remarks,
+  }) async {
+    try {
+      final request = RefundInvestorRequestModel(
+        userId: userId,
+        refundAmount: refundAmount,
+        paymentMethod: paymentMethod,
+        remarks: remarks,
+      );
+
+      final response = await dio.post(
+        ApiEndpoints.refundInvestor,
+        data: request.toJson(),
+      );
+
+      final raw = response.data;
+      if (raw is! Map) {
+        throw const FormatException('Invalid refund response');
+      }
+
+      final result = RefundInvestorResponseModel.fromJson(
+        Map<String, dynamic>.from(raw),
+      );
+
+      final succeeded = result.status || result.code == 200;
+      if (!succeeded) {
+        throw Exception(
+          result.message.trim().isNotEmpty
+              ? result.message.trim()
+              : 'Failed to process refund',
+        );
+      }
+
+      return result;
+    } on DioException catch (error) {
+      log(
+        'Refund investor failed: ${error.message} '
+        '(status ${error.response?.statusCode})',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } on FormatException catch (error) {
+      log(
+        'Refund investor invalid response: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } catch (error) {
+      log(
+        'Refund investor failed: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;

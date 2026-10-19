@@ -13,6 +13,7 @@ class InvestorNomineeEntry {
   final TextEditingController aadhaarController = TextEditingController();
   final TextEditingController panController = TextEditingController();
 
+  int? nomineeId;
   String? relationship;
   DateTime? dateOfBirth;
 
@@ -60,6 +61,7 @@ class InvestorNomineeEntry {
     phoneController.text = record.phoneNumber ?? '';
     aadhaarController.text = record.aadhaarNumber ?? '';
     panController.text = record.panCardNumber ?? '';
+    nomineeId = record.nomineeId;
     relationship = record.relationship;
     dateOfBirth = record.dateOfBirth;
     existingProfileImageUrl = record.profilePhotoUrl;
@@ -73,6 +75,7 @@ List<InvestorNomineeRecord> nomineeRecordsFromInvestor(InvestorModel investor) {
     return investor.nominees;
   }
   final single = InvestorNomineeRecord(
+    nomineeId: investor.nomineeId,
     name: investor.nomineeName,
     relationship: investor.nomineeRelationship,
     address: investor.nomineeAddress,

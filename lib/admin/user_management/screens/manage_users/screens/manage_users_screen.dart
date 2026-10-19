@@ -13,10 +13,15 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
-import 'package:sizer/sizer.dart';
 
 class ManageUsersScreen extends StatelessWidget {
-  const ManageUsersScreen({super.key});
+  const ManageUsersScreen({
+    super.key,
+    this.isActive = false,
+  });
+
+  /// When true, this tab is visible in the admin [IndexedStack].
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -25,15 +30,17 @@ class ManageUsersScreen extends StatelessWidget {
       child: BlocProvider(
         create: (context) => ManageUsersCubit(
           repository: context.read<ManageUsersRepository>(),
-        )..fetchUsers(),
-        child: const _ManageUsersView(),
+        ),
+        child: _ManageUsersView(isActive: isActive),
       ),
     );
   }
 }
 
 class _ManageUsersView extends StatefulWidget {
-  const _ManageUsersView();
+  const _ManageUsersView({required this.isActive});
+
+  final bool isActive;
 
   @override
   State<_ManageUsersView> createState() => _ManageUsersViewState();
@@ -41,13 +48,41 @@ class _ManageUsersView extends StatefulWidget {
 
 class _ManageUsersViewState extends State<_ManageUsersView> {
   int? _selectedUserId;
+  double? _selectedCommittedAmount;
+  double? _selectedPaidAmount;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshIfActive();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ManageUsersView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refreshIfActive();
+    }
+  }
+
+  void _refreshIfActive() {
+    if (!widget.isActive) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.isActive) return;
+      context.read<ManageUsersCubit>().fetchUsers();
+    });
+  }
 
   void _openUser(ManageUsersInvestor user) {
     FocusManager.instance.primaryFocus?.unfocus();
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       Future<void>.delayed(Duration.zero, () {
         if (!mounted) return;
-        setState(() => _selectedUserId = user.id);
+        setState(() {
+          _selectedUserId = user.id;
+          _selectedCommittedAmount = user.totalPayable;
+          _selectedPaidAmount = user.amountPaid;
+        });
       });
     });
   }
@@ -57,7 +92,11 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       Future<void>.delayed(Duration.zero, () {
         if (!mounted) return;
-        setState(() => _selectedUserId = null);
+        setState(() {
+          _selectedUserId = null;
+          _selectedCommittedAmount = null;
+          _selectedPaidAmount = null;
+        });
       });
     });
   }
@@ -68,6 +107,8 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
     if (selectedUserId != null) {
       return UserStatusUpdateScreen(
         userId: selectedUserId,
+        committedAmount: _selectedCommittedAmount ?? 0,
+        paidAmount: _selectedPaidAmount ?? 0,
         onBack: _backToUsers,
       );
     }
@@ -102,12 +143,7 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
               context.read<ManageUsersCubit>().clearStatusFeedback();
             },
             builder: (context, state) {
-              final users = switch (state) {
-                ManageUsersSuccess(:final users) => users,
-                ManageUsersEmpty() => const <ManageUsersInvestor>[],
-                _ => const <ManageUsersInvestor>[],
-              };
-              final showList =
+              final showOverview =
                   state is ManageUsersSuccess || state is ManageUsersEmpty;
 
               return Column(
@@ -133,7 +169,7 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (showList)
+                          if (showOverview)
                             ManageUsersOverviewSection(
                               totalUsers: state is ManageUsersSuccess
                                   ? state.totalUsers
@@ -144,9 +180,6 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
                               blockedUsers: state is ManageUsersSuccess
                                   ? state.blockedUsers
                                   : 0,
-                            //   usersWithPendingDues: state is ManageUsersSuccess
-                            //       ? state.usersWithPendingDues
-                            //       : 0,
                             )
                           else
                             const UserManagementSectionHeader(
@@ -155,27 +188,12 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
                                   'Review accounts, payment status, and access for all users',
                             ),
                           const SizedBox(height: 20),
-                          if (state is ManageUsersLoading ||
-                              state is ManageUsersInitial)
-                            const _ManageUsersLoading()
-                          else if (state is ManageUsersFailure)
-                            _ManageUsersErrorPanel(
-                              message: state.message,
-                              onRetry: () => context
-                                  .read<ManageUsersCubit>()
-                                  .fetchUsers(),
-                            )
-                          else
-                            ManageUsersTableSection(
-                              users: users,
-                              statusUpdatingUserId: state is ManageUsersSuccess
-                                  ? state.statusUpdatingUserId
-                                  : null,
-                              onUserTap: _openUser,
-                              onToggleBlock: (user) => context
-                                  .read<ManageUsersCubit>()
-                                  .toggleBlockStatus(user),
-                            ),
+                          ManageUsersTableSection(
+                            onUserTap: _openUser,
+                            onToggleBlock: (user) => context
+                                .read<ManageUsersCubit>()
+                                .toggleBlockStatus(user),
+                          ),
                         ],
                       ),
                     ),
@@ -185,90 +203,6 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class _ManageUsersLoading extends StatelessWidget {
-  const _ManageUsersLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 280,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: AppColors.accent,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Loading users...',
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ManageUsersErrorPanel extends StatelessWidget {
-  const _ManageUsersErrorPanel({
-    required this.message,
-    required this.onRetry,
-  });
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 280,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.error,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: onRetry,
-                child: Text(
-                  'Retry',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

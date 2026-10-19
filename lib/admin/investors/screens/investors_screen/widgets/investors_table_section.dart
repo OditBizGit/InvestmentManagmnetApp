@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
@@ -23,7 +24,7 @@ class InvestorsTableSection extends StatefulWidget {
 }
 
 class _InvestorsTableSectionState extends State<InvestorsTableSection> {
-  static const double _minTableWidth = 1040;
+  static const double _minTableWidth = 1280;
 
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalController = ScrollController();
@@ -215,6 +216,12 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
                                               joinedDate: _formatDate(
                                                 investor.createdDate,
                                               ),
+                                              refundAmount: _formatAmount(
+                                                investor.refundAmount,
+                                              ),
+                                              discountAmount: _formatAmount(
+                                                investor.discountAmount,
+                                              ),
                                               profileImage:
                                                   investor.profileImageUrl,
                                               onEdit: widget.onEditInvestor ==
@@ -376,6 +383,8 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('Paid Amt', flex: 2),
           _HeaderCell('Status', flex: 2),
           _HeaderCell('Joined Date', flex: 2),
+          _HeaderCell('Refund Amnt', flex: 2),
+          _HeaderCell('Disc Amnt', flex: 2),
           _HeaderCell('Action', flex: 2, align: TextAlign.center),
         ],
       ),
@@ -423,6 +432,8 @@ class _InvestorRow extends StatelessWidget {
     required this.investAmount,
     required this.paidAmount,
     required this.status,
+    required this.refundAmount,
+    required this.discountAmount,
     required this.joinedDate,
     this.profileImage,
     this.onEdit,
@@ -437,6 +448,8 @@ class _InvestorRow extends StatelessWidget {
   final String paidAmount;
   final String status;
   final String joinedDate;
+  final String refundAmount;
+  final String discountAmount;
   final String? profileImage;
   final VoidCallback? onEdit;
 
@@ -469,34 +482,7 @@ class _InvestorRow extends StatelessWidget {
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: imageUrl != null && imageUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.cover,
-                              httpHeaders: const {
-                                'Accept': 'image/*,*/*',
-                              },
-                              placeholder: (context, url) => const Center(
-                                child: SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.5,
-                                    color: AppColors.accent,
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => const Icon(
-                                Icons.person,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.person,
-                              size: 18,
-                              color: AppColors.textSecondary,
-                            ),
+                      child: _InvestorProfileImage(imageUrl: imageUrl),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -542,6 +528,8 @@ class _InvestorRow extends StatelessWidget {
                 ),
               ),
               _Cell(joinedDate, flex: 2),
+              _Cell(refundAmount, flex: 2),
+              _Cell(discountAmount, flex: 2),
               Expanded(
                 flex: 2,
                 child: Center(
@@ -566,6 +554,72 @@ class _InvestorRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _InvestorProfileImage extends StatelessWidget {
+  const _InvestorProfileImage({this.imageUrl});
+
+  final String? imageUrl;
+
+  static const _placeholder = Icon(
+    Icons.person,
+    size: 18,
+    color: AppColors.textSecondary,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    if (url == null || url.isEmpty) return _placeholder;
+
+    // Flutter web: CachedNetworkImage uses createImageCodecFromUrl / XHR.
+    // Dashboard and the edit form use NetworkImage, which displays the same
+    // backend files correctly in Chrome. Keep cache on mobile only.
+    if (kIsWeb) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        width: 32,
+        height: 32,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('GetInvestors table image failed: $url\n$error');
+          return _placeholder;
+        },
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(
+            child: SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: AppColors.accent,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (context, _) => const Center(
+        child: SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(
+            strokeWidth: 1.5,
+            color: AppColors.accent,
+          ),
+        ),
+      ),
+      errorWidget: (context, failedUrl, error) {
+        debugPrint('GetInvestors table image failed: $failedUrl\n$error');
+        return _placeholder;
+      },
     );
   }
 }

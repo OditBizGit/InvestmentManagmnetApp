@@ -31,12 +31,14 @@ class UpdateInvestorRequestModel {
   final double investmentAdvanceAmount;
   final String? paymentMethod;
 
+  /// Existing primary nominee id, or 0 when creating a new nominee.
+  final int nomineeId;
   final List<InvestorNomineeSubmitData> nominees;
 
-  // Images
+  // Images — API field names: ProfileImage, AadhaarPhoto, PanCardPhoto
   final MultipartFile? profileImage;
-  final MultipartFile? aadhaarCardImage;
-  final MultipartFile? panCardImage;
+  final MultipartFile? aadhaarPhoto;
+  final MultipartFile? panCardPhoto;
 
   UpdateInvestorRequestModel({
     required this.userId,
@@ -63,10 +65,11 @@ class UpdateInvestorRequestModel {
     this.investmentSplitGap = 0,
     this.investmentAdvanceAmount = 0,
     this.paymentMethod,
+    this.nomineeId = 0,
     this.nominees = const [],
     this.profileImage,
-    this.aadhaarCardImage,
-    this.panCardImage,
+    this.aadhaarPhoto,
+    this.panCardPhoto,
   });
 
   Future<FormData> toFormData() async {
@@ -74,122 +77,55 @@ class UpdateInvestorRequestModel {
 
     formData.fields.addAll([
       MapEntry('UserId', userId.toString()),
-      MapEntry('FullName', fullName),
-
-      if (staffId != null && staffId! > 0)
-        MapEntry('StaffId', staffId.toString()),
-
-      if (_hasValue(email))
-        MapEntry('Email', email!),
-
-      if (_hasValue(phoneNumber))
-        MapEntry('PhoneNumber', phoneNumber!),
-
-      if (_hasValue(alternativeNumber))
-        MapEntry('AlternativeNumber', alternativeNumber!),
-
-      if (_hasValue(investorType))
-        MapEntry('InvestorType', investorType!),
-
-      if (_hasValue(organization))
-        MapEntry('Organization', organization!),
-
-      if (_hasValue(description))
-        MapEntry('Description', description!),
-
-      if (_hasValue(address))
-        MapEntry('Address', address!),
-
-      // KYC / Bank
-      if (_hasValue(aadhaarNumber))
-        MapEntry('AadhaarNumber', aadhaarNumber!),
-
-      if (_hasValue(panCardNumber))
-        MapEntry('PanCardNumber', panCardNumber!),
-
-      if (_hasValue(accountNumber))
-        MapEntry('AccountNumber', accountNumber!),
-
-      if (_hasValue(ifscCode))
-        MapEntry('IFSCCode', ifscCode!),
-
-      if (_hasValue(bankName))
-        MapEntry('BankName', bankName!),
-
-      if (dateOfBirth != null)
-        MapEntry(
-          'DateOfBirth',
-          dateOfBirth!.toIso8601String(),
-        ),
-
-      // Investment
+      MapEntry('FullName', _text(fullName)),
+      MapEntry('Email', _text(email)),
+      MapEntry('PhoneNumber', _text(phoneNumber)),
+      MapEntry('AlternativeNumber', _text(alternativeNumber)),
+      MapEntry('InvestorType', _text(investorType)),
+      MapEntry('Organization', _text(organization)),
+      MapEntry('Address', _text(address)),
+      MapEntry('AadhaarNumber', _text(aadhaarNumber)),
+      MapEntry('PanCardNumber', _text(panCardNumber)),
+      MapEntry('AccountNumber', _text(accountNumber)),
+      MapEntry('IFSCCode', _text(ifscCode)),
+      MapEntry('BankName', _text(bankName)),
+      MapEntry('DateOfBirth', _date(dateOfBirth)),
       MapEntry(
-        'InvestmentAmount',
-        investmentAmount.toString(),
+        'StaffId',
+        staffId != null && staffId! > 0 ? staffId.toString() : '',
       ),
-
-      if (investmentDate != null)
-        MapEntry(
-          'InvestmentDate',
-          investmentDate!.toIso8601String(),
-        ),
-
-      MapEntry(
-        'InvestmentSplitMonths',
-        investmentSplitMonths.toString(),
-      ),
-
-      if (_hasValue(investmentSplitType))
-        MapEntry(
-          'InvestmentSplitType',
-          investmentSplitType!,
-        ),
-
-      MapEntry(
-        'InvestmentSplitGap',
-        investmentSplitGap.toString(),
-      ),
-
+      MapEntry('Description', _text(description)),
+      MapEntry('InvestmentAmount', investmentAmount.toString()),
+      MapEntry('InvestmentDate', _date(investmentDate)),
+      MapEntry('InvestmentSplitMonths', investmentSplitMonths.toString()),
+      MapEntry('InvestmentSplitType', _text(investmentSplitType)),
+      MapEntry('InvestmentSplitGap', investmentSplitGap.toString()),
       MapEntry(
         'InvestmentAdvanceAmount',
         investmentAdvanceAmount.toString(),
       ),
-
-      if (_hasValue(paymentMethod))
-        MapEntry(
-          'PaymentMethod',
-          paymentMethod!,
-        ),
+      MapEntry('PaymentMethod', _text(paymentMethod)),
     ]);
 
     if (profileImage != null) {
-      formData.files.add(
-        MapEntry('ProfileImage', profileImage!),
-      );
+      formData.files.add(MapEntry('ProfileImage', profileImage!.clone()));
+    }
+    if (aadhaarPhoto != null) {
+      formData.files.add(MapEntry('AadhaarPhoto', aadhaarPhoto!.clone()));
+    }
+    if (panCardPhoto != null) {
+      formData.files.add(MapEntry('PanCardPhoto', panCardPhoto!.clone()));
     }
 
-    if (aadhaarCardImage != null) {
-      formData.files.add(
-        MapEntry('AadhaarCardImage', aadhaarCardImage!),
-      );
-    }
-
-    if (panCardImage != null) {
-      formData.files.add(
-        MapEntry('PanCardImage', panCardImage!),
-      );
-    }
-
-    if (nominees.isNotEmpty) {
-      appendNomineesToFormData(formData, nominees);
-    }
+    appendUpdateInvestorNomineesToFormData(formData, nominees);
 
     return formData;
   }
 
-  static bool _hasValue(String? value) {
-    return value != null && value.trim().isNotEmpty;
-  }
+  static String _text(String? value) => value?.trim() ?? '';
+
+  static String _date(DateTime? value) =>
+      value?.toIso8601String() ?? '';
 }
 
 

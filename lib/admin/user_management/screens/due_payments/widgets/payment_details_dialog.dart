@@ -20,10 +20,11 @@ Future<void> showPaymentDetailsDialog({
           borderRadius: BorderRadius.circular(16),
         ),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480, maxHeight: 560),
+          constraints: const BoxConstraints(maxWidth: 480),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
@@ -82,79 +83,6 @@ Future<void> showPaymentDetailsDialog({
                 _DetailRow(
                   label: 'Next due date',
                   value: _formatDate(user.nextDueDate),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Payment history',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: user.payments.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No payments recorded yet',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: user.payments.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final payment = user.payments[index];
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.screenBg,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          payment.reference,
-                                          style: TextStyle(
-                                            fontSize: 10.sp,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '${_formatDate(payment.date)} · ${payment.method}',
-                                          style: TextStyle(
-                                            fontSize: 9.sp,
-                                            color: AppColors.textMuted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    CurrencyFormatter.format(payment.amount),
-                                    style: TextStyle(
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
                 ),
                 const SizedBox(height: 12),
                 Align(

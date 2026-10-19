@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/model/managed_user_model.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/cubit/manage_users_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_list_toolbar.dart';
@@ -11,16 +13,12 @@ import 'package:sizer/sizer.dart';
 class ManageUsersTableSection extends StatefulWidget {
   const ManageUsersTableSection({
     super.key,
-    required this.users,
     required this.onToggleBlock,
     required this.onUserTap,
-    this.statusUpdatingUserId,
   });
 
-  final List<ManageUsersInvestor> users;
   final ValueChanged<ManageUsersInvestor> onToggleBlock;
   final ValueChanged<ManageUsersInvestor> onUserTap;
-  final int? statusUpdatingUserId;
 
   @override
   State<ManageUsersTableSection> createState() =>
@@ -45,10 +43,10 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
     super.dispose();
   }
 
-  List<ManageUsersInvestor> get _filteredUsers {
+  List<ManageUsersInvestor> _filteredUsers(List<ManageUsersInvestor> users) {
     final query = _query.trim().toLowerCase();
 
-    return widget.users.where((user) {
+    return users.where((user) {
       final matchesFilter = switch (_filter) {
         ManageUsersStatusFilter.all => true,
         ManageUsersStatusFilter.active => !user.isBlocked,
@@ -102,67 +100,184 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
 
   @override
   Widget build(BuildContext context) {
-    final users = _filteredUsers;
+    return BlocBuilder<ManageUsersCubit, ManageUsersState>(
+      builder: (context, state) {
+        final isTableLoading = state is ManageUsersInitial ||
+            state is ManageUsersLoading ||
+            (state is ManageUsersSuccess && state.isTableLoading) ||
+            (state is ManageUsersEmpty && state.isTableLoading);
 
-    return UserManagementTableCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          UserManagementListToolbar(
-            title: 'All Investors',
-            searchController: _searchController,
-            searchHint: 'Search by name, mobile, email...',
-            onSearchChanged: (value) => setState(() => _query = value),
-            onClearSearch: () {
-              _searchController.clear();
-              setState(() => _query = '');
-            },
-            filters: _filters,
-            selectedFilterIndex: _filter.index,
-            onFilterSelected: (index) {
-              setState(() {
-                _filter = ManageUsersStatusFilter.values[index];
-              });
-            },
-          ),
-          const SizedBox(height: 14),
-          UserManagementTableFrame(
-            minTableWidth: _minTableWidth,
-            header: const UserManagementHeaderRow(
-              children: [
-                UserManagementHeaderCell('#', flex: 1),
-                UserManagementHeaderCell('Investor Name', flex: 4),
-                UserManagementHeaderCell('Mobile No', flex: 3),
-                UserManagementHeaderCell('Email', flex: 3),
-                UserManagementHeaderCell('Invest Amt', flex: 2),
-                UserManagementHeaderCell('Paid Amt', flex: 2),
-                UserManagementHeaderCell('Status', flex: 2),
-                UserManagementHeaderCell('Joined Date', flex: 2),
-                UserManagementHeaderCell(
-                  'Action',
-                  flex: 2,
-                  align: TextAlign.center,
+        final users = switch (state) {
+          ManageUsersSuccess(:final users) => users,
+          ManageUsersEmpty() => const <ManageUsersInvestor>[],
+          _ => const <ManageUsersInvestor>[],
+        };
+
+        final statusUpdatingUserId = state is ManageUsersSuccess
+            ? state.statusUpdatingUserId
+            : null;
+
+        final filteredUsers = _filteredUsers(users);
+        final failure = state is ManageUsersFailure ? state : null;
+        final showErrorPanel = failure != null && !isTableLoading;
+        final showTable = (state is ManageUsersSuccess ||
+                state is ManageUsersEmpty) &&
+            !isTableLoading;
+
+        return UserManagementTableCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              UserManagementListToolbar(
+                title: 'All Investors',
+                searchController: _searchController,
+                searchHint: 'Search by name, mobile, email...',
+                onSearchChanged: (value) => setState(() => _query = value),
+                onClearSearch: () {
+                  _searchController.clear();
+                  setState(() => _query = '');
+                },
+                filters: _filters,
+                selectedFilterIndex: _filter.index,
+                onFilterSelected: (index) {
+                  setState(() {
+                    _filter = ManageUsersStatusFilter.values[index];
+                  });
+                },
+              ),
+              const SizedBox(height: 14),
+              if (isTableLoading)
+                const _ManageUsersTableLoading()
+              else if (showErrorPanel)
+                _ManageUsersTableErrorPanel(
+                  message: failure.message,
+                  onRetry: () =>
+                      context.read<ManageUsersCubit>().fetchUsers(),
+                )
+              else if (showTable)
+                UserManagementTableFrame(
+                  minTableWidth: _minTableWidth,
+                  header: const UserManagementHeaderRow(
+                    children: [
+                      UserManagementHeaderCell('#', flex: 1),
+                      UserManagementHeaderCell('Investor Name', flex: 4),
+                      UserManagementHeaderCell('Mobile No', flex: 3),
+                      UserManagementHeaderCell('Email', flex: 3),
+                      UserManagementHeaderCell('Committed Amt', flex: 2),
+                      UserManagementHeaderCell('Paid Amt', flex: 2),
+                      UserManagementHeaderCell('Status', flex: 2),
+                      UserManagementHeaderCell('Joined Date', flex: 2),
+                      UserManagementHeaderCell(
+                        'Action',
+                        flex: 2,
+                        align: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  rowCount: filteredUsers.length,
+                  emptyMessage: _query.trim().isEmpty &&
+                          _filter == ManageUsersStatusFilter.all
+                      ? 'No investors found'
+                      : 'No investors match your search or filter',
+                  rowBuilder: (context, index) {
+                    final user = filteredUsers[index];
+                    return _ManageUserRow(
+                      index: index,
+                      user: user,
+                      joinedDate: _formatDate(user.joinedDate),
+                      isUpdating: statusUpdatingUserId == user.id,
+                      onTap: () => widget.onUserTap(user),
+                      onToggleBlock: () => _confirmToggle(user),
+                    );
+                  },
                 ),
-              ],
-            ),
-            rowCount: users.length,
-            emptyMessage: _query.trim().isEmpty &&
-                    _filter == ManageUsersStatusFilter.all
-                ? 'No investors found'
-                : 'No investors match your search or filter',
-            rowBuilder: (context, index) {
-              final user = users[index];
-              return _ManageUserRow(
-                index: index,
-                user: user,
-                joinedDate: _formatDate(user.joinedDate),
-                isUpdating: widget.statusUpdatingUserId == user.id,
-                onTap: () => widget.onUserTap(user),
-                onToggleBlock: () => _confirmToggle(user),
-              );
-            },
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+}
+
+class _ManageUsersTableLoading extends StatelessWidget {
+  const _ManageUsersTableLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 280,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Loading users...',
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ManageUsersTableErrorPanel extends StatelessWidget {
+  const _ManageUsersTableErrorPanel({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 280,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.error,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: onRetry,
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

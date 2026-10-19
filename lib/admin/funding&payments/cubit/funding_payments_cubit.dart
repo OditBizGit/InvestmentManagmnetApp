@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/funding_investor_list_model.dart';
@@ -13,13 +15,10 @@ part 'funding_payments_state.dart';
 
 class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
   FundingPaymentsCubit({
-    required InvestorsRepository investorsRepository,
-    required InvestorPaymentRepository paymentRepository,
-    required ProjectRepository projectRepository,
-  })  : _investorsRepository = investorsRepository,
-        _paymentRepository = paymentRepository,
-        _projectRepository = projectRepository,
-        super(FundingPaymentsInitial());
+    required this._investorsRepository,
+    required this._paymentRepository,
+    required this._projectRepository,
+  })  : super(FundingPaymentsInitial());
 
   final InvestorsRepository _investorsRepository;
   final InvestorPaymentRepository _paymentRepository;
@@ -88,6 +87,8 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
   Future<void> addInvestorPayment(
     AddInvestorPaymentRequestModel request,
   ) async {
+    if (state is AddPaymentLoading) return;
+
     emit(AddPaymentLoading());
     try {
       final response = await _paymentRepository.addInvestorPayment(request);
@@ -111,6 +112,9 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
           data: response.data,
         ),
       );
+
+      unawaited(_refreshInvestorsAfterPayment());
+      unawaited(refreshSilently());
     } on DioException catch (e) {
       emit(
         AddPaymentFailure(
@@ -186,6 +190,22 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
 
   void clearInvestorDetails() {
     _investorDetails = null;
+  }
+
+  Future<void> _refreshInvestorsAfterPayment() async {
+    try {
+      final response = await _investorsRepository.getInvestors();
+      final hasData = response.data.isNotEmpty;
+      final looksSuccessful = response.status ||
+          response.code == 200 ||
+          response.message.toLowerCase().contains('success');
+
+      if (looksSuccessful || hasData) {
+        _investors = response.data;
+      }
+    } catch (_) {
+      // Keep the last known investor list if refresh fails.
+    }
   }
 
   Future<void> _refreshProjectTotalFund() async {

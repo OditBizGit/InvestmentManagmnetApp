@@ -31,20 +31,17 @@ class AddFundFormCard extends StatelessWidget {
     required this.dueStatus,
     required this.payingNowController,
     required this.payingNowValidator,
-    required this.onPayDue,
     required this.onSettleFull,
     required this.discountController,
     required this.discountValidator,
-    required this.medicalAllowanceController,
+    required this.descriptionController,
     required this.paymentMethodOptions,
     required this.selectedPaymentMethod,
     required this.onPaymentMethodChanged,
     required this.fundingDate,
     required this.onPickDate,
     required this.formatDate,
-    required this.descriptionController,
     this.isLoadingInvestors = false,
-    this.canPayDue = false,
     this.canSettleFull = false,
   });
 
@@ -61,20 +58,17 @@ class AddFundFormCard extends StatelessWidget {
   final String? dueStatus;
   final TextEditingController payingNowController;
   final String? Function(String?) payingNowValidator;
-  final VoidCallback onPayDue;
   final VoidCallback onSettleFull;
   final TextEditingController discountController;
   final String? Function(String?) discountValidator;
-  final TextEditingController medicalAllowanceController;
+  final TextEditingController descriptionController;
   final List<String> paymentMethodOptions;
   final String? selectedPaymentMethod;
   final ValueChanged<String?> onPaymentMethodChanged;
   final DateTime fundingDate;
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
-  final TextEditingController descriptionController;
   final bool isLoadingInvestors;
-  final bool canPayDue;
   final bool canSettleFull;
 
   @override
@@ -210,24 +204,10 @@ class AddFundFormCard extends StatelessWidget {
                         validator: payingNowValidator,
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _QuickAmountButton(
-                              label: 'Pay Due',
-                              enabled: canPayDue,
-                              onTap: onPayDue,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _QuickAmountButton(
-                              label: 'Settle Full',
-                              enabled: canSettleFull,
-                              onTap: onSettleFull,
-                            ),
-                          ),
-                        ],
+                      _QuickAmountButton(
+                        label: 'Settle Full',
+                        enabled: canSettleFull,
+                        onTap: onSettleFull,
                       ),
                     ],
                   ),
@@ -236,7 +216,7 @@ class AddFundFormCard extends StatelessWidget {
                   label: 'Discount',
                   child: _TextInput(
                     controller: discountController,
-                    hint: 'Optional — does not reduce deposit recorded',
+                    hint: 'Optional — reduces remaining outstanding with deposit',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -268,18 +248,10 @@ class AddFundFormCard extends StatelessWidget {
                   ),
                 );
                 final descriptionField = _LabeledField(
-                  label: 'Description',
+                  label: 'Description Medical Allowances',
                   child: _TextInput(
                     controller: descriptionController,
                     hint: 'Enter payment description / narration',
-                    maxLines: 3,
-                  ),
-                );
-                final medicalAllowanceField = _LabeledField(
-                  label: 'Medical Allowance Description',
-                  child: _TextInput(
-                    controller: medicalAllowanceController,
-                    hint: 'Enter medical allowance details (optional)',
                     maxLines: 3,
                   ),
                 );
@@ -310,8 +282,6 @@ class AddFundFormCard extends StatelessWidget {
                       dateField,
                       const SizedBox(height: 14),
                       descriptionField,
-                      const SizedBox(height: 14),
-                      medicalAllowanceField,
                     ],
                   );
                 }
@@ -361,8 +331,6 @@ class AddFundFormCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     descriptionField,
-                    const SizedBox(height: 14),
-                    medicalAllowanceField,
                   ],
                 );
               },

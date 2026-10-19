@@ -21,6 +21,7 @@ class UserBenefitsSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final note = medicalAllowanceNote.trim();
+    final displayNote = note.isEmpty ? 'No medical allowance recorded' : note;
 
     return AddInvestorSectionCard(
       title: 'Deposit & company benefits',
@@ -77,41 +78,48 @@ class UserBenefitsSummaryCard extends StatelessWidget {
               );
             },
           ),
-          if (note.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.screenBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border),
+          const SizedBox(height: 14),
+          Text(
+            'Medical allowance',
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            readOnly: true,
+            maxLines: 3,
+            initialValue: displayNote,
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w400,
+              color: note.isEmpty ? AppColors.hint : AppColors.textPrimary,
+              height: 1.4,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Medical allowance details from funding records',
+              filled: true,
+              fillColor: const Color(0xFFF8F7FA),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Medical allowance note',
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    note,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textPrimary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );

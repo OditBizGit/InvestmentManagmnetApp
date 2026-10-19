@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 class InvestorNomineeSubmitData {
   const InvestorNomineeSubmitData({
+    this.nomineeId,
     this.name = '',
     this.relationship = '',
     this.address = '',
@@ -14,6 +15,7 @@ class InvestorNomineeSubmitData {
     this.panCardImage,
   });
 
+  final int? nomineeId;
   final String name;
   final String relationship;
   final String address;
@@ -24,6 +26,13 @@ class InvestorNomineeSubmitData {
   final MultipartFile? profilePhoto;
   final MultipartFile? aadhaarCardImage;
   final MultipartFile? panCardImage;
+
+  /// Existing nominees keep their API id; new nominees are sent as 0.
+  int get resolvedNomineeId {
+    final id = nomineeId;
+    if (id == null || id <= 0) return 0;
+    return id;
+  }
 
   bool get isEmpty {
     return name.trim().isEmpty &&
@@ -64,6 +73,10 @@ void _appendRegisterNomineeSlot(
   final prefix = _registerNomineeFieldPrefix(index);
 
   formData.fields.addAll([
+    MapEntry(
+      _registerNomineeIdKey(index),
+      nominee.resolvedNomineeId.toString(),
+    ),
     MapEntry('${prefix}Name', nominee.name.trim()),
     MapEntry('${prefix}Relationship', nominee.relationship.trim()),
     MapEntry('${prefix}Address', nominee.address.trim()),
@@ -80,15 +93,9 @@ void _appendRegisterNomineeSlot(
   final aadhaarKey = _registerNomineeAadhaarPhotoKey(index);
   final panKey = _registerNomineePanPhotoKey(index);
 
-  if (nominee.profilePhoto != null) {
-    formData.files.add(MapEntry(profileKey, nominee.profilePhoto!));
-  }
-  if (nominee.aadhaarCardImage != null) {
-    formData.files.add(MapEntry(aadhaarKey, nominee.aadhaarCardImage!));
-  }
-  if (nominee.panCardImage != null) {
-    formData.files.add(MapEntry(panKey, nominee.panCardImage!));
-  }
+  _addMultipartFile(formData, profileKey, nominee.profilePhoto);
+  _addMultipartFile(formData, aadhaarKey, nominee.aadhaarCardImage);
+  _addMultipartFile(formData, panKey, nominee.panCardImage);
 }
 
 String _registerNomineeFieldPrefix(int index) {
@@ -101,6 +108,19 @@ String _registerNomineeFieldPrefix(int index) {
       return 'Nominee3';
     default:
       return 'Nominee3';
+  }
+}
+
+String _registerNomineeIdKey(int index) {
+  switch (index) {
+    case 0:
+      return 'NomineeId';
+    case 1:
+      return 'Nominee2Id';
+    case 2:
+      return 'Nominee3Id';
+    default:
+      return 'Nominee3Id';
   }
 }
 
@@ -143,91 +163,68 @@ String _registerNomineePanPhotoKey(int index) {
   }
 }
 
-/// UpdateInvestor API (indexed nominee array — unchanged for edit flow).
-void appendNomineesToFormData(
+/// UpdateInvestor: always send 3 nominee slots in API field names.
+/// Empty slots use empty strings and NomineeId 0.
+void appendUpdateInvestorNomineesToFormData(
   FormData formData,
-  List<InvestorNomineeSubmitData> nominees, {
-  bool legacyPrimaryFields = true,
-}) {
-  for (var i = 0; i < nominees.length; i++) {
-    _appendNomineeAtIndex(formData, i, nominees[i]);
+  List<InvestorNomineeSubmitData> nominees,
+) {
+  final slots = List<InvestorNomineeSubmitData>.generate(
+    3,
+    (index) => index < nominees.length
+        ? nominees[index]
+        : const InvestorNomineeSubmitData(),
+  );
+
+  for (var index = 0; index < slots.length; index++) {
+    _appendUpdateNomineeSlot(formData, index, slots[index]);
   }
-
-  if (!legacyPrimaryFields || nominees.isEmpty) return;
-
-  final primary = nominees.first;
-  _appendLegacyNomineeFields(formData, primary);
 }
 
-void _appendNomineeAtIndex(
+void _appendUpdateNomineeSlot(
   FormData formData,
   int index,
   InvestorNomineeSubmitData nominee,
 ) {
-  final prefix = 'Nominees[$index]';
+  final suffix = '${index + 1}';
+  final idKey = index == 0 ? 'NomineeId' : 'NomineeId$suffix';
 
   formData.fields.addAll([
-    MapEntry('$prefix.NomineeName', nominee.name),
-    MapEntry('$prefix.NomineeRelationship', nominee.relationship),
-    MapEntry('$prefix.NomineeAddress', nominee.address),
-    MapEntry('$prefix.NomineeAadhaarNumber', nominee.aadhaarNumber),
-    MapEntry('$prefix.NomineePanCardNumber', nominee.panCardNumber),
-    MapEntry('$prefix.NomineePhoneNumber', nominee.phoneNumber),
-    if (nominee.dateOfBirth != null)
-      MapEntry(
-        '$prefix.NomineeDateOfBirth',
-        nominee.dateOfBirth!.toIso8601String(),
-      ),
+    MapEntry(idKey, nominee.resolvedNomineeId.toString()),
+    MapEntry('NomineeName$suffix', nominee.name.trim()),
+    MapEntry('NomineeRelationship$suffix', nominee.relationship.trim()),
+    MapEntry('NomineeAddress$suffix', nominee.address.trim()),
+    MapEntry(
+      'NomineeDateOfBirth$suffix',
+      nominee.dateOfBirth?.toIso8601String() ?? '',
+    ),
+    MapEntry('NomineeAadhaarNumber$suffix', nominee.aadhaarNumber.trim()),
+    MapEntry('NomineePanCardNumber$suffix', nominee.panCardNumber.trim()),
+    MapEntry('NomineePhoneNumber$suffix', nominee.phoneNumber.trim()),
   ]);
 
-  if (nominee.profilePhoto != null) {
-    formData.files.add(
-      MapEntry('$prefix.NomineeProfilePhoto', nominee.profilePhoto!),
-    );
-  }
-  if (nominee.aadhaarCardImage != null) {
-    formData.files.add(
-      MapEntry('$prefix.NomineeAadhaarCardImage', nominee.aadhaarCardImage!),
-    );
-  }
-  if (nominee.panCardImage != null) {
-    formData.files.add(
-      MapEntry('$prefix.NomineePanCardImage', nominee.panCardImage!),
-    );
-  }
+  _addMultipartFile(
+    formData,
+    'NomineeProfilePhoto$suffix',
+    nominee.profilePhoto,
+  );
+  _addMultipartFile(
+    formData,
+    'NomineeAadhaarPhoto$suffix',
+    nominee.aadhaarCardImage,
+  );
+  _addMultipartFile(
+    formData,
+    'NomineePanCardPhoto$suffix',
+    nominee.panCardImage,
+  );
 }
 
-void _appendLegacyNomineeFields(
+void _addMultipartFile(
   FormData formData,
-  InvestorNomineeSubmitData nominee,
+  String key,
+  MultipartFile? file,
 ) {
-  formData.fields.addAll([
-    MapEntry('NomineeName', nominee.name),
-    MapEntry('NomineeRelationship', nominee.relationship),
-    MapEntry('NomineeAddress', nominee.address),
-    MapEntry('NomineeAadhaarNumber', nominee.aadhaarNumber),
-    MapEntry('NomineePanCardNumber', nominee.panCardNumber),
-    MapEntry('NomineePhoneNumber', nominee.phoneNumber),
-    if (nominee.dateOfBirth != null)
-      MapEntry(
-        'NomineeDateOfBirth',
-        nominee.dateOfBirth!.toIso8601String(),
-      ),
-  ]);
-
-  if (nominee.profilePhoto != null) {
-    formData.files.add(
-      MapEntry('NomineeProfilePhoto', nominee.profilePhoto!),
-    );
-  }
-  if (nominee.aadhaarCardImage != null) {
-    formData.files.add(
-      MapEntry('NomineeAadhaarCardImage', nominee.aadhaarCardImage!),
-    );
-  }
-  if (nominee.panCardImage != null) {
-    formData.files.add(
-      MapEntry('NomineePanCardImage', nominee.panCardImage!),
-    );
-  }
+  if (file == null) return;
+  formData.files.add(MapEntry(key, file.clone()));
 }

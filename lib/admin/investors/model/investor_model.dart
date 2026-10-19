@@ -16,6 +16,8 @@ class InvestorModel {
   final String? organization;
   final String? description;
   final String? address;
+  final double refundAmount;
+  final double discountAmount;
 
   // Personal / KYC
   final String? aadhaarNumber;
@@ -52,6 +54,7 @@ class InvestorModel {
   final String? status;
 
   // Nominee
+  final int? nomineeId;
   final String? nomineeName;
   final String? nomineeRelationship;
   final String? nomineeAddress;
@@ -79,6 +82,9 @@ class InvestorModel {
     this.organization,
     this.description,
     this.address,
+    this.refundAmount = 0,
+    this.discountAmount = 0,
+
 
     // Personal / KYC
     this.aadhaarNumber,
@@ -115,6 +121,7 @@ class InvestorModel {
     this.status,
 
     // Nominee
+    this.nomineeId,
     this.nomineeName,
     this.nomineeRelationship,
     this.nomineeAddress,
@@ -217,10 +224,19 @@ class InvestorModel {
       aadhaarNumber: _readString(
         json['aadhaarNumber'] ?? json['AadhaarNumber'],
       ),
+      refundAmount: _readDouble(
+        json['refundAmount'] ?? json['RefundAmount'],
+      ),
+      discountAmount: _readDouble(
+        json['discountAmount'] ?? json['DiscountAmount'],
+      ),
+
 
       aadhaarCardImage: _readString(
         json['aadhaarCardImage'] ??
             json['AadhaarCardImage'] ??
+            json['aadhaarPhoto'] ??
+            json['AadhaarPhoto'] ??
             json['aadhaarImage'] ??
             json['AadhaarImage'],
       ),
@@ -232,6 +248,8 @@ class InvestorModel {
       panCardImage: _readString(
         json['panCardImage'] ??
             json['PanCardImage'] ??
+            json['panCardPhoto'] ??
+            json['PanCardPhoto'] ??
             json['panImage'] ??
             json['PanImage'],
       ),
@@ -338,6 +356,9 @@ class InvestorModel {
       ),
 
       // Nominee
+      nomineeId: _readNullableInt(
+        json['nomineeId'] ?? json['NomineeId'] ?? json['id'] ?? json['Id'],
+      ),
       nomineeName: _readString(
         json['nomineeName'] ?? json['NomineeName'],
       ),

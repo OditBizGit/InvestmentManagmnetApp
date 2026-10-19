@@ -17,9 +17,17 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
   final ManageUsersRepository _repository;
 
   Future<void> fetchUsers() async {
-    if (state is ManageUsersLoading) return;
+    final previous = state;
+    if (previous is ManageUsersLoading) return;
 
-    emit(const ManageUsersLoading());
+    if (previous is ManageUsersSuccess) {
+      emit(previous.copyWith(isTableLoading: true));
+    } else if (previous is ManageUsersEmpty) {
+      emit(previous.copyWith(isTableLoading: true));
+    } else {
+      emit(const ManageUsersLoading());
+    }
+
     try {
       final response = await _repository.getInvestors();
       if (isClosed) return;
@@ -156,6 +164,92 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     }
 
     emit(current.copyWith(clearStatusFeedback: true));
+  }
+
+  Future<bool> refundUser({
+    required ManageUsersInvestor user,
+    required double refundAmount,
+    required String paymentMethod,
+    required String remarks,
+  }) async {
+    final current = state;
+    if (current is! ManageUsersSuccess) return false;
+    if (current.refundUpdatingUserId != null) return false;
+
+    final displayName =
+        user.name.trim().isEmpty ? 'User' : user.name.trim();
+
+    emit(
+      current.copyWith(
+        refundUpdatingUserId: user.id,
+        clearStatusFeedback: true,
+      ),
+    );
+
+    try {
+      final response = await _repository.refundInvestor(
+        userId: user.id,
+        refundAmount: refundAmount,
+        paymentMethod: paymentMethod,
+        remarks: remarks,
+      );
+      if (isClosed) return false;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return false;
+
+      final refundData = response.data;
+      final updatedPaid = refundData != null
+          ? refundData.remainingRefundableAmount
+          : (user.amountPaid - refundAmount).clamp(0.0, double.infinity);
+
+      final message = response.message.trim().isNotEmpty
+          ? response.message.trim()
+          : 'Refund recorded for $displayName';
+
+      emit(
+        latest.copyWith(
+          users: [
+            for (final item in latest.users)
+              if (item.id == user.id)
+                item.copyWith(amountPaid: updatedPaid)
+              else
+                item,
+          ],
+          clearRefundUpdatingUserId: true,
+          statusFeedback: ManageUsersStatusFeedback(
+            isSuccess: true,
+            title: 'Refund Saved',
+            message: message,
+          ),
+        ),
+      );
+      return true;
+    } catch (error) {
+      log(
+        'Refund user failed: $error',
+        name: 'ManageUsersCubit',
+      );
+      if (isClosed) return false;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return false;
+
+      emit(
+        latest.copyWith(
+          clearRefundUpdatingUserId: true,
+          statusFeedback: ManageUsersStatusFeedback(
+            isSuccess: false,
+            title: 'Refund Failed',
+            message: ApiErrorMessage.from(
+              error,
+              fallback: 'Failed to process refund',
+            ),
+          ),
+        ),
+      );
+      return false;
+    }
   }
 
   void updateMouStatus(int userId, DocumentProcessStatus status) {

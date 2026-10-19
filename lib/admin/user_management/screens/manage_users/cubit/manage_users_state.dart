@@ -13,7 +13,15 @@ final class ManageUsersLoading extends ManageUsersState {
 }
 
 final class ManageUsersEmpty extends ManageUsersState {
-  const ManageUsersEmpty();
+  const ManageUsersEmpty({this.isTableLoading = false});
+
+  final bool isTableLoading;
+
+  ManageUsersEmpty copyWith({bool? isTableLoading}) {
+    return ManageUsersEmpty(
+      isTableLoading: isTableLoading ?? this.isTableLoading,
+    );
+  }
 }
 
 class ManageUsersStatusFeedback {
@@ -34,14 +42,18 @@ final class ManageUsersSuccess extends ManageUsersState {
     this.mouStatus = const {},
     this.llpStatus = const {},
     this.statusUpdatingUserId,
+    this.refundUpdatingUserId,
     this.statusFeedback,
+    this.isTableLoading = false,
   });
 
   final List<ManageUsersInvestor> users;
   final Map<int, DocumentProcessStatus> mouStatus;
   final Map<int, DocumentProcessStatus> llpStatus;
   final int? statusUpdatingUserId;
+  final int? refundUpdatingUserId;
   final ManageUsersStatusFeedback? statusFeedback;
+  final bool isTableLoading;
 
   int get totalUsers => users.length;
 
@@ -58,8 +70,11 @@ final class ManageUsersSuccess extends ManageUsersState {
     Map<int, DocumentProcessStatus>? llpStatus,
     int? statusUpdatingUserId,
     bool clearStatusUpdatingUserId = false,
+    int? refundUpdatingUserId,
+    bool clearRefundUpdatingUserId = false,
     ManageUsersStatusFeedback? statusFeedback,
     bool clearStatusFeedback = false,
+    bool? isTableLoading,
   }) {
     return ManageUsersSuccess(
       users: users ?? this.users,
@@ -68,9 +83,13 @@ final class ManageUsersSuccess extends ManageUsersState {
       statusUpdatingUserId: clearStatusUpdatingUserId
           ? null
           : statusUpdatingUserId ?? this.statusUpdatingUserId,
+      refundUpdatingUserId: clearRefundUpdatingUserId
+          ? null
+          : refundUpdatingUserId ?? this.refundUpdatingUserId,
       statusFeedback: clearStatusFeedback
           ? null
           : statusFeedback ?? this.statusFeedback,
+      isTableLoading: isTableLoading ?? this.isTableLoading,
     );
   }
 }
