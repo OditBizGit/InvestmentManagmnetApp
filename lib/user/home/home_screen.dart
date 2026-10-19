@@ -117,12 +117,14 @@ class _UserHomeViewState extends State<_UserHomeView> {
   Future<void> _maybeShowCommitmentOverlay({
     required double totalCollection,
     required double totalCommitment,
+    double discountAmount = 0,
   }) async {
     if (_commitmentOverlayShown ||
         _isShowingCommitmentOverlay ||
         !isCommitmentFullyCollected(
           totalCollection: totalCollection,
           totalCommitment: totalCommitment,
+          discountAmount: discountAmount,
         )) {
       return;
     }
@@ -158,6 +160,7 @@ class _UserHomeViewState extends State<_UserHomeView> {
                 _maybeShowCommitmentOverlay(
                   totalCollection: state.profile.totalCollection,
                   totalCommitment: state.profile.totalCommitment,
+                  discountAmount: state.profile.discountAmount,
                 );
               });
             }
@@ -184,6 +187,7 @@ class _UserHomeViewState extends State<_UserHomeView> {
             final summaryKey = profile == null
                 ? 'loading'
                 : '${profile.totalCollection}_${profile.totalCommitment}_'
+                    '${profile.discountAmount}_'
                     '${profile.displayName}_${profile.investorCode}_'
                     '${profile.profileImageUrl}';
 

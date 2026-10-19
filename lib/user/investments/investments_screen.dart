@@ -230,6 +230,13 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
                                       totalPaid: data?.totalPaidAmount ?? 0,
                                       totalBalance:
                                           data?.totalPendingAmount ?? 0,
+                                      discountAmount: data?.transactions
+                                              .fold<double>(
+                                            0,
+                                            (sum, item) =>
+                                                sum + item.discountAmount,
+                                          ) ??
+                                          0,
                                     ),
                                     SizedBox(height: 1.5.h),
                                     const WorkProgressCard(),
@@ -718,10 +725,12 @@ class _CapitalAllocationCard extends StatelessWidget {
   const _CapitalAllocationCard({
     required this.totalPaid,
     required this.totalBalance,
+    required this.discountAmount,
   });
 
   final double totalPaid;
   final double totalBalance;
+  final double discountAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -756,6 +765,21 @@ class _CapitalAllocationCard extends StatelessWidget {
             amount: UserInvestmentsScreen.formatCurrency(totalBalance),
             amountColor: UserInvestmentsScreen._red,
           ),
+          if (discountAmount > 0) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 1.h),
+              child: const Divider(
+                height: 1,
+                thickness: 1,
+                color: UserInvestmentsScreen._border,
+              ),
+            ),
+            _AllocationRow(
+              label: 'Discount',
+              amount: UserInvestmentsScreen.formatCurrency(discountAmount),
+              amountColor: UserInvestmentsScreen._accent,
+            ),
+          ],
         ],
       ),
     );

@@ -12,11 +12,11 @@ import 'package:maribel_wellness_centre_application/core/utils/currency_formatte
 import 'package:maribel_wellness_centre_application/core/utils/user_logout_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/cubit/profile_cubit.dart';
-import 'package:maribel_wellness_centre_application/user/profile/documents_screen.dart';
-import 'package:maribel_wellness_centre_application/user/profile/investment_details_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
-import 'package:maribel_wellness_centre_application/user/profile/personal_info_screen.dart';
-import 'package:maribel_wellness_centre_application/user/profile/register_complaint_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/documents_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/investment_details_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/personal_info_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/register_complaint_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
@@ -174,6 +174,12 @@ class _UserProfileView extends StatelessWidget {
                             ),
                           ),
                         );
+                      },
+                    ),
+                    _MenuTile(
+                      iconPath: ImageConstants.team,
+                      label: 'Team Overview',
+                      onTap: () {
                       },
                     ),
                     _MenuTile(

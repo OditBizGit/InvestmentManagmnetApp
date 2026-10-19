@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
-import 'package:maribel_wellness_centre_application/user/profile/complaint_success_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/widgets/complaint_success_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/my_complaints_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
 import 'package:shimmer/shimmer.dart';

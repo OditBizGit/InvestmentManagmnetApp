@@ -58,6 +58,7 @@ class HomeRepository {
           details.profileImageUrl ?? localProfile.profileImageUrl,
       totalCollection: details.totalPaidAmount,
       totalCommitment: details.investmentAmount,
+      discountAmount: details.discountAmount,
     );
   }
 

@@ -5,6 +5,7 @@ class HomeProfileModel {
     this.profileImageUrl,
     this.totalCollection = 0,
     this.totalCommitment = 0,
+    this.discountAmount = 0,
   });
 
   final String displayName;
@@ -16,4 +17,7 @@ class HomeProfileModel {
 
   /// Maps to API `investmentAmount`.
   final double totalCommitment;
+
+  /// Maps to API `discountAmount`.
+  final double discountAmount;
 }

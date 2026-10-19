@@ -11,6 +11,7 @@ class InvestorTransactionItemModel {
   final double paidAmount;
   final double receivedAmount;
   final double pendingAmount;
+  final double discountAmount;
   final String status;
   final String narration;
   final String paymentMethod;
@@ -26,6 +27,7 @@ class InvestorTransactionItemModel {
     this.paidAmount = 0,
     this.receivedAmount = 0,
     this.pendingAmount = 0,
+    this.discountAmount = 0,
     this.status = '',
     this.narration = '',
     this.paymentMethod = '',
@@ -51,6 +53,9 @@ class InvestorTransactionItemModel {
       ),
       pendingAmount: _readDouble(
         json['pendingAmount'] ?? json['PendingAmount'],
+      ),
+      discountAmount: _readDouble(
+        json['discountAmount'] ?? json['DiscountAmount'],
       ),
       status: (json['status'] ?? json['Status'] ?? '').toString(),
       narration: (json['narration'] ?? json['Narration'] ?? '').toString(),
