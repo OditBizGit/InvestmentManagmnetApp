@@ -51,6 +51,10 @@ class ApiEndpoints {
   static const String blockUser = "/api/Investor/UpdateInvestorStatus";
   static const String refundInvestor = "/api/Investor/RefundInvestor";
   static const String paymentStatusReport = "/api/Investor/PaymentStatusReport";
+  static const String saveMOU = "/api/Investor/SaveInvestorMOU";
+  static const String saveLLP = "/api/Investor/SaveInvestorLLP";
+  static const String getInvestorsMOU = "/api/Investor/GetInvestorMOU/{investorId}";
+  static const String getInvestorsLLP = "/api/Investor/GetInvestorLLP/{investorId}";
 
 
 
