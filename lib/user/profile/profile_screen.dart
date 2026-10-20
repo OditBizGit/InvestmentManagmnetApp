@@ -13,7 +13,7 @@ import 'package:maribel_wellness_centre_application/core/utils/user_logout_confi
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/cubit/profile_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
-import 'package:maribel_wellness_centre_application/user/profile/screens/documents_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/document_screen/documents_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/screens/investment_details_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/screens/personal_info_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/screens/register_complaint_screen.dart';
@@ -157,9 +157,7 @@ class _UserProfileView extends StatelessWidget {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => DocumentsScreen(
-                              details: details,
-                            ),
+                            builder: (_) => const DocumentsScreen(),
                           ),
                         );
                       },

@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_response_model.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/investor_llp_response_model.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/investor_mou_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/my_complaints_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/register_complaint_response_model.dart';
 
@@ -67,6 +69,50 @@ class ProfileRepository {
       rethrow;
     } catch (e) {
       log('Get My Complaints Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<InvestorMouResponseModel> getInvestorMou(int investorId) async {
+    try {
+      final response = await dio.get(
+        ApiEndpoints.getInvestorsMOU.replaceFirst(
+          '{investorId}',
+          '$investorId',
+        ),
+      );
+
+      return InvestorMouResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      log('Get Investor MOU Error: ${e.message}');
+      log('Get Investor MOU Response: ${e.response?.data}');
+      rethrow;
+    } catch (e) {
+      log('Get Investor MOU Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<InvestorLlpResponseModel> getInvestorLlp(int investorId) async {
+    try {
+      final response = await dio.get(
+        ApiEndpoints.getInvestorsLLP.replaceFirst(
+          '{investorId}',
+          '$investorId',
+        ),
+      );
+
+      return InvestorLlpResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      log('Get Investor LLP Error: ${e.message}');
+      log('Get Investor LLP Response: ${e.response?.data}');
+      rethrow;
+    } catch (e) {
+      log('Get Investor LLP Error: $e');
       rethrow;
     }
   }
