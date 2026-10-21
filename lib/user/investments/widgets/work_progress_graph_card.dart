@@ -8,16 +8,16 @@ import 'package:maribel_wellness_centre_application/user/investments/repository/
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
-class WorkProgressCard extends StatefulWidget {
-  const WorkProgressCard({super.key});
+class WorkProgressGraphCard extends StatefulWidget {
+  const WorkProgressGraphCard({super.key});
 
   @override
-  State<WorkProgressCard> createState() => _WorkProgressCardState();
+  State<WorkProgressGraphCard> createState() => _WorkProgressGraphCardState();
 }
 
-/// Shimmer matching [WorkProgressCard] padding, chart height, and typography.
-class WorkProgressCardShimmer extends StatelessWidget {
-  const WorkProgressCardShimmer({super.key});
+/// Shimmer matching [WorkProgressGraphCard] padding, chart height, and typography.
+class WorkProgressGraphCardShimmer extends StatelessWidget {
+  const WorkProgressGraphCardShimmer({super.key});
 
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
@@ -121,7 +121,7 @@ class _Line extends StatelessWidget {
   }
 }
 
-class _WorkProgressCardState extends State<WorkProgressCard> {
+class _WorkProgressGraphCardState extends State<WorkProgressGraphCard> {
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _textSecondary = Color(0xFF8A8A8A);
   static const Color _accent = Color(0xFFA28CC1);
@@ -159,6 +159,9 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
         if (selected == null) {
           _graphPoints = const [];
           _isLoadingGraph = false;
+        } else {
+          _graphPoints = const [];
+          _isLoadingGraph = true;
         }
       });
 
@@ -315,8 +318,14 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
     final chartValues = _chartValues;
     final chartLabels = _chartLabels;
     final selectedLabel = _selectedProgressLabel;
+    final hasGraphData = _isLoadingGraph || _graphPoints.isNotEmpty;
+    if (_stages.isEmpty || !hasGraphData) {
+      return const SizedBox.shrink();
+    }
 
-    return Container(
+    return Padding(
+      padding: EdgeInsets.only(bottom: 2.5.h),
+      child: Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(4.w, 2.h, 5.w, 2.h),
       decoration: BoxDecoration(
@@ -496,6 +505,7 @@ class _WorkProgressCardState extends State<WorkProgressCard> {
               ],
             ),
         ],
+      ),
       ),
     );
   }

@@ -231,12 +231,14 @@ class _UserHomeViewState extends State<_UserHomeView> {
                             ),
                             SizedBox(height: 2.h),
                           ],
-                          WorkProgressCard(
-                            isLoading: isLoading,
-                            items: workProgress,
-                          ),
+                          if (isLoading || workProgress.isNotEmpty)
+                            WorkProgressCard(
+                              isLoading: isLoading,
+                              items: workProgress,
+                            ),
                           if (isLoading || latestUpdate != null) ...[
-                            SizedBox(height: 2.5.h),
+                            if (isLoading || workProgress.isNotEmpty)
+                              SizedBox(height: 2.5.h),
                             LatestProjectUpdates(
                               isLoading: isLoading,
                               isActive: widget.isActive,

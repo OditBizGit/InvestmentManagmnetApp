@@ -24,6 +24,10 @@ class WorkProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!isLoading && items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
@@ -77,32 +81,14 @@ class _PhaseProgressBody extends StatelessWidget {
             ),
           ],
         ),
-        if (items.isEmpty)
-          SizedBox(
-            width: double.infinity,
-            height: 20.h,
-            child: Center(
-              child: Text(
-                'No work progress available',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: WorkProgressCard._textPrimary.withValues(alpha: 0.55),
-                ),
-              ),
+        SizedBox(height: 2.h),
+        for (int i = 0; i < items.length; i++)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: i == items.length - 1 ? 0 : 1.6.h,
             ),
-          )
-        else ...[
-          SizedBox(height: 2.h),
-          for (int i = 0; i < items.length; i++)
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: i == items.length - 1 ? 0 : 1.6.h,
-              ),
-              child: _ProgressRow(item: items[i]),
-            ),
-        ],
+            child: _ProgressRow(item: items[i]),
+          ),
       ],
     );
   }

@@ -47,7 +47,7 @@ class _AccountBlockedOverlayState extends State<AccountBlockedOverlay> {
           settings: const RouteSettings(name: AccountBlockRoutes.login),
           builder: (_) => const LoginScreen(
             home: UserMainScreen(),
-            snackBarMessage: 'Your account has been blocked',
+            snackBarMessage: 'Your account has been terminated',
           ),
         ),
         (route) => false,
@@ -144,7 +144,7 @@ class _AccountBlockedOverlayState extends State<AccountBlockedOverlay> {
                     ),
                     SizedBox(height: 2.8.h),
                     Text(
-                      'Account Blocked',
+                      'Account Terminated',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18.sp,
@@ -156,8 +156,8 @@ class _AccountBlockedOverlayState extends State<AccountBlockedOverlay> {
                     ),
                     SizedBox(height: 1.4.h),
                     Text(
-                      'Your account has been blocked by the administrator.\n'
-                      'Please contact support for assistance.',
+                      'Your account has been terminated by the administrator.\n'
+                      'Please contact the administrator for assistance.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13.5.sp,

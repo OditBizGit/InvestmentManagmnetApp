@@ -14,7 +14,7 @@ import 'package:maribel_wellness_centre_application/core/utils/go_to_top_button.
 import 'package:maribel_wellness_centre_application/user/investments/cubit/investments_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/investments/model/investor_transaction_history_data_model.dart';
 import 'package:maribel_wellness_centre_application/user/investments/widgets/recent_transactions_section.dart';
-import 'package:maribel_wellness_centre_application/user/investments/widgets/work_progress_card.dart';
+import 'package:maribel_wellness_centre_application/user/investments/widgets/work_progress_graph_card.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -239,8 +239,7 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
                                           0,
                                     ),
                                     SizedBox(height: 1.5.h),
-                                    const WorkProgressCard(),
-                                    SizedBox(height: 2.5.h),
+                                    const WorkProgressGraphCard(),
                                     RecentTransactionsSection(
                                       projectName: data?.projectName ?? '',
                                       transactions:
@@ -839,7 +838,7 @@ class _InvestmentsShimmer extends StatelessWidget {
         SizedBox(height: 1.5.h),
         const _CapitalAllocationCardShimmer(),
         SizedBox(height: 1.5.h),
-        const WorkProgressCardShimmer(),
+        const WorkProgressGraphCardShimmer(),
         SizedBox(height: 2.5.h),
         const RecentTransactionsSectionShimmer(),
         SizedBox(height: 1.h),

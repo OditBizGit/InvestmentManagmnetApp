@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/user/profile/widgets/complaint_success_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/register_complaint_screen/widgets/complaint_success_screen.dart';
 import 'package:sizer/sizer.dart';
 
 class ChangeRequestScreen extends StatefulWidget {
