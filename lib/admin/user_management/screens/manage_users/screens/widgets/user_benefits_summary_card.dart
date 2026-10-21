@@ -9,12 +9,12 @@ import 'package:sizer/sizer.dart';
 class UserBenefitsSummaryCard extends StatelessWidget {
   const UserBenefitsSummaryCard({
     super.key,
-    required this.amountPaid,
+    required this.committedAmount,
     this.depositDiscountAmount = 0,
     this.medicalAllowanceNote = '',
   });
 
-  final double amountPaid;
+  final double committedAmount;
   final double depositDiscountAmount;
   final String medicalAllowanceNote;
 
@@ -35,8 +35,8 @@ class UserBenefitsSummaryCard extends StatelessWidget {
               final stacked = constraints.maxWidth < 640;
               final tiles = [
                 _BenefitTile(
-                  label: 'Deposit paid',
-                  value: CurrencyFormatter.format(amountPaid),
+                  label: 'Committed amount',
+                  value: CurrencyFormatter.format(committedAmount),
                   icon: ImageConstants.addPayment,
                   iconColor: const Color(0xFF9B7EBF),
                   iconBg: const Color(0xFFF0EBF6),

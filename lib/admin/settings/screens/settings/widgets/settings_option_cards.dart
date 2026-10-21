@@ -10,6 +10,7 @@ enum SettingsOptionType {
   addAdmin,
   adminSettings,
   userComplaints,
+  investorRating,
 }
 
 class SettingsOptionCards extends StatelessWidget {
@@ -62,6 +63,15 @@ class SettingsOptionCards extends StatelessWidget {
       icon: ImageConstants.notification,
       iconColor: Color(0xFF5B8DEF),
       iconBg: Color(0xFFEAF1FC),
+    ),
+    _OptionData(
+      type: SettingsOptionType.investorRating,
+      title: 'Investor Rating',
+      description: 'Rate investors and manage Top Rated list',
+      icon: ImageConstants.investors,
+      iconColor: Color(0xFFE89A3C),
+      iconBg: Color(0xFFFFF3E8),
+      useStarIcon: true,
     ),
   ];
 
@@ -116,6 +126,7 @@ class _OptionData {
     required this.iconBg,
     this.usePersonAddIcon = false,
     this.useAdminSettingsIcon = false,
+    this.useStarIcon = false,
   });
 
   final SettingsOptionType type;
@@ -126,6 +137,7 @@ class _OptionData {
   final Color iconBg;
   final bool usePersonAddIcon;
   final bool useAdminSettingsIcon;
+  final bool useStarIcon;
 }
 
 class _OptionTile extends StatelessWidget {
@@ -178,6 +190,12 @@ class _OptionTile extends StatelessWidget {
                     : data.useAdminSettingsIcon
                     ? Icon(
                         Icons.admin_panel_settings_rounded,
+                        size: 22,
+                        color: data.iconColor,
+                      )
+                    : data.useStarIcon
+                    ? Icon(
+                        Icons.star_rounded,
                         size: 22,
                         color: data.iconColor,
                       )

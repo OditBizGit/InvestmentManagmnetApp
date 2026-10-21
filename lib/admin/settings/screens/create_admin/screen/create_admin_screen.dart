@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/cubit/create_admin_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/model/create_admin_model.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/repository/create_admin_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/screen/widgets/admins_list_section.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_admin/screen/widgets/create_admin_form_card.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -27,7 +28,7 @@ class CreateAdminScreen extends StatelessWidget {
       child: BlocProvider(
         create: (context) => CreateAdminCubit(
           repository: context.read<CreateAdminRepository>(),
-        ),
+        )..fetchAdmins(),
         child: _CreateAdminView(
           onBack: onBack,
           onCreateSuccess: onCreateSuccess,
@@ -141,26 +142,36 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
   Widget build(BuildContext context) {
     return BlocConsumer<CreateAdminCubit, CreateAdminState>(
       listener: (context, state) {
-        if (state is CreateAdminSuccess) {
+        if (state is! CreateAdminViewState) return;
+        final feedback = state.actionFeedback;
+        if (feedback == null) return;
+
+        if (feedback.isSuccess) {
           AppToast.success(
-            state.message,
+            feedback.message,
             title: 'Create Admin',
             context: context,
           );
           _resetForm();
-          if (widget.onCreateSuccess != null && state.data != null) {
-            widget.onCreateSuccess!(state.data!);
+          if (widget.onCreateSuccess != null && feedback.data != null) {
+            widget.onCreateSuccess!(feedback.data!);
           }
-        } else if (state is CreateAdminFailure) {
+          context.read<CreateAdminCubit>().clearActionFeedback();
+          context.read<CreateAdminCubit>().fetchAdmins();
+        } else {
           AppToast.error(
-            state.message,
+            feedback.message,
             title: 'Create Admin',
             context: context,
           );
+          context.read<CreateAdminCubit>().clearActionFeedback();
         }
       },
       builder: (context, state) {
-        final isLoading = state is CreateAdminLoading;
+        final viewState = state is CreateAdminViewState
+            ? state
+            : const CreateAdminViewState();
+        final isLoading = viewState.isSubmitting;
 
         return ColoredBox(
           color: AppColors.screenBg,
@@ -218,6 +229,15 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
                                   onCreate: _handleSubmit,
                                   isLoading: isLoading,
                                 ),
+                                const SizedBox(height: 16),
+                                AdminsListSection(
+                                  admins: viewState.admins,
+                                  isLoading: viewState.isAdminsLoading,
+                                  errorMessage: viewState.adminsError,
+                                  onRetry: () => context
+                                      .read<CreateAdminCubit>()
+                                      .fetchAdmins(),
+                                ),
                               ],
                             )
                           : Column(
@@ -253,6 +273,15 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
                                       ),
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 16),
+                                AdminsListSection(
+                                  admins: viewState.admins,
+                                  isLoading: viewState.isAdminsLoading,
+                                  errorMessage: viewState.adminsError,
+                                  onRetry: () => context
+                                      .read<CreateAdminCubit>()
+                                      .fetchAdmins(),
                                 ),
                               ],
                             ),

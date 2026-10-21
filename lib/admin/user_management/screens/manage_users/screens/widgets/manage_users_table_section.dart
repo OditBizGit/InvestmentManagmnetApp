@@ -7,6 +7,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/widget
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_list_toolbar.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_table_widgets.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:sizer/sizer.dart';
 
@@ -64,19 +65,64 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
     }).toList();
   }
 
-  Future<void> _confirmToggle(ManageUsersInvestor user) async {
-    final blocking = !user.isBlocked;
+  Future<void> _confirmTerminate(ManageUsersInvestor user) async {
+    // Unblock is disabled — only allow terminate for active users.
+    if (user.isBlocked) return;
+
     final confirmed = await showUserManagementConfirmDialog(
       context: context,
-      title: blocking ? 'Block user?' : 'Unblock user?',
-      message: blocking
-          ? 'Block ${user.name}? They will not be able to access their account.'
-          : 'Unblock ${user.name}? They will regain access to their account.',
-      confirmLabel: blocking ? 'Block' : 'Unblock',
-      confirmColor: blocking ? AppColors.error : AppColors.green,
+      title: 'Terminate user?',
+      message:
+          'This action will not be undone. Are you sure you want to continue terminating ${user.name}?',
+      confirmLabel: 'Terminate',
+      confirmColor: AppColors.error,
     );
     if (!confirmed || !mounted) return;
     widget.onToggleBlock(user);
+  }
+
+  Future<void> _handleExportSelected(
+    UserManagementExportFormat format,
+    UserManagementExportScope scope,
+    DateTimeRange range,
+  ) async {
+    final fromDate = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final toDate = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    final section = scope == UserManagementExportScope.dues ? 'due' : 'all';
+    final result = await context.read<ManageUsersCubit>().exportInvestorPaymentReport(
+          asPdf: format == UserManagementExportFormat.pdf,
+          section: section,
+          fromDate: fromDate,
+          toDate: toDate,
+        );
+    if (!mounted) return;
+
+    if (result.success) {
+      AppToast.success(
+        result.message,
+        title: 'Export ready',
+        context: context,
+      );
+    } else {
+      AppToast.error(
+        result.message,
+        title: 'Export failed',
+        context: context,
+      );
+    }
   }
 
   String _formatDate(DateTime? date) {
@@ -117,6 +163,13 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
             ? state.statusUpdatingUserId
             : null;
 
+        final isExporting = switch (state) {
+          ManageUsersSuccess(:final isExporting) => isExporting,
+          ManageUsersEmpty(:final isExporting) => isExporting,
+          ManageUsersFailure(:final isExporting) => isExporting,
+          _ => false,
+        };
+
         final filteredUsers = _filteredUsers(users);
         final failure = state is ManageUsersFailure ? state : null;
         final showErrorPanel = failure != null && !isTableLoading;
@@ -144,7 +197,22 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
                     _filter = ManageUsersStatusFilter.values[index];
                   });
                 },
+                trailing: UserManagementExportIcons(
+                  isExporting: isExporting,
+                  onExportSelected: _handleExportSelected,
+                ),
               ),
+              if (isExporting) ...[
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: const LinearProgressIndicator(
+                    minHeight: 3,
+                    color: AppColors.accent,
+                    backgroundColor: Color(0xFFE8E6EC),
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               if (isTableLoading)
                 const _ManageUsersTableLoading()
@@ -187,7 +255,7 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
                       joinedDate: _formatDate(user.joinedDate),
                       isUpdating: statusUpdatingUserId == user.id,
                       onTap: () => widget.onUserTap(user),
-                      onToggleBlock: () => _confirmToggle(user),
+                      onToggleBlock: () => _confirmTerminate(user),
                     );
                   },
                 ),
@@ -356,25 +424,35 @@ class _ManageUserRow extends StatelessWidget {
                               color: AppColors.accent,
                             ),
                           )
-                        : TextButton(
-                            onPressed: onToggleBlock,
-                            style: TextButton.styleFrom(
-                              foregroundColor: user.isBlocked
-                                  ? AppColors.green
-                                  : AppColors.error,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              minimumSize: const Size(0, 34),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              user.isBlocked ? 'Unblock' : 'Block',
-                              style: TextStyle(
-                                fontSize: 9.5.sp,
-                                fontWeight: FontWeight.w600,
+                        // Unblock option removed — terminated users have no action.
+                        : user.isBlocked
+                            ? Text(
+                                'Terminated',
+                                style: TextStyle(
+                                  fontSize: 9.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textMuted,
+                                ),
+                              )
+                            : TextButton(
+                                onPressed: onToggleBlock,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.error,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  minimumSize: const Size(0, 34),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Terminate',
+                                  style: TextStyle(
+                                    fontSize: 9.5.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
                   ),
                 ),
               ],

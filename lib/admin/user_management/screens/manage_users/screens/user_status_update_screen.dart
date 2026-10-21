@@ -11,7 +11,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
-class UserStatusUpdateScreen extends StatelessWidget {
+class UserStatusUpdateScreen extends StatefulWidget {
   const UserStatusUpdateScreen({
     super.key,
     required this.userId,
@@ -24,6 +24,22 @@ class UserStatusUpdateScreen extends StatelessWidget {
   final double committedAmount;
   final double paidAmount;
   final VoidCallback onBack;
+
+  @override
+  State<UserStatusUpdateScreen> createState() => _UserStatusUpdateScreenState();
+}
+
+class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<ManageUsersCubit>();
+      cubit.fetchInvestorMouStatus(widget.userId);
+      cubit.fetchInvestorLlpStatus(widget.userId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +74,7 @@ class UserStatusUpdateScreen extends StatelessWidget {
             },
             builder: (context, state) {
               final user = state is ManageUsersSuccess
-                  ? _userById(state.users, userId)
+                  ? _userById(state.users, widget.userId)
                   : null;
 
               if (user == null) {
@@ -75,21 +91,29 @@ class UserStatusUpdateScreen extends StatelessWidget {
                       child: UserStatusUpdateHeader(
                         title: 'Investor not found',
                         subtitle: 'This investor is no longer available',
-                        onBack: onBack,
+                        onBack: widget.onBack,
                       ),
                     ),
                   ],
                 );
               }
 
-              final mouStatus = state is ManageUsersSuccess
-                  ? state.mouStatus[user.id] ?? DocumentProcessStatus.pending
-                  : DocumentProcessStatus.pending;
-              final llpStatus = state is ManageUsersSuccess
-                  ? state.llpStatus[user.id] ?? DocumentProcessStatus.pending
-                  : DocumentProcessStatus.pending;
-              final isRefundSaving = state is ManageUsersSuccess &&
-                  state.refundUpdatingUserId == user.id;
+              final successState =
+                  state is ManageUsersSuccess ? state : null;
+              final mouStatus = successState?.mouStatus[user.id] ??
+                  DocumentProcessStatus.pending;
+              final llpStatus = successState?.llpStatus[user.id] ??
+                  DocumentProcessStatus.pending;
+              final mouIssuedAt = successState?.mouIssuedAt[user.id];
+              final mouCompletedAt = successState?.mouCompletedAt[user.id];
+              final llpIssuedAt = successState?.llpIssuedAt[user.id];
+              final llpCompletedAt = successState?.llpCompletedAt[user.id];
+              final isRefundSaving =
+                  successState?.refundUpdatingUserId == user.id;
+              final isMouBusy = successState?.mouUpdatingUserId == user.id ||
+                  successState?.mouLoadingUserId == user.id;
+              final isLlpBusy = successState?.llpUpdatingUserId == user.id ||
+                  successState?.llpLoadingUserId == user.id;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,7 +129,7 @@ class UserStatusUpdateScreen extends StatelessWidget {
                       title: _displayOrNA(user.name),
                       subtitle:
                           '${_displayOrNA(user.userId)} · ${_displayOrNA(user.email)} · ${_displayOrNA(user.phoneNumber)}',
-                      onBack: onBack,
+                      onBack: widget.onBack,
                     ),
                   ),
                   Expanded(
@@ -120,7 +144,7 @@ class UserStatusUpdateScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           UserBenefitsSummaryCard(
-                            amountPaid: user.amountPaid,
+                            committedAmount: user.totalPayable,
                             depositDiscountAmount: user.depositDiscountAmount,
                             medicalAllowanceNote:
                                 user.medicalAllowanceDescription,
@@ -150,32 +174,36 @@ class UserStatusUpdateScreen extends StatelessWidget {
                                 title: 'Update MOU status',
                                 subtitle:
                                     'Select the current memorandum of understanding status',
+                                documentLabel: 'MOU',
                                 selected: mouStatus,
+                                issuedAt: mouIssuedAt,
+                                completedAt: mouCompletedAt,
+                                isLoading: isMouBusy,
                                 onChanged: (status) {
                                   context
                                       .read<ManageUsersCubit>()
-                                      .updateMouStatus(user.id, status);
-                                  AppToast.success(
-                                    'MOU status set to ${status.label}',
-                                    title: 'MOU Updated',
-                                    context: context,
-                                  );
+                                      .saveInvestorMouStatus(
+                                        investorId: user.id,
+                                        status: status,
+                                      );
                                 },
                               );
                               final llpCard = UserStatusCheckboxCard(
                                 title: 'Update LLP registration status',
                                 subtitle:
                                     'Select the current LLP registration status',
+                                documentLabel: 'LLP',
                                 selected: llpStatus,
+                                issuedAt: llpIssuedAt,
+                                completedAt: llpCompletedAt,
+                                isLoading: isLlpBusy,
                                 onChanged: (status) {
                                   context
                                       .read<ManageUsersCubit>()
-                                      .updateLlpStatus(user.id, status);
-                                  AppToast.success(
-                                    'LLP status set to ${status.label}',
-                                    title: 'LLP Updated',
-                                    context: context,
-                                  );
+                                      .saveInvestorLlpStatus(
+                                        investorId: user.id,
+                                        status: status,
+                                      );
                                 },
                               );
 

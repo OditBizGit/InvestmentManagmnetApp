@@ -10,14 +10,7 @@ import 'package:sizer/sizer.dart';
 
 const staffDesignationOptions = [
   'Relationship Manager',
-  'Customer Support Executive',
-  'Client Relationship Officer',
-  'Customer Success Manager',
-  'Investor Support Associate',
-  'Client Services Executive',
-  'Account Manager',
-  'Customer Care Executive',
-  'Client Support Specialist',
+  'Financial Manager'
 ];
 
 class AddStaffFormCard extends StatelessWidget {
@@ -260,6 +253,7 @@ void submitAddStaffForm({
     designation: selectedDesignation?.trim() ?? '',
     email: emailController.text.trim(),
     phoneNumber: phoneController.text.trim(),
+    role: selectedDesignation?.trim() ?? '',
   );
 
   cubit.createStaff(request);

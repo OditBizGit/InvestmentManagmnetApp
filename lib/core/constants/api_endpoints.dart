@@ -55,6 +55,8 @@ class ApiEndpoints {
   static const String saveLLP = "/api/Investor/SaveInvestorLLP";
   static const String getInvestorsMOU = "/api/Investor/GetInvestorMOU/{investorId}";
   static const String getInvestorsLLP = "/api/Investor/GetInvestorLLP/{investorId}";
+  static const String getAdmins = "/api/User/GetAdmins";
+  static const String getPdfExcel = "/api/Investor/InvestorPaymentDetails";
 
 
 

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
+import '../model/admins_response_model.dart';
 import '../model/create_admin_model.dart';
 
 class CreateAdminResult {
@@ -73,6 +74,47 @@ class CreateAdminRepository {
       rethrow;
     }
   }
+
+
+
+  Future<AdminsResponseModel> getAdmins() async {
+    try {
+      log('Fetching admins...');
+
+      final response = await dio.get(
+        ApiEndpoints.getAdmins,
+      );
+
+      log('Get Admins Response: ${response.data}');
+
+      final body = response.data;
+      if (body is! Map) {
+        throw Exception('Invalid response from server');
+      }
+
+      final result = AdminsResponseModel.fromJson(
+        Map<String, dynamic>.from(body),
+      );
+
+      if (!result.status || result.code != 200) {
+        throw Exception(
+          result.message.isNotEmpty
+              ? result.message
+              : 'Failed to retrieve admins',
+        );
+      }
+
+      return result;
+    } on DioException catch (e) {
+      log('Get Admins Dio Error: ${e.message}');
+      log('Get Admins Response: ${e.response?.data}');
+      rethrow;
+    } catch (e) {
+      log('Get Admins Error: $e');
+      rethrow;
+    }
+  }
+
 
   bool _readStatus(Map body, int? statusCode) {
     final raw = body['status'] ?? body['Status'];

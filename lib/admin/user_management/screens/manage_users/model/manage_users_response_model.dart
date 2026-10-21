@@ -135,7 +135,7 @@ class ManageUsersInvestor {
 
   bool get isBlocked => !isActive;
 
-  String get accountStatusLabel => isBlocked ? 'Blocked' : 'Active';
+  String get accountStatusLabel => isBlocked ? 'Terminated' : 'Active';
 
   double get outstandingBalance {
     final computed = totalPayable - amountPaid;

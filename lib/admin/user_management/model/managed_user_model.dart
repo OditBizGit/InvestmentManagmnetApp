@@ -4,17 +4,36 @@ enum ManageUsersStatusFilter { all, active, blocked }
 
 enum DuePaymentsStatusFilter { all, pending, partiallyPaid, fullyPaid }
 
-enum DocumentProcessStatus { pending, inProgress, completed }
+enum DocumentProcessStatus { pending, issued, completed }
 
 extension DocumentProcessStatusX on DocumentProcessStatus {
   String get label {
     switch (this) {
       case DocumentProcessStatus.pending:
         return 'Pending';
-      case DocumentProcessStatus.inProgress:
-        return 'In Progress';
+      case DocumentProcessStatus.issued:
+        return 'Issued';
       case DocumentProcessStatus.completed:
         return 'Completed';
+    }
+  }
+
+  /// API value expected by SaveInvestorMOU (`Pending` / `Issued` / `Completed`).
+  String get apiValue => label;
+
+  static DocumentProcessStatus? tryParse(String? raw) {
+    final normalized = (raw ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+
+    switch (normalized) {
+      case 'pending':
+        return DocumentProcessStatus.pending;
+      case 'issued':
+        return DocumentProcessStatus.issued;
+      case 'completed':
+        return DocumentProcessStatus.completed;
+      default:
+        return null;
     }
   }
 }
