@@ -34,6 +34,7 @@ class CreateAdminModel {
       'email': email,
       'phoneNumber': phoneNumber,
       'alternativeNumber': alternativeNumber,
+      'userRole': userRole,
     };
   }
 

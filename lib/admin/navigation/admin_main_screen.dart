@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/investors_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_permissions.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/settings_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/due_payments/due_payments_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/manage_users_screen.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_footer.dart';
 import 'package:maribel_wellness_centre_application/core/utils/logout_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/work_progress/work_progress_screen.dart';
@@ -33,11 +36,20 @@ class AdminMainScreen extends StatefulWidget {
 }
 
 class _AdminMainScreenState extends State<AdminMainScreen> {
-  AdminDrawerItem _selectedItem = AdminDrawerItem.dashboard;
+  late AdminDrawerItem _selectedItem;
   bool _isCollapsed = false;
+
+  String? get _userRole => getIt<LocalStorage>().getUserRole();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedItem = AdminNavPermissions.defaultDrawerItem(_userRole);
+  }
 
   void _onSelect(AdminDrawerItem item) {
     if (_selectedItem == item) return;
+    if (!AdminNavPermissions.canOpen(item, _userRole)) return;
     setState(() => _selectedItem = item);
   }
 

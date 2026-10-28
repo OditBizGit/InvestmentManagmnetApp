@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_permissions.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sizer/sizer.dart';
 
@@ -46,7 +49,7 @@ class AdminSideDrawer extends StatelessWidget {
   /// Labels only appear once the animated width has enough room.
   static const double _labelRevealWidth = 140;
 
-  static final List<_DrawerDestination> _destinations = [
+  static final List<_DrawerDestination> _allDestinations = [
     _DrawerDestination(
       item: AdminDrawerItem.dashboard,
       label: 'Dashboard',
@@ -100,8 +103,39 @@ class AdminSideDrawer extends StatelessWidget {
     ),
   ];
 
+  static List<_DrawerDestination> destinationsForRole(String? role) {
+    final allowed = AdminNavPermissions.allowedDrawerItems(role);
+    final filtered = <_DrawerDestination>[];
+
+    for (final destination in _allDestinations) {
+      if (destination.isGroup) {
+        final children = destination.children
+            .where((child) => child.item != null && allowed.contains(child.item))
+            .toList(growable: false);
+        if (children.isEmpty) continue;
+        filtered.add(
+          _DrawerDestination(
+            label: destination.label,
+            icon: destination.icon,
+            children: children,
+          ),
+        );
+        continue;
+      }
+
+      if (destination.item != null && allowed.contains(destination.item)) {
+        filtered.add(destination);
+      }
+    }
+
+    return filtered;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final role = getIt<LocalStorage>().getUserRole();
+    final destinations = destinationsForRole(role);
+
     return AnimatedContainer(
       duration: animate
           ? const Duration(milliseconds: 220)
@@ -150,10 +184,10 @@ class AdminSideDrawer extends StatelessWidget {
                   Expanded(
                     child: ListView.separated(
                       padding: EdgeInsets.zero,
-                      itemCount: _destinations.length,
+                      itemCount: destinations.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 4),
                       itemBuilder: (context, index) {
-                        final destination = _destinations[index];
+                        final destination = destinations[index];
                         if (destination.isGroup) {
                           return _ExpandableDrawerGroup(
                             destination: destination,

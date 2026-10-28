@@ -6,7 +6,6 @@ import 'package:sizer/sizer.dart';
 
 import '../../../model/pending_request_model.dart';
 
-
 class PendingRequestsOverviewSection extends StatelessWidget {
   const PendingRequestsOverviewSection({
     super.key,
@@ -32,25 +31,25 @@ class PendingRequestsOverviewSection extends StatelessWidget {
               iconBg: const Color(0xFFF0EBF6),
             ),
             UserManagementStatCardData(
-              label: 'Requested',
-              value: '${overview.requested}',
-              icon: ImageConstants.documents,
+              label: 'Pending',
+              value: '${overview.pending}',
+              icon: ImageConstants.amountRemaining,
               iconColor: const Color(0xFFE89A3C),
               iconBg: const Color(0xFFFFF3E8),
             ),
             UserManagementStatCardData(
-              label: 'Pending',
-              value: '${overview.pending}',
-              icon: ImageConstants.amountRemaining,
-              iconColor: const Color(0xFFE06B7A),
-              iconBg: const Color(0xFFFDECEE),
-            ),
-            UserManagementStatCardData(
-              label: 'Completed',
-              value: '${overview.completed}',
+              label: 'Approved',
+              value: '${overview.approved}',
               icon: ImageConstants.tick,
               iconColor: const Color(0xFF2CB5A8),
               iconBg: const Color(0xFFE6F7F5),
+            ),
+            UserManagementStatCardData(
+              label: 'Rejected',
+              value: '${overview.rejected}',
+              icon: ImageConstants.documents,
+              iconColor: const Color(0xFFE06B7A),
+              iconBg: const Color(0xFFFDECEE),
             ),
           ],
         ),
@@ -72,7 +71,7 @@ class _Header extends StatelessWidget {
 
         const titleBlock = UserManagementSectionHeader(
           title: 'Pending Requests',
-          subtitle: 'Review and approve investor registration requests',
+          subtitle: 'Review and approve investor payment requests',
         );
 
         final queueBadge = Container(

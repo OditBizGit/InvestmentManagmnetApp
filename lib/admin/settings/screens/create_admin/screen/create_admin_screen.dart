@@ -60,6 +60,7 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _alternativePhoneController = TextEditingController();
+  String? _selectedUserRoleLabel = createAdminRoleLabels.first;
 
   double? _formCardHeight;
 
@@ -114,6 +115,7 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
     // Remount the Form so AutovalidateMode.onUserInteraction fields
     // do not keep showing errors after controllers are cleared.
     setState(() {
+      _selectedUserRoleLabel = createAdminRoleLabels.first;
       _formKey = GlobalKey<FormState>();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncFormCardHeight());
@@ -126,6 +128,9 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncFormCardHeight());
     if (!isValid) return;
 
+    final roleLabel = _selectedUserRoleLabel?.trim() ?? '';
+    if (roleLabel.isEmpty) return;
+
     final model = CreateAdminModel(
       username: _usernameController.text.trim(),
       password: _passwordController.text,
@@ -133,6 +138,7 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
       email: _emailController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       alternativeNumber: _alternativePhoneController.text.trim(),
+      userRole: createAdminRoleApiValue(roleLabel),
     );
 
     context.read<CreateAdminCubit>().createAdmin(model);
@@ -191,6 +197,12 @@ class _CreateAdminViewState extends State<_CreateAdminView> {
                   emailController: _emailController,
                   phoneController: _phoneController,
                   alternativePhoneController: _alternativePhoneController,
+                  selectedUserRoleLabel: _selectedUserRoleLabel,
+                  onUserRoleChanged: (value) {
+                    setState(() => _selectedUserRoleLabel = value);
+                    WidgetsBinding.instance
+                        .addPostFrameCallback((_) => _syncFormCardHeight());
+                  },
                 ),
               );
 

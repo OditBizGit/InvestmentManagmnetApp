@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/admin/pending_requests/model/pending_request_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
@@ -12,13 +13,41 @@ class ReviewRequestDetailsSection extends StatelessWidget {
   const ReviewRequestDetailsSection({
     super.key,
     required this.request,
+    this.investorDetails,
+    this.isInvestorDetailsLoading = false,
+    this.investorDetailsError,
+    this.isReviewSubmitting = false,
+    this.onRetryInvestorDetails,
     this.onAccept,
     this.onReject,
   });
 
   final PendingRequestModel request;
+  final InvestorDetailsModel? investorDetails;
+  final bool isInvestorDetailsLoading;
+  final String? investorDetailsError;
+  final bool isReviewSubmitting;
+  final VoidCallback? onRetryInvestorDetails;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
+
+  List<PendingRequestNominee> get _nominees {
+    final details = investorDetails;
+    if (details == null) return request.nominees;
+    return details.nominees
+        .map(
+          (nominee) => PendingRequestNominee(
+            name: nominee.nomineeName,
+            relationship: nominee.nomineeRelationship,
+            phoneNumber: nominee.nomineePhoneNumber,
+            aadhaarNumber: nominee.nomineeAadhaarNumber,
+            panNumber: nominee.nomineePanCardNumber,
+            aadhaarPhotoUrl: nominee.nomineeAadhaarPhotoUrl,
+            panPhotoUrl: nominee.nomineePanCardPhotoUrl,
+          ),
+        )
+        .toList(growable: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +56,12 @@ class ReviewRequestDetailsSection extends StatelessWidget {
       children: [
         _PaymentRequestSummaryCard(
           request: request,
+          investmentAmount: investorDetails?.investmentAmount,
+          pendingAmount: investorDetails?.totalPendingAmount,
+          isInvestorDetailsLoading: isInvestorDetailsLoading,
+          investorDetailsError: investorDetailsError,
+          isReviewSubmitting: isReviewSubmitting,
+          onRetryInvestorDetails: onRetryInvestorDetails,
           onAccept: onAccept,
           onReject: onReject,
         ),
@@ -34,8 +69,16 @@ class ReviewRequestDetailsSection extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final stacked = constraints.maxWidth < 980;
-            final personal = _PersonalAndRequestCard(request: request);
-            final documents = _KycDocumentsColumn(request: request);
+            final personal = _PersonalAndRequestCard(
+              request: request,
+              investorDetails: investorDetails,
+              isLoading: isInvestorDetailsLoading,
+            );
+            final documents = _KycDocumentsColumn(
+              request: request,
+              investorDetails: investorDetails,
+              isLoading: isInvestorDetailsLoading,
+            );
 
             if (stacked) {
               return Column(
@@ -58,9 +101,16 @@ class ReviewRequestDetailsSection extends StatelessWidget {
           },
         ),
         const SizedBox(height: 14),
-        _BankDetailsCard(request: request),
+        _BankDetailsCard(
+          request: request,
+          investorDetails: investorDetails,
+          isLoading: isInvestorDetailsLoading,
+        ),
         const SizedBox(height: 14),
-        _NomineeDetailsSection(nominees: request.nominees),
+        _NomineeDetailsSection(
+          nominees: _nominees,
+          isLoading: isInvestorDetailsLoading,
+        ),
       ],
     );
   }
@@ -69,11 +119,23 @@ class ReviewRequestDetailsSection extends StatelessWidget {
 class _PaymentRequestSummaryCard extends StatelessWidget {
   const _PaymentRequestSummaryCard({
     required this.request,
+    this.investmentAmount,
+    this.pendingAmount,
+    this.isInvestorDetailsLoading = false,
+    this.investorDetailsError,
+    this.isReviewSubmitting = false,
+    this.onRetryInvestorDetails,
     this.onAccept,
     this.onReject,
   });
 
   final PendingRequestModel request;
+  final double? investmentAmount;
+  final double? pendingAmount;
+  final bool isInvestorDetailsLoading;
+  final String? investorDetailsError;
+  final bool isReviewSubmitting;
+  final VoidCallback? onRetryInvestorDetails;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
 
@@ -82,6 +144,27 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
     final canAct = request.isAwaitingReview &&
         onAccept != null &&
         onReject != null;
+
+    final tiles = [
+      _PaymentMetricTile(
+        label: 'Investment amount',
+        value: investmentAmount == null
+            ? '—'
+            : CurrencyFormatter.format(investmentAmount!),
+        isLoading: isInvestorDetailsLoading,
+      ),
+      _PaymentMetricTile(
+        label: 'Paid amount',
+        value: CurrencyFormatter.format(request.amount),
+      ),
+      _PaymentMetricTile(
+        label: 'Pending',
+        value: pendingAmount == null
+            ? '—'
+            : CurrencyFormatter.format(pendingAmount!),
+        isLoading: isInvestorDetailsLoading,
+      ),
+    ];
 
     return _SectionCard(
       title: 'Payment request details',
@@ -92,20 +175,6 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 640;
-              final tiles = [
-                _PaymentMetricTile(
-                  label: 'Investment amount',
-                  value: CurrencyFormatter.format(request.amount),
-                ),
-                _PaymentMetricTile(
-                  label: 'Paying now',
-                  value: CurrencyFormatter.format(request.amountPayingNow),
-                ),
-                _PaymentMetricTile(
-                  label: 'Pending',
-                  value: CurrencyFormatter.format(request.pendingAmount),
-                ),
-              ];
 
               if (stacked) {
                 return Column(
@@ -128,36 +197,77 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
               );
             },
           ),
+          if (investorDetailsError != null &&
+              investorDetailsError!.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    investorDetailsError!,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+                if (onRetryInvestorDetails != null)
+                  TextButton(
+                    onPressed: onRetryInvestorDetails,
+                    child: Text(
+                      'Retry',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
           if (canAct) ...[
             const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
                 final stacked = constraints.maxWidth < 420;
-                final accept = SizedBox(
+                final approve = SizedBox(
                   height: 40,
                   child: ElevatedButton(
-                    onPressed: onAccept,
+                    onPressed: isReviewSubmitting ? null : onAccept,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.green,
                       foregroundColor: AppColors.white,
+                      disabledBackgroundColor: AppColors.green,
+                      disabledForegroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: Text(
-                      'Accept',
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: isReviewSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: AppColors.white,
+                            ),
+                          )
+                        : Text(
+                            'Approve',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 );
                 final reject = SizedBox(
                   height: 40,
                   child: OutlinedButton(
-                    onPressed: onReject,
+                    onPressed: isReviewSubmitting ? null : onReject,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: const BorderSide(color: AppColors.error),
@@ -178,7 +288,7 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
                 if (stacked) {
                   return Column(
                     children: [
-                      accept,
+                      approve,
                       const SizedBox(height: 10),
                       reject,
                     ],
@@ -187,7 +297,7 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
 
                 return Row(
                   children: [
-                    Expanded(child: accept),
+                    Expanded(child: approve),
                     const SizedBox(width: 12),
                     Expanded(child: reject),
                   ],
@@ -199,7 +309,7 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
             Text(
               request.isRejected
                   ? 'This request was rejected.'
-                  : 'This request has been accepted.',
+                  : 'This request has been approved.',
               style: TextStyle(
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w500,
@@ -217,10 +327,12 @@ class _PaymentMetricTile extends StatelessWidget {
   const _PaymentMetricTile({
     required this.label,
     required this.value,
+    this.isLoading = false,
   });
 
   final String label;
   final String value;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -247,16 +359,26 @@ class _PaymentMetricTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          if (isLoading)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.accent,
+              ),
+            )
+          else
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -322,15 +444,48 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _PersonalAndRequestCard extends StatelessWidget {
-  const _PersonalAndRequestCard({required this.request});
+  const _PersonalAndRequestCard({
+    required this.request,
+    this.investorDetails,
+    this.isLoading = false,
+  });
 
   final PendingRequestModel request;
+  final InvestorDetailsModel? investorDetails;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final details = investorDetails;
+    final fullName = details?.fullName.trim().isNotEmpty == true
+        ? details!.fullName
+        : request.applicantName;
+    final organization = details?.organization.trim().isNotEmpty == true
+        ? details!.organization
+        : details?.investorType.trim().isNotEmpty == true
+            ? details!.investorType
+            : request.organization;
+    final investorCode = details?.investorCode.trim().isNotEmpty == true
+        ? details!.investorCode
+        : request.requestId;
+    final email =
+        details?.email.trim().isNotEmpty == true ? details!.email : request.email;
+    final phone = details?.phoneNumber.trim().isNotEmpty == true
+        ? details!.phoneNumber
+        : request.phoneNumber;
+    final alternatePhone = details?.alternativeNumber.trim().isNotEmpty == true
+        ? details!.alternativeNumber
+        : request.alternatePhone;
+    final dob = details?.dateOfBirth ?? request.dateOfBirth;
+    final address = details?.address.trim().isNotEmpty == true
+        ? details!.address
+        : request.address;
+
     return _SectionCard(
       title: 'Personal information',
-      subtitle: 'Applicant profile and contact details',
+      subtitle: isLoading
+          ? 'Loading investor profile...'
+          : 'Applicant profile and contact details',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -343,22 +498,9 @@ class _PersonalAndRequestCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    request.initials,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
+                _ProfileAvatar(
+                  initials: request.initials,
+                  imageUrl: details?.profileImageUrl,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -366,7 +508,7 @@ class _PersonalAndRequestCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _text(request.applicantName),
+                        _text(fullName),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -377,7 +519,7 @@ class _PersonalAndRequestCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _text(request.organization),
+                        _text(organization),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -388,7 +530,7 @@ class _PersonalAndRequestCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        request.requestId,
+                        investorCode,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -400,29 +542,45 @@ class _PersonalAndRequestCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (isLoading)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.accent,
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 14),
           _FieldGrid(
             fields: [
-              _FieldData(label: 'Email', value: _text(request.email)),
-              _FieldData(label: 'Phone', value: _text(request.phoneNumber)),
+              _FieldData(label: 'Email', value: _text(email)),
+              _FieldData(label: 'Phone', value: _text(phone)),
               _FieldData(
                 label: 'Alternate phone',
-                value: _text(request.alternatePhone),
+                value: _text(alternatePhone),
               ),
               _FieldData(
                 label: 'Date of birth',
-                value: _formatDate(request.dateOfBirth),
+                value: _formatDate(dob),
               ),
             ],
           ),
           const SizedBox(height: 10),
           _FieldTile(
             label: 'Address',
-            value: _text(request.address),
+            value: _text(address),
           ),
+          if (details?.description.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            _FieldTile(
+              label: 'Description',
+              value: _text(details!.description),
+            ),
+          ],
           const SizedBox(height: 16),
           _FieldGrid(
             fields: [
@@ -441,28 +599,96 @@ class _PersonalAndRequestCard extends StatelessWidget {
   }
 }
 
-class _KycDocumentsColumn extends StatelessWidget {
-  const _KycDocumentsColumn({required this.request});
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.initials,
+    this.imageUrl,
+  });
 
-  final PendingRequestModel request;
+  final String initials;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
+    final url = imageUrl?.trim() ?? '';
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 52,
+        height: 52,
+        color: AppColors.accent,
+        alignment: Alignment.center,
+        child: url.isEmpty
+            ? Text(
+                initials,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.white,
+                ),
+              )
+            : Image.network(
+                url,
+                fit: BoxFit.cover,
+                width: 52,
+                height: 52,
+                errorBuilder: (_, _, _) => Text(
+                  initials,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.white,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _KycDocumentsColumn extends StatelessWidget {
+  const _KycDocumentsColumn({
+    required this.request,
+    this.investorDetails,
+    this.isLoading = false,
+  });
+
+  final PendingRequestModel request;
+  final InvestorDetailsModel? investorDetails;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final details = investorDetails;
+    final panNumber = details?.panCardNumber.trim().isNotEmpty == true
+        ? details!.panCardNumber
+        : request.panNumber;
+    final aadhaarNumber = details?.aadhaarNumber.trim().isNotEmpty == true
+        ? details!.aadhaarNumber
+        : request.aadhaarNumber;
+    final panPhotoUrl = details?.panCardPhotoUrl ?? request.panPhotoUrl;
+    final aadhaarPhotoUrl =
+        details?.aadhaarPhotoUrl ?? request.aadhaarPhotoUrl;
+
     return Column(
       children: [
         _DocumentCard(
           title: 'PAN card',
           numberLabel: 'PAN number',
-          number: _text(request.panNumber),
-          photoUrl: request.panPhotoUrl,
+          number: isLoading && (panNumber == null || panNumber.isEmpty)
+              ? 'Loading...'
+              : _text(panNumber),
+          photoUrl: panPhotoUrl,
           photoLabel: 'PAN card photo',
         ),
         const SizedBox(height: 14),
         _DocumentCard(
           title: 'Aadhaar',
           numberLabel: 'Aadhaar number',
-          number: _text(request.aadhaarNumber),
-          photoUrl: request.aadhaarPhotoUrl,
+          number: isLoading && (aadhaarNumber == null || aadhaarNumber.isEmpty)
+              ? 'Loading...'
+              : _text(aadhaarNumber),
+          photoUrl: aadhaarPhotoUrl,
           photoLabel: 'Aadhaar photo',
         ),
       ],
@@ -546,23 +772,42 @@ class _DocumentPhoto extends StatelessWidget {
 }
 
 class _BankDetailsCard extends StatelessWidget {
-  const _BankDetailsCard({required this.request});
+  const _BankDetailsCard({
+    required this.request,
+    this.investorDetails,
+    this.isLoading = false,
+  });
 
   final PendingRequestModel request;
+  final InvestorDetailsModel? investorDetails;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final details = investorDetails;
+    final bankName = details?.bankName.trim().isNotEmpty == true
+        ? details!.bankName
+        : request.bankName;
+    final accountNumber = details?.accountNumber.trim().isNotEmpty == true
+        ? details!.accountNumber
+        : request.accountNumber;
+    final ifscCode = details?.ifscCode.trim().isNotEmpty == true
+        ? details!.ifscCode
+        : request.ifscCode;
+
     return _SectionCard(
       title: 'Bank details',
-      subtitle: 'Account information submitted with this request',
+      subtitle: isLoading
+          ? 'Loading account information...'
+          : 'Account information submitted with this request',
       child: _FieldGrid(
         fields: [
-          _FieldData(label: 'Bank name', value: _text(request.bankName)),
+          _FieldData(label: 'Bank name', value: _text(bankName)),
           _FieldData(
             label: 'Account number',
-            value: _text(request.accountNumber),
+            value: _text(accountNumber),
           ),
-          _FieldData(label: 'IFSC code', value: _text(request.ifscCode)),
+          _FieldData(label: 'IFSC code', value: _text(ifscCode)),
         ],
       ),
     );
@@ -570,9 +815,13 @@ class _BankDetailsCard extends StatelessWidget {
 }
 
 class _NomineeDetailsSection extends StatelessWidget {
-  const _NomineeDetailsSection({required this.nominees});
+  const _NomineeDetailsSection({
+    required this.nominees,
+    this.isLoading = false,
+  });
 
   final List<PendingRequestNominee> nominees;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -580,10 +829,26 @@ class _NomineeDetailsSection extends StatelessWidget {
       title: nominees.isEmpty
           ? 'Nominee details'
           : 'Nominee details (${nominees.length})',
-      subtitle: nominees.isEmpty
-          ? 'No nominee details submitted with this request'
-          : 'Nominees linked to this registration request',
-      child: nominees.isEmpty
+      subtitle: isLoading
+          ? 'Loading nominee details...'
+          : nominees.isEmpty
+              ? 'No nominee details submitted with this request'
+              : 'Nominees linked to this investor',
+      child: isLoading && nominees.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            )
+          : nominees.isEmpty
           ? const SizedBox.shrink()
           : LayoutBuilder(
               builder: (context, constraints) {

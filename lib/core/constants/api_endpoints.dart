@@ -57,6 +57,8 @@ class ApiEndpoints {
   static const String getInvestorsLLP = "/api/Investor/GetInvestorLLP/{investorId}";
   static const String getAdmins = "/api/User/GetAdmins";
   static const String getPdfExcel = "/api/Investor/InvestorPaymentDetails";
+  static const String getPaymentRequests = "/api/Investor/GetPaymentRequests";
+  static const String acceptOrRejectPaymentRequest = "/api/Investor/ReviewPaymentRequest";
 
 
 

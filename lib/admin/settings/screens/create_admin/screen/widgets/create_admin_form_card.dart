@@ -4,6 +4,23 @@ import 'package:maribel_wellness_centre_application/admin/investors/screens/add_
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
 
+/// Display labels for the create-admin role dropdown.
+const List<String> createAdminRoleLabels = [
+  'Admin',
+  'Financial Manager',
+];
+
+/// Maps a role dropdown label to the API `userRole` value.
+String createAdminRoleApiValue(String label) {
+  switch (label.trim().toLowerCase()) {
+    case 'financial manager':
+      return 'FinancialManager';
+    case 'admin':
+    default:
+      return 'Admin';
+  }
+}
+
 class CreateAdminFormCard extends StatefulWidget {
   const CreateAdminFormCard({
     super.key,
@@ -14,6 +31,8 @@ class CreateAdminFormCard extends StatefulWidget {
     required this.emailController,
     required this.phoneController,
     required this.alternativePhoneController,
+    required this.selectedUserRoleLabel,
+    required this.onUserRoleChanged,
   });
 
   final GlobalKey<FormState> formKey;
@@ -23,6 +42,8 @@ class CreateAdminFormCard extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController phoneController;
   final TextEditingController alternativePhoneController;
+  final String? selectedUserRoleLabel;
+  final ValueChanged<String?> onUserRoleChanged;
 
   @override
   State<CreateAdminFormCard> createState() => _CreateAdminFormCardState();
@@ -166,10 +187,54 @@ class _CreateAdminFormCardState extends State<CreateAdminFormCard> {
               ),
             );
 
+            final userRoleField = AddInvestorLabeledField(
+              label: 'User Role',
+              isRequired: true,
+              child: FormField<String>(
+                key: ValueKey(widget.selectedUserRoleLabel),
+                initialValue: widget.selectedUserRoleLabel,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'User role is required';
+                  }
+                  return null;
+                },
+                builder: (field) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AddInvestorDropdownInput(
+                        value: widget.selectedUserRoleLabel,
+                        hint: 'Select user role',
+                        items: createAdminRoleLabels,
+                        onChanged: (value) {
+                          field.didChange(value);
+                          widget.onUserRoleChanged(value);
+                        },
+                      ),
+                      if (field.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 4),
+                          child: Text(
+                            field.errorText!,
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            );
+
             if (!twoCol) {
               return Column(
                 children: [
                   fullNameField,
+                  const SizedBox(height: 14),
+                  userRoleField,
                   const SizedBox(height: 14),
                   usernameField,
                   const SizedBox(height: 14),
@@ -186,7 +251,14 @@ class _CreateAdminFormCardState extends State<CreateAdminFormCard> {
 
             return Column(
               children: [
-                fullNameField,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: fullNameField),
+                    const SizedBox(width: 14),
+                    Expanded(child: userRoleField),
+                  ],
+                ),
                 const SizedBox(height: 14),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

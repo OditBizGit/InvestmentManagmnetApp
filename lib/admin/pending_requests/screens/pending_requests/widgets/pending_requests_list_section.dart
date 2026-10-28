@@ -9,7 +9,6 @@ import 'package:sizer/sizer.dart';
 import '../../../cubit/pending_requests_cubit.dart';
 import '../../../model/pending_request_model.dart';
 
-
 class PendingRequestsListSection extends StatefulWidget {
   const PendingRequestsListSection({
     super.key,
@@ -25,11 +24,11 @@ class PendingRequestsListSection extends StatefulWidget {
 
 class _PendingRequestsListSectionState
     extends State<PendingRequestsListSection> {
-  static const _filters = ['Pending', 'Completed'];
+  static final _filters =
+      PendingRequestsListFilter.values.map((f) => f.label).toList();
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  PendingRequestsListFilter _filter = PendingRequestsListFilter.pending;
 
   @override
   void dispose() {
@@ -39,21 +38,25 @@ class _PendingRequestsListSectionState
 
   List<PendingRequestModel> _filtered(List<PendingRequestModel> requests) {
     final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return requests;
 
     return requests.where((request) {
-      final matchesFilter = switch (_filter) {
-        PendingRequestsListFilter.pending => request.isAwaitingReview,
-        PendingRequestsListFilter.completed => request.isClosed,
-      };
-      if (!matchesFilter) return false;
-      if (query.isEmpty) return true;
-
       return request.applicantName.toLowerCase().contains(query) ||
           request.requestId.toLowerCase().contains(query) ||
           request.email.toLowerCase().contains(query) ||
           request.phoneNumber.toLowerCase().contains(query) ||
           request.allocation.toLowerCase().contains(query);
     }).toList();
+  }
+
+  String _emptyMessage(PendingRequestsListFilter filter) {
+    if (_query.trim().isNotEmpty) return 'No requests match your search';
+    return switch (filter) {
+      PendingRequestsListFilter.all => 'No payment requests',
+      PendingRequestsListFilter.pending => 'No pending requests',
+      PendingRequestsListFilter.approved => 'No approved requests',
+      PendingRequestsListFilter.rejected => 'No rejected requests',
+    };
   }
 
   @override
@@ -64,17 +67,26 @@ class _PendingRequestsListSectionState
             state is PendingRequestsLoading ||
             (state is PendingRequestsSuccess && state.isListLoading);
 
+        final statusFilter = switch (state) {
+          PendingRequestsSuccess(:final statusFilter) => statusFilter,
+          PendingRequestsLoading(:final statusFilter) => statusFilter,
+          PendingRequestsFailure(:final statusFilter) => statusFilter,
+          _ => PendingRequestsListFilter.all,
+        };
+
         final requests = state is PendingRequestsSuccess
             ? state.requests
             : const <PendingRequestModel>[];
         final filtered = _filtered(requests);
+        final failureMessage =
+            state is PendingRequestsFailure ? state.message : null;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             UserManagementTableCard(
               child: UserManagementListToolbar(
-                title: 'Registration requests',
+                title: 'Payment requests',
                 searchController: _searchController,
                 searchHint: 'Search by name, request ID, email, phone...',
                 onSearchChanged: (value) => setState(() => _query = value),
@@ -83,34 +95,35 @@ class _PendingRequestsListSectionState
                   setState(() => _query = '');
                 },
                 filters: _filters,
-                selectedFilterIndex: _filter.index,
+                selectedFilterIndex: statusFilter.index,
                 onFilterSelected: (index) {
-                  setState(() {
-                    _filter = PendingRequestsListFilter.values[index];
-                  });
+                  context.read<PendingRequestsCubit>().loadRequests(
+                        statusFilter: PendingRequestsListFilter.values[index],
+                      );
                 },
               ),
             ),
             const SizedBox(height: 14),
             if (isLoading)
               const _ListLoading()
-            else if (filtered.isEmpty)
-              _EmptyState(
-                message: _query.trim().isEmpty
-                    ? _filter == PendingRequestsListFilter.pending
-                        ? 'No pending requests'
-                        : 'No completed requests'
-                    : 'No requests match your search',
+            else if (failureMessage != null)
+              _ListError(
+                message: failureMessage,
+                onRetry: () => context.read<PendingRequestsCubit>().loadRequests(
+                      statusFilter: statusFilter,
+                    ),
               )
+            else if (filtered.isEmpty)
+              _EmptyState(message: _emptyMessage(statusFilter))
             else
               Column(
                 children: [
                   for (var i = 0; i < filtered.length; i++) ...[
                     if (i > 0) const SizedBox(height: 10),
-                      PendingRequestCard(
-                        request: filtered[i],
-                        onReview: () => widget.onReview(filtered[i]),
-                      ),
+                    PendingRequestCard(
+                      request: filtered[i],
+                      onReview: () => widget.onReview(filtered[i]),
+                    ),
                   ],
                 ],
               ),
@@ -151,6 +164,57 @@ class _ListLoading extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ListError extends StatelessWidget {
+  const _ListError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return UserManagementTableCard(
+      child: SizedBox(
+        height: 220,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.error,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: onRetry,
+                  child: Text(
+                    'Retry',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

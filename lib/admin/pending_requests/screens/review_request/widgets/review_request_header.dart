@@ -30,10 +30,9 @@ class ReviewRequestHeader extends StatelessWidget {
       onBack: onBack,
       statusLabel: request.statusLabel,
       statusTone: switch (request.status) {
-        PendingRequestStatus.completed => UserManagementBadgeTone.success,
+        PendingRequestStatus.approved => UserManagementBadgeTone.success,
         PendingRequestStatus.rejected => UserManagementBadgeTone.danger,
         PendingRequestStatus.pending => UserManagementBadgeTone.warning,
-        PendingRequestStatus.requested => UserManagementBadgeTone.neutral,
       },
     );
   }

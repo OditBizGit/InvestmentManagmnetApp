@@ -1,6 +1,19 @@
-enum PendingRequestStatus { requested, pending, completed, rejected }
+import 'package:maribel_wellness_centre_application/admin/pending_requests/model/payment_request_model.dart';
 
-enum PendingRequestsListFilter { pending, completed }
+enum PendingRequestStatus { pending, approved, rejected }
+
+enum PendingRequestsListFilter { all, pending, approved, rejected }
+
+extension PendingRequestsListFilterX on PendingRequestsListFilter {
+  String get label => switch (this) {
+        PendingRequestsListFilter.all => 'All',
+        PendingRequestsListFilter.pending => 'Pending',
+        PendingRequestsListFilter.approved => 'Approved',
+        PendingRequestsListFilter.rejected => 'Rejected',
+      };
+
+  String get apiStatus => label;
+}
 
 class PendingRequestNominee {
   const PendingRequestNominee({
@@ -25,6 +38,7 @@ class PendingRequestNominee {
 class PendingRequestModel {
   const PendingRequestModel({
     required this.id,
+    required this.userId,
     required this.requestId,
     required this.applicantName,
     required this.email,
@@ -49,6 +63,7 @@ class PendingRequestModel {
   });
 
   final String id;
+  final int userId;
   final String requestId;
   final String applicantName;
   final String email;
@@ -71,6 +86,34 @@ class PendingRequestModel {
   final String? ifscCode;
   final List<PendingRequestNominee> nominees;
 
+  factory PendingRequestModel.fromPaymentRequest(
+    PaymentRequestDataModel data,
+  ) {
+    final allocation = data.narration.trim().isNotEmpty
+        ? data.narration.trim()
+        : data.paymentMethod.trim().isNotEmpty
+            ? data.paymentMethod.trim()
+            : 'Payment request';
+
+    return PendingRequestModel(
+      id: data.requestId.toString(),
+      userId: data.userId,
+      requestId: data.investorCode.trim().isNotEmpty
+          ? data.investorCode.trim()
+          : 'REQ-${data.requestId}',
+      applicantName: data.fullName.trim().isNotEmpty
+          ? data.fullName.trim()
+          : 'Unknown',
+      email: data.email,
+      phoneNumber: data.phoneNumber,
+      allocation: allocation,
+      amount: data.paidAmount,
+      amountPayingNow: data.paidAmount,
+      submittedAt: data.requestedDate ?? DateTime.now(),
+      status: PendingRequestStatusX.fromApi(data.status),
+    );
+  }
+
   double get pendingAmount {
     final remaining = amount - amountPayingNow;
     return remaining < 0 ? 0 : remaining;
@@ -90,28 +133,26 @@ class PendingRequestModel {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  bool get isCompleted => status == PendingRequestStatus.completed;
+  bool get isApproved => status == PendingRequestStatus.approved;
 
   bool get isRejected => status == PendingRequestStatus.rejected;
 
-  bool get isAwaitingReview =>
-      status == PendingRequestStatus.requested ||
-      status == PendingRequestStatus.pending;
+  bool get isAwaitingReview => status == PendingRequestStatus.pending;
 
   bool get isClosed =>
-      status == PendingRequestStatus.completed ||
+      status == PendingRequestStatus.approved ||
       status == PendingRequestStatus.rejected;
 
   String get statusLabel => switch (status) {
-        PendingRequestStatus.requested => 'Requested',
         PendingRequestStatus.pending => 'Pending',
-        PendingRequestStatus.completed => 'Completed',
+        PendingRequestStatus.approved => 'Approved',
         PendingRequestStatus.rejected => 'Rejected',
       };
 
   PendingRequestModel copyWith({PendingRequestStatus? status}) {
     return PendingRequestModel(
       id: id,
+      userId: userId,
       requestId: requestId,
       applicantName: applicantName,
       email: email,
@@ -137,53 +178,65 @@ class PendingRequestModel {
   }
 }
 
+extension PendingRequestStatusX on PendingRequestStatus {
+  static PendingRequestStatus fromApi(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'approved':
+        return PendingRequestStatus.approved;
+      case 'rejected':
+        return PendingRequestStatus.rejected;
+      case 'pending':
+      default:
+        return PendingRequestStatus.pending;
+    }
+  }
+}
+
 class PendingRequestsOverviewStats {
   const PendingRequestsOverviewStats({
     required this.total,
-    required this.requested,
     required this.pending,
-    required this.completed,
+    required this.approved,
+    required this.rejected,
   });
 
   final int total;
-  final int requested;
   final int pending;
-  final int completed;
+  final int approved;
+  final int rejected;
 
-  int get awaitingReview => requested + pending;
+  int get awaitingReview => pending;
 
   static const empty = PendingRequestsOverviewStats(
     total: 0,
-    requested: 0,
     pending: 0,
-    completed: 0,
+    approved: 0,
+    rejected: 0,
   );
 
   static PendingRequestsOverviewStats from(
     List<PendingRequestModel> requests,
   ) {
-    var requested = 0;
     var pending = 0;
-    var completed = 0;
+    var approved = 0;
+    var rejected = 0;
 
     for (final request in requests) {
       switch (request.status) {
-        case PendingRequestStatus.requested:
-          requested++;
         case PendingRequestStatus.pending:
           pending++;
-        case PendingRequestStatus.completed:
-          completed++;
+        case PendingRequestStatus.approved:
+          approved++;
         case PendingRequestStatus.rejected:
-          completed++;
+          rejected++;
       }
     }
 
     return PendingRequestsOverviewStats(
       total: requests.length,
-      requested: requested,
       pending: pending,
-      completed: completed,
+      approved: approved,
+      rejected: rejected,
     );
   }
 }

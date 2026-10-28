@@ -339,10 +339,9 @@ class _StatusAndAction extends StatelessWidget {
   final bool expanded;
 
   UserManagementBadgeTone get _tone => switch (request.status) {
-        PendingRequestStatus.completed => UserManagementBadgeTone.success,
+        PendingRequestStatus.approved => UserManagementBadgeTone.success,
         PendingRequestStatus.rejected => UserManagementBadgeTone.danger,
         PendingRequestStatus.pending => UserManagementBadgeTone.warning,
-        PendingRequestStatus.requested => UserManagementBadgeTone.neutral,
       };
 
   @override
@@ -361,7 +360,7 @@ class _StatusAndAction extends StatelessWidget {
           ),
         ),
         child: Text(
-          request.isCompleted ? 'View request' : 'Review request',
+          request.isAwaitingReview ? 'Review request' : 'View request',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

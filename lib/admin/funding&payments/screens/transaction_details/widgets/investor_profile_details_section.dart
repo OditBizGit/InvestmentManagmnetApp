@@ -461,7 +461,59 @@ class _PersonalContactCard extends StatelessWidget {
   }
 }
 
-class _PendingScheduleCard extends StatelessWidget {
+class _PendingDueEntry {
+  _PendingDueEntry({
+    required this.installmentNumber,
+    required this.dueDate,
+    required this.amount,
+    required this.paidAmount,
+    required this.status,
+  });
+
+  final int installmentNumber;
+  DateTime? dueDate;
+  double amount;
+  final double paidAmount;
+  final String status;
+
+  String get description =>
+      status.trim().isNotEmpty ? status : 'Scheduled installment';
+
+  String get badgeLabel => status.trim().isNotEmpty ? status : 'Pending';
+
+  _PendingDueEntry copy() {
+    return _PendingDueEntry(
+      installmentNumber: installmentNumber,
+      dueDate: dueDate,
+      amount: amount,
+      paidAmount: paidAmount,
+      status: status,
+    );
+  }
+}
+
+List<_PendingDueEntry> _pendingDueEntriesFrom(InvestorDetailsModel details) {
+  return details.dueDates
+      .where((d) {
+        final status = d.status.toLowerCase();
+        return status.contains('pending') ||
+            status.contains('due') ||
+            status.contains('schedul') ||
+            d.pendingAmount > 0;
+      })
+      .map(
+        (d) => _PendingDueEntry(
+          installmentNumber: d.installmentNumber,
+          dueDate: d.dueDate,
+          amount: d.pendingAmount > 0 ? d.pendingAmount : d.installmentAmount,
+          paidAmount: d.paidAmount,
+          status: d.status,
+        ),
+      )
+      .toList();
+}
+
+class _PendingScheduleCard extends StatefulWidget {
   const _PendingScheduleCard({
     required this.details,
     required this.formatCurrency,
@@ -481,21 +533,142 @@ class _PendingScheduleCard extends StatelessWidget {
   final double? listMaxHeight;
 
   @override
+  State<_PendingScheduleCard> createState() => _PendingScheduleCardState();
+}
+
+class _PendingScheduleCardState extends State<_PendingScheduleCard> {
+  late List<_PendingDueEntry> _entries;
+  int? _editingInstallmentNumber;
+  _PendingDueEntry? _editDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    _entries = _pendingDueEntriesFrom(widget.details);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PendingScheduleCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.details != widget.details && _editingInstallmentNumber == null) {
+      _entries = _pendingDueEntriesFrom(widget.details);
+    }
+  }
+
+  void _startEditingEntry(int installmentNumber) {
+    final index = _entries.indexWhere(
+      (e) => e.installmentNumber == installmentNumber,
+    );
+    if (index < 0) return;
+    setState(() {
+      _editingInstallmentNumber = installmentNumber;
+      _editDraft = _entries[index].copy();
+    });
+  }
+
+  void _cancelEditingEntry() {
+    setState(() {
+      _editingInstallmentNumber = null;
+      _editDraft = null;
+    });
+  }
+
+  void _saveEditingEntry() {
+    final draft = _editDraft;
+    final installmentNumber = _editingInstallmentNumber;
+    if (draft == null || installmentNumber == null) return;
+
+    final index = _entries.indexWhere(
+      (e) => e.installmentNumber == installmentNumber,
+    );
+    if (index < 0) return;
+
+    setState(() {
+      _entries[index] = draft.copy();
+      _editingInstallmentNumber = null;
+      _editDraft = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Installment $installmentNumber updated',
+          style: TextStyle(fontSize: 10.sp),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.accent,
+      ),
+    );
+  }
+
+  Future<void> _pickDueDateForDraft() async {
+    final draft = _editDraft;
+    if (draft == null) return;
+    final now = DateTime.now();
+    final initial = draft.dueDate ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 10),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.accent,
+              onPrimary: AppColors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked == null || !mounted) return;
+    setState(() => draft.dueDate = picked);
+  }
+
+  void _updateDraftAmount(String value) {
+    final draft = _editDraft;
+    if (draft == null) return;
+    final parsed = double.tryParse(value.replaceAll(',', '').trim());
+    if (parsed != null && parsed >= 0) {
+      draft.amount = parsed;
+    }
+  }
+
+  Widget _dueEditIconButton({
+    required int installmentNumber,
+    required bool enabled,
+  }) {
+    return Material(
+      color: enabled ? AppColors.cardBg : AppColors.cardBg.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: enabled
+            ? () => _startEditingEntry(installmentNumber)
+            : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(
+            Icons.edit_outlined,
+            size: 16,
+            color: enabled ? AppColors.accent : AppColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final committed = details.investmentAmount;
-    final paid = details.totalPaidAmount;
+    final committed = widget.details.investmentAmount;
+    final paid = widget.details.totalPaidAmount;
     final progress = committed > 0 ? (paid / committed).clamp(0.0, 1.0) : 0.0;
     final progressPercent = (progress * 100).toStringAsFixed(1);
 
-    final pendingDues = details.dueDates.where((d) {
-      final status = d.status.toLowerCase();
-      return status.contains('pending') ||
-          status.contains('due') ||
-          status.contains('schedul') ||
-          d.pendingAmount > 0;
-    }).toList();
-
-    final dueSoonCount = pendingDues.length;
+    final dueSoonCount = _entries.length;
+    final anotherRowIsEditing = _editingInstallmentNumber != null;
 
     final header = Row(
       children: [
@@ -599,7 +772,7 @@ class _PendingScheduleCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Collected: ${formatCurrency(paid)}',
+                  'Collected: ${widget.formatCurrency(paid)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -612,7 +785,7 @@ class _PendingScheduleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Target: ${formatCurrency(committed)}',
+                  'Target: ${widget.formatCurrency(committed)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
@@ -630,7 +803,7 @@ class _PendingScheduleCard extends StatelessWidget {
     );
 
     Widget duesList({required bool expand}) {
-      if (pendingDues.isEmpty) {
+      if (_entries.isEmpty) {
         return Text(
           'No pending dues',
           style: TextStyle(
@@ -642,27 +815,38 @@ class _PendingScheduleCard extends StatelessWidget {
 
       final list = ListView.separated(
         padding: EdgeInsets.zero,
-        itemCount: pendingDues.length,
+        itemCount: _entries.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
-          final due = pendingDues[i];
+          final due = _entries[i];
+          final isThisRowEditing =
+              _editingInstallmentNumber == due.installmentNumber;
+          if (isThisRowEditing && _editDraft != null) {
+            return _EditablePendingDueTile(
+              key: ValueKey('edit-${due.installmentNumber}'),
+              entry: _editDraft!,
+              formatCurrency: widget.formatCurrency,
+              formatDate: widget.formatDate,
+              onPickDate: _pickDueDateForDraft,
+              onAmountChanged: _updateDraftAmount,
+              onCancel: _cancelEditingEntry,
+              onSave: _saveEditingEntry,
+            );
+          }
           return _MilestoneItem(
             title: 'Installment ${due.installmentNumber}',
-            description: due.status.trim().isNotEmpty
-                ? due.status
-                : 'Scheduled installment',
-            amount: formatCurrency(
-              due.pendingAmount > 0
-                  ? due.pendingAmount
-                  : due.installmentAmount,
-            ),
+            description: due.description,
+            amount: widget.formatCurrency(due.amount),
             amountColor: AppColors.error,
-            badgeLabel:
-                due.status.trim().isNotEmpty ? due.status : 'Pending',
+            badgeLabel: due.badgeLabel,
             badgeColor: AppColors.error,
             badgeBg: const Color(0xFFFDECEE),
-            dueLabel: 'Due: ${formatDate(due.dueDate)}',
-            metaLabel: 'Paid: ${formatCurrency(due.paidAmount)}',
+            dueLabel: 'Due: ${widget.formatDate(due.dueDate)}',
+            metaLabel: 'Paid: ${widget.formatCurrency(due.paidAmount)}',
+            trailing: _dueEditIconButton(
+              installmentNumber: due.installmentNumber,
+              enabled: !anotherRowIsEditing,
+            ),
           );
         },
       );
@@ -671,14 +855,12 @@ class _PendingScheduleCard extends StatelessWidget {
         return Expanded(child: list);
       }
       return SizedBox(
-        height: listMaxHeight ?? 260,
+        height: widget.listMaxHeight ?? 260,
         child: list,
       );
     }
 
-
-
-    final useFixedHeight = height != null && height! > 0;
+    final useFixedHeight = widget.height != null && widget.height! > 0;
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -697,9 +879,273 @@ class _PendingScheduleCard extends StatelessWidget {
     );
 
     if (useFixedHeight) {
-      return SizedBox(height: height, child: card);
+      return SizedBox(height: widget.height, child: card);
     }
     return card;
+  }
+}
+
+class _EditablePendingDueTile extends StatefulWidget {
+  const _EditablePendingDueTile({
+    super.key,
+    required this.entry,
+    required this.formatCurrency,
+    required this.formatDate,
+    required this.onPickDate,
+    required this.onAmountChanged,
+    required this.onCancel,
+    required this.onSave,
+  });
+
+  final _PendingDueEntry entry;
+  final String Function(double amount) formatCurrency;
+  final String Function(DateTime? date) formatDate;
+  final VoidCallback onPickDate;
+  final ValueChanged<String> onAmountChanged;
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
+
+  @override
+  State<_EditablePendingDueTile> createState() =>
+      _EditablePendingDueTileState();
+}
+
+class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
+  late final TextEditingController _amountController;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(
+      text: _formatAmountInput(widget.entry.amount),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _EditablePendingDueTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entry.amount != widget.entry.amount &&
+        _amountController.text != _formatAmountInput(widget.entry.amount)) {
+      _amountController.text = _formatAmountInput(widget.entry.amount);
+    }
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  String _formatAmountInput(double amount) {
+    if (amount == amount.roundToDouble()) {
+      return amount.toInt().toString();
+    }
+    return amount.toStringAsFixed(2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final due = widget.entry;
+    final dateLabel = due.dueDate != null
+        ? widget.formatDate(due.dueDate)
+        : 'Select due date';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Installment ${due.installmentNumber}',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDECEE),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  due.badgeLabel,
+                  style: TextStyle(
+                    fontSize: 8.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Due date',
+            style: TextStyle(
+              fontSize: 8.sp,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Material(
+            color: const Color(0xFFF8F7FA),
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              onTap: widget.onPickDate,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 16,
+                      color: AppColors.accent,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        dateLabel,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w600,
+                          color: due.dueDate != null
+                              ? AppColors.textPrimary
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: AppColors.textMuted.withValues(alpha: 0.8),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Amount due',
+            style: TextStyle(
+              fontSize: 8.sp,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: TextStyle(
+              fontSize: 10.5.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: const Color(0xFFF8F7FA),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.accent, width: 1),
+              ),
+              prefixIcon: const Padding(
+                padding: EdgeInsets.only(left: 12, right: 4),
+                child: Icon(
+                  Icons.currency_rupee_rounded,
+                  size: 16,
+                  color: AppColors.accent,
+                ),
+              ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 0),
+            ),
+            onChanged: widget.onAmountChanged,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Paid: ${widget.formatCurrency(due.paidAmount)} (read-only)',
+            style: TextStyle(
+              fontSize: 8.5.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: widget.onCancel,
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              FilledButton(
+                onPressed: widget.onSave,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: AppColors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Save',
+                  style: TextStyle(
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -714,6 +1160,7 @@ class _MilestoneItem extends StatelessWidget {
     required this.badgeBg,
     required this.dueLabel,
     required this.metaLabel,
+    this.trailing,
   });
 
   final String title;
@@ -725,6 +1172,7 @@ class _MilestoneItem extends StatelessWidget {
   final Color badgeBg;
   final String dueLabel;
   final String metaLabel;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -736,10 +1184,14 @@ class _MilestoneItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
             spacing: 8,
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -826,6 +1278,13 @@ class _MilestoneItem extends StatelessWidget {
               ),
             ],
           ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
         ],
       ),
     );
