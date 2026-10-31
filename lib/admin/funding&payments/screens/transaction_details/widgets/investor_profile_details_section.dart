@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit/funding_payments_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
@@ -472,7 +474,7 @@ class _PendingDueEntry {
 
   final int installmentNumber;
   DateTime? dueDate;
-  double amount;
+  final double amount;
   final double paidAmount;
   final String status;
 
@@ -550,8 +552,10 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
   @override
   void didUpdateWidget(covariant _PendingScheduleCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.details != widget.details && _editingInstallmentNumber == null) {
+    if (oldWidget.details != widget.details) {
       _entries = _pendingDueEntriesFrom(widget.details);
+      _editingInstallmentNumber = null;
+      _editDraft = null;
     }
   }
 
@@ -573,31 +577,31 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
     });
   }
 
-  void _saveEditingEntry() {
+  Future<void> _saveEditingEntry() async {
     final draft = _editDraft;
     final installmentNumber = _editingInstallmentNumber;
     if (draft == null || installmentNumber == null) return;
 
-    final index = _entries.indexWhere(
-      (e) => e.installmentNumber == installmentNumber,
-    );
-    if (index < 0) return;
-
-    setState(() {
-      _entries[index] = draft.copy();
-      _editingInstallmentNumber = null;
-      _editDraft = null;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Installment $installmentNumber updated',
-          style: TextStyle(fontSize: 10.sp),
+    final dueDate = draft.dueDate;
+    if (dueDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Select a due date before saving.',
+            style: TextStyle(fontSize: 10.sp),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
         ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.accent,
-      ),
-    );
+      );
+      return;
+    }
+
+    await context.read<FundingPaymentsCubit>().updateInvestorDueDate(
+          userId: widget.details.userId,
+          installmentNumber: installmentNumber,
+          dueDate: dueDate,
+        );
   }
 
   Future<void> _pickDueDateForDraft() async {
@@ -625,15 +629,6 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
     );
     if (picked == null || !mounted) return;
     setState(() => draft.dueDate = picked);
-  }
-
-  void _updateDraftAmount(String value) {
-    final draft = _editDraft;
-    if (draft == null) return;
-    final parsed = double.tryParse(value.replaceAll(',', '').trim());
-    if (parsed != null && parsed >= 0) {
-      draft.amount = parsed;
-    }
   }
 
   Widget _dueEditIconButton({
@@ -669,6 +664,11 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
 
     final dueSoonCount = _entries.length;
     final anotherRowIsEditing = _editingInstallmentNumber != null;
+    final cubitState = context.watch<FundingPaymentsCubit>().state;
+    final savingInstallment = cubitState is UpdateDueDateLoading
+        ? cubitState.installmentNumber
+        : null;
+    final isSavingDueDate = savingInstallment != null;
 
     final header = Row(
       children: [
@@ -827,10 +827,10 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
               entry: _editDraft!,
               formatCurrency: widget.formatCurrency,
               formatDate: widget.formatDate,
-              onPickDate: _pickDueDateForDraft,
-              onAmountChanged: _updateDraftAmount,
-              onCancel: _cancelEditingEntry,
-              onSave: _saveEditingEntry,
+              isSaving: savingInstallment == due.installmentNumber,
+              onPickDate: isSavingDueDate ? null : _pickDueDateForDraft,
+              onCancel: isSavingDueDate ? null : _cancelEditingEntry,
+              onSave: isSavingDueDate ? null : _saveEditingEntry,
             );
           }
           return _MilestoneItem(
@@ -845,7 +845,7 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
             metaLabel: 'Paid: ${widget.formatCurrency(due.paidAmount)}',
             trailing: _dueEditIconButton(
               installmentNumber: due.installmentNumber,
-              enabled: !anotherRowIsEditing,
+              enabled: !anotherRowIsEditing && !isSavingDueDate,
             ),
           );
         },
@@ -885,14 +885,14 @@ class _PendingScheduleCardState extends State<_PendingScheduleCard> {
   }
 }
 
-class _EditablePendingDueTile extends StatefulWidget {
+class _EditablePendingDueTile extends StatelessWidget {
   const _EditablePendingDueTile({
     super.key,
     required this.entry,
     required this.formatCurrency,
     required this.formatDate,
+    required this.isSaving,
     required this.onPickDate,
-    required this.onAmountChanged,
     required this.onCancel,
     required this.onSave,
   });
@@ -900,54 +900,16 @@ class _EditablePendingDueTile extends StatefulWidget {
   final _PendingDueEntry entry;
   final String Function(double amount) formatCurrency;
   final String Function(DateTime? date) formatDate;
-  final VoidCallback onPickDate;
-  final ValueChanged<String> onAmountChanged;
-  final VoidCallback onCancel;
-  final VoidCallback onSave;
-
-  @override
-  State<_EditablePendingDueTile> createState() =>
-      _EditablePendingDueTileState();
-}
-
-class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
-  late final TextEditingController _amountController;
-
-  @override
-  void initState() {
-    super.initState();
-    _amountController = TextEditingController(
-      text: _formatAmountInput(widget.entry.amount),
-    );
-  }
-
-  @override
-  void didUpdateWidget(covariant _EditablePendingDueTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.entry.amount != widget.entry.amount &&
-        _amountController.text != _formatAmountInput(widget.entry.amount)) {
-      _amountController.text = _formatAmountInput(widget.entry.amount);
-    }
-  }
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  String _formatAmountInput(double amount) {
-    if (amount == amount.roundToDouble()) {
-      return amount.toInt().toString();
-    }
-    return amount.toStringAsFixed(2);
-  }
+  final bool isSaving;
+  final VoidCallback? onPickDate;
+  final VoidCallback? onCancel;
+  final Future<void> Function()? onSave;
 
   @override
   Widget build(BuildContext context) {
-    final due = widget.entry;
+    final due = entry;
     final dateLabel = due.dueDate != null
-        ? widget.formatDate(due.dueDate)
+        ? formatDate(due.dueDate)
         : 'Select due date';
 
     return Container(
@@ -1005,7 +967,7 @@ class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
             color: const Color(0xFFF8F7FA),
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
-              onTap: widget.onPickDate,
+              onTap: onPickDate,
               borderRadius: BorderRadius.circular(10),
               child: Padding(
                 padding:
@@ -1042,7 +1004,7 @@ class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Amount due',
+            'Amount due (read-only)',
             style: TextStyle(
               fontSize: 8.sp,
               fontWeight: FontWeight.w600,
@@ -1051,47 +1013,25 @@ class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
             ),
           ),
           const SizedBox(height: 6),
-          TextField(
-            controller: _amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: TextStyle(
-              fontSize: 10.5.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F7FA),
+              borderRadius: BorderRadius.circular(10),
             ),
-            decoration: InputDecoration(
-              isDense: true,
-              filled: true,
-              fillColor: const Color(0xFFF8F7FA),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+            child: Text(
+              formatCurrency(due.amount),
+              style: TextStyle(
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.error,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.accent, width: 1),
-              ),
-              prefixIcon: const Padding(
-                padding: EdgeInsets.only(left: 12, right: 4),
-                child: Icon(
-                  Icons.currency_rupee_rounded,
-                  size: 16,
-                  color: AppColors.accent,
-                ),
-              ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 0),
             ),
-            onChanged: widget.onAmountChanged,
           ),
           const SizedBox(height: 8),
           Text(
-            'Paid: ${widget.formatCurrency(due.paidAmount)} (read-only)',
+            'Paid: ${formatCurrency(due.paidAmount)} (read-only)',
             style: TextStyle(
               fontSize: 8.5.sp,
               fontWeight: FontWeight.w400,
@@ -1103,7 +1043,7 @@ class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed: widget.onCancel,
+                onPressed: onCancel,
                 style: TextButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1121,7 +1061,9 @@ class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
               ),
               const SizedBox(width: 6),
               FilledButton(
-                onPressed: widget.onSave,
+                onPressed: isSaving || onSave == null
+                    ? null
+                    : () => onSave!(),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.white,
@@ -1133,13 +1075,22 @@ class _EditablePendingDueTileState extends State<_EditablePendingDueTile> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.white,
+                        ),
+                      )
+                    : Text(
+                        'Save',
+                        style: TextStyle(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ],
           ),

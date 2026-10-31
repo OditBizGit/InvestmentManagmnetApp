@@ -1,0 +1,84 @@
+class TopInvestorsResponse {
+  final bool status;
+  final String message;
+  final List<TopInvestorModel> data;
+  final int code;
+
+  TopInvestorsResponse({
+    required this.status,
+    required this.message,
+    required this.data,
+    required this.code,
+  });
+
+  factory TopInvestorsResponse.fromJson(Map<String, dynamic> json) {
+    return TopInvestorsResponse(
+      status: json['status'] as bool? ?? false,
+      message: json['message'] as String? ?? '',
+      data: (json['data'] as List<dynamic>? ?? [])
+          .map(
+            (item) => TopInvestorModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+      code: (json['code'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class TopInvestorModel {
+  final int userId;
+  final String investorCode;
+  final String fullName;
+  final String? profileImage;
+  final String investorType;
+  final String? organization;
+  final double investmentAmount;
+  final double totalPaidAmount;
+  final double pendingAmount;
+  final int rating;
+
+  TopInvestorModel({
+    required this.userId,
+    required this.investorCode,
+    required this.fullName,
+    this.profileImage,
+    required this.investorType,
+    this.organization,
+    required this.investmentAmount,
+    required this.totalPaidAmount,
+    required this.pendingAmount,
+    required this.rating,
+  });
+
+  factory TopInvestorModel.fromJson(Map<String, dynamic> json) {
+    return TopInvestorModel(
+      userId: (json['userId'] as num?)?.toInt() ?? 0,
+      investorCode: json['investorCode']?.toString() ?? '',
+      fullName: json['fullName'] as String? ?? '',
+      profileImage: json['profileImage'] as String?,
+      investorType: json['investorType'] as String? ?? '',
+      organization: json['organization'] as String?,
+      investmentAmount:
+          (json['investmentAmount'] as num?)?.toDouble() ?? 0.0,
+      totalPaidAmount: (json['totalPaidAmount'] as num?)?.toDouble() ?? 0.0,
+      pendingAmount: (json['pendingAmount'] as num?)?.toDouble() ?? 0.0,
+      rating: (json['rating'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  int? get savedStarRating =>
+      rating >= 1 && rating <= 5 ? rating : null;
+
+  String get initials {
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+}

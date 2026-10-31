@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/funding_investor_list_model.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_details_models.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/model/investor_payment_model.dart';
+import 'package:maribel_wellness_centre_application/admin/funding&payments/model/update_due_dates_model.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/repository/funding_payments_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/repository/investors_repository.dart';
@@ -190,6 +191,111 @@ class FundingPaymentsCubit extends Cubit<FundingPaymentsState> {
 
   void clearInvestorDetails() {
     _investorDetails = null;
+  }
+
+  Future<void> updateInvestorDueDate({
+    required int userId,
+    required int installmentNumber,
+    required DateTime dueDate,
+  }) async {
+    if (state is UpdateDueDateLoading) return;
+
+    final previousDetails = _investorDetails;
+    if (previousDetails == null) {
+      emit(
+        UpdateDueDateFailure(
+          'Investor details are not loaded yet.',
+        ),
+      );
+      return;
+    }
+
+    emit(UpdateDueDateLoading(installmentNumber: installmentNumber));
+
+    final apiDueDate = UpdateDueDatesRequestModel.normalizeCalendarDate(dueDate);
+
+    try {
+      final response = await _paymentRepository.updateDueDates(
+        investorId: userId,
+        installmentNumber: installmentNumber,
+        dueDate: apiDueDate,
+      );
+
+      if (!response.status) {
+        emit(
+          UpdateDueDateFailure(
+            response.message.isNotEmpty
+                ? response.message
+                : 'Failed to update due date',
+          ),
+        );
+        emit(InvestorDetailsSuccess(previousDetails));
+        return;
+      }
+
+      final patched = _patchDueDate(
+        previousDetails,
+        installmentNumber: installmentNumber,
+        dueDate: apiDueDate,
+      );
+      _investorDetails = patched;
+      emit(InvestorDetailsSuccess(patched));
+      emit(
+        UpdateDueDateSuccess(
+          response.message.isNotEmpty
+              ? response.message
+              : 'Due date updated successfully',
+        ),
+      );
+
+      unawaited(_refreshInvestorDetailsSilently(userId));
+    } on DioException catch (e) {
+      emit(
+        UpdateDueDateFailure(
+          ApiErrorMessage.from(e, fallback: 'Failed to update due date'),
+        ),
+      );
+      emit(InvestorDetailsSuccess(previousDetails));
+    } catch (e) {
+      emit(
+        UpdateDueDateFailure(
+          ApiErrorMessage.from(e, fallback: 'Failed to update due date'),
+        ),
+      );
+      emit(InvestorDetailsSuccess(previousDetails));
+    }
+  }
+
+  InvestorDetailsModel _patchDueDate(
+    InvestorDetailsModel details, {
+    required int installmentNumber,
+    required DateTime dueDate,
+  }) {
+    final updatedDueDates = details.dueDates.map((entry) {
+      if (entry.installmentNumber != installmentNumber) return entry;
+      return entry.copyWith(dueDate: dueDate);
+    }).toList();
+
+    return details.copyWith(dueDates: updatedDueDates);
+  }
+
+  Future<void> _refreshInvestorDetailsSilently(int userId) async {
+    try {
+      final response = await _paymentRepository.getInvestorDetails(
+        userId: userId,
+      );
+
+      final looksSuccessful = response.status ||
+          response.code == 200 ||
+          response.message.toLowerCase().contains('success');
+
+      if (!looksSuccessful || response.data == null || isClosed) return;
+
+      _investorDetails = response.data;
+      emit(InvestorDetailsSuccess(response.data!));
+    } catch (_) {
+      // Keep the optimistic due date if background refresh fails.
+    }
   }
 
   Future<void> _refreshInvestorsAfterPayment() async {

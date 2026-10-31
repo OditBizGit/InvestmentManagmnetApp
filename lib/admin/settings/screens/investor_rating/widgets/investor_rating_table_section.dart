@@ -1,209 +1,279 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/investor_rating/cubit/investor_rating_cubit.dart';
-import 'package:maribel_wellness_centre_application/admin/settings/screens/investor_rating/model/investor_rating_record.dart';
+import 'package:maribel_wellness_centre_application/admin/settings/screens/investor_rating/model/investor_rating_details_model.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/investor_rating/widgets/interactive_star_rating.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_table_widgets.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:sizer/sizer.dart';
 
-class InvestorRatingTableSection extends StatelessWidget {
-  const InvestorRatingTableSection({
-    super.key,
-    required this.state,
-    required this.query,
-    required this.searchController,
-    required this.onQueryChanged,
-    required this.onClearQuery,
-    required this.onRatingChanged,
-    required this.onToggleSelected,
-    required this.onSaveInvestorRating,
-    required this.onAddToTopRated,
-  });
+class InvestorRatingTableSection extends StatefulWidget {
+  const InvestorRatingTableSection({super.key});
 
-  final InvestorRatingState state;
-  final String query;
-  final TextEditingController searchController;
-  final ValueChanged<String> onQueryChanged;
-  final VoidCallback onClearQuery;
-  final void Function(String investorCode, int rating) onRatingChanged;
-  final ValueChanged<String> onToggleSelected;
-  final ValueChanged<String> onSaveInvestorRating;
-  final ValueChanged<String> onAddToTopRated;
+  @override
+  State<InvestorRatingTableSection> createState() =>
+      _InvestorRatingTableSectionState();
+}
 
-  static const double _minTableWidth = 1180;
+class _InvestorRatingTableSectionState extends State<InvestorRatingTableSection> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
 
-  List<InvestorRatingRecord> get _filtered {
-    final text = query.trim().toLowerCase();
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<InvestorRatingDetailsModel> _filtered(InvestorRatingState state) {
+    final text = _query.trim().toLowerCase();
     if (text.isEmpty) return state.investors;
     return state.investors.where((investor) {
-      return investor.fullName.toLowerCase().contains(text) ||
-          investor.investorCode.toLowerCase().contains(text);
+      return investor.investorName.toLowerCase().contains(text) ||
+          investor.userId.toString().contains(text);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final rows = _filtered;
+    return BlocBuilder<InvestorRatingCubit, InvestorRatingState>(
+      builder: (context, state) {
+        final cubit = context.read<InvestorRatingCubit>();
+        final rows = _filtered(state);
 
-    return UserManagementTableCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 720;
-              final title = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'All investors',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accent,
+        return UserManagementTableCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final stacked = constraints.maxWidth < 720;
+                  final title = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'All investors',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Assign stars and manage Top Rated · ${state.investors.length} investors',
+                        style: TextStyle(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  );
+                  final search = SizedBox(
+                    width: stacked ? double.infinity : 260,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() => _query = value),
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppColors.textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: 'Search name or user ID',
+                        hintStyle: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.hint,
+                        ),
+                        suffixIcon: _query.isEmpty
+                            ? const Icon(
+                                Icons.search_rounded,
+                                size: 18,
+                                color: AppColors.hint,
+                              )
+                            : IconButton(
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _query = '');
+                                },
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  size: 16,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.accent),
+                        ),
+                      ),
+                    ),
+                  );
+
+                  if (stacked) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        title,
+                        const SizedBox(height: 10),
+                        search,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: title),
+                      search,
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              if (state.isLoading)
+                const SizedBox(
+                  height: 220,
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: AppColors.accent,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Assign stars and manage Top Rated · ${state.investors.length} investors',
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
-                    ),
+                )
+              else if (state.loadError != null && state.investors.isEmpty)
+                _LoadErrorState(
+                  message: state.loadError!,
+                  onRetry: cubit.fetchInvestorRatingDetails,
+                )
+              else
+                UserManagementTableFrame(
+                  minTableWidth: _minTableWidth,
+                  emptyMessage: _query.trim().isEmpty
+                      ? 'No investors to review'
+                      : 'No investors match your search',
+                  header: const UserManagementHeaderRow(
+                    children: [
+                      UserManagementHeaderCell('', flex: 1),
+                      UserManagementHeaderCell('Investor', flex: 4),
+                      UserManagementHeaderCell('User ID', flex: 2),
+                      UserManagementHeaderCell('Committed', flex: 2),
+                      UserManagementHeaderCell('Due', flex: 1),
+                      UserManagementHeaderCell('On time', flex: 2),
+                      UserManagementHeaderCell('Delayed', flex: 2),
+                      UserManagementHeaderCell('On-time %', flex: 2),
+                      UserManagementHeaderCell('Stars', flex: 3),
+                      UserManagementHeaderCell(
+                        'Actions',
+                        flex: 3,
+                        align: TextAlign.center,
+                      ),
+                    ],
                   ),
-                ],
-              );
-              final search = SizedBox(
-                width: stacked ? double.infinity : 260,
-                child: TextField(
-                  controller: searchController,
-                  onChanged: onQueryChanged,
+                  rowCount: rows.length,
+                  rowBuilder: (context, index) {
+                    final investor = rows[index];
+                    return _InvestorRatingRow(
+                      index: index,
+                      investor: investor,
+                      state: state,
+                      onRatingChanged: (rating) =>
+                          cubit.setDraftRating(investor.investorCode, rating),
+                      onToggleSelected: () =>
+                          cubit.toggleInvestorSelected(investor.investorCode),
+                      onSaveRating: () =>
+                          cubit.saveInvestorRating(investor.investorCode),
+                    );
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  static const double _minTableWidth = 1180;
+}
+
+class _LoadErrorState extends StatelessWidget {
+  const _LoadErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 220,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 32,
+                color: AppColors.error,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Could not load investors',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 9.5.sp,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textMuted,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 14),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(
+                  'Retry',
                   style: TextStyle(
                     fontSize: 10.sp,
-                    color: AppColors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: 'Search name or code',
-                    hintStyle: TextStyle(
-                      fontSize: 10.sp,
-                      color: AppColors.hint,
-                    ),
-                    suffixIcon: query.isEmpty
-                        ? const Icon(
-                            Icons.search_rounded,
-                            size: 18,
-                            color: AppColors.hint,
-                          )
-                        : IconButton(
-                            onPressed: onClearQuery,
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              size: 16,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                    filled: true,
-                    fillColor: AppColors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.accent),
-                    ),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              );
-
-              if (stacked) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    title,
-                    const SizedBox(height: 10),
-                    search,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: title),
-                  search,
-                ],
-              );
-            },
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          if (state.isLoading)
-            const SizedBox(
-              height: 220,
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
-            )
-          else
-            UserManagementTableFrame(
-              minTableWidth: _minTableWidth,
-              emptyMessage: query.trim().isEmpty
-                  ? 'No investors to review'
-                  : 'No investors match your search',
-              header: const UserManagementHeaderRow(
-                children: [
-                  UserManagementHeaderCell('', flex: 1),
-                  UserManagementHeaderCell('Investor', flex: 4),
-                  UserManagementHeaderCell('Code', flex: 2),
-                  UserManagementHeaderCell('Committed', flex: 2),
-                  UserManagementHeaderCell('Due', flex: 1),
-                  UserManagementHeaderCell('On time', flex: 2),
-                  UserManagementHeaderCell('Delayed', flex: 2),
-                  UserManagementHeaderCell('On-time %', flex: 2),
-                  UserManagementHeaderCell('Stars', flex: 3),
-                  UserManagementHeaderCell(
-                    'Actions',
-                    flex: 3,
-                    align: TextAlign.center,
-                  ),
-                ],
-              ),
-              rowCount: rows.length,
-              rowBuilder: (context, index) {
-                final investor = rows[index];
-                return _InvestorRatingRow(
-                  index: index,
-                  investor: investor,
-                  state: state,
-                  onRatingChanged: (rating) =>
-                      onRatingChanged(investor.investorCode, rating),
-                  onToggleSelected: () =>
-                      onToggleSelected(investor.investorCode),
-                  onSaveRating: () =>
-                      onSaveInvestorRating(investor.investorCode),
-                  onAddToTopRated: () =>
-                      onAddToTopRated(investor.investorCode),
-                );
-              },
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -217,31 +287,28 @@ class _InvestorRatingRow extends StatelessWidget {
     required this.onRatingChanged,
     required this.onToggleSelected,
     required this.onSaveRating,
-    required this.onAddToTopRated,
   });
 
   final int index;
-  final InvestorRatingRecord investor;
+  final InvestorRatingDetailsModel investor;
   final InvestorRatingState state;
   final ValueChanged<int> onRatingChanged;
   final VoidCallback onToggleSelected;
   final VoidCallback onSaveRating;
-  final VoidCallback onAddToTopRated;
 
   @override
   Widget build(BuildContext context) {
-    final percentage = investor.onTimePercentage;
-    final isEven = index.isEven;
     final code = investor.investorCode;
+    final percentage = investor.totalDueCount == 0
+        ? null
+        : investor.onTimePaymentPercentage;
+    final isSavingRow = state.isSavingInvestor(code);
+    final isEven = index.isEven;
     final isSelected = state.selectedInvestorCodes.contains(code);
     final isTopRated = state.isInTopRated(code);
     final effectiveRating = state.effectiveRating(code);
     final hasUnsaved = state.hasUnsavedRating(code);
-    final canAddToTopRated = isSelected &&
-        !isTopRated &&
-        !state.topRatedFull &&
-        effectiveRating != null &&
-        effectiveRating >= 1;
+    final checkboxEnabled = !isTopRated && !state.isSaving;
 
     return Material(
       color: isEven ? AppColors.white : const Color(0xFFFBF9FC),
@@ -259,8 +326,11 @@ class _InvestorRatingRow extends StatelessWidget {
                     width: 28,
                     height: 28,
                     child: Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => onToggleSelected(),
+                      value: isTopRated ? true : isSelected,
+                      tristate: false,
+                      onChanged: checkboxEnabled
+                          ? (_) => onToggleSelected()
+                          : null,
                       activeColor: AppColors.accent,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
@@ -291,7 +361,7 @@ class _InvestorRatingRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            investor.fullName,
+                            investor.investorName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -315,14 +385,14 @@ class _InvestorRatingRow extends StatelessWidget {
                   ],
                 ),
               ),
-              UserManagementDataCell(investor.investorCode, flex: 2),
+              UserManagementDataCell('${investor.userId}', flex: 2),
               UserManagementDataCell(
-                CurrencyFormatter.format(investor.committedAmount),
+                CurrencyFormatter.format(investor.totalInvestmentAmount),
                 flex: 2,
               ),
-              UserManagementDataCell('${investor.totalInstalmentsDue}', flex: 1),
-              UserManagementDataCell('${investor.paidOnTime}', flex: 2),
-              UserManagementDataCell('${investor.delayedPayments}', flex: 2),
+              UserManagementDataCell('${investor.totalDueCount}', flex: 1),
+              UserManagementDataCell('${investor.onTimePaymentCount}', flex: 2),
+              UserManagementDataCell('${investor.delayedPaymentCount}', flex: 2),
               Expanded(
                 flex: 2,
                 child: Align(
@@ -357,37 +427,29 @@ class _InvestorRatingRow extends StatelessWidget {
                     children: [
                       if (hasUnsaved)
                         TextButton(
-                          onPressed: onSaveRating,
+                          onPressed: isSavingRow ? null : onSaveRating,
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.green,
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             minimumSize: const Size(0, 28),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: Text(
-                            'Save',
-                            style: TextStyle(
-                              fontSize: 8.5.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      if (canAddToTopRated)
-                        TextButton(
-                          onPressed: onAddToTopRated,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.textPrimary,
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            minimumSize: const Size(0, 28),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(
-                            'Add Top',
-                            style: TextStyle(
-                              fontSize: 8.5.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: isSavingRow
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.green,
+                                  ),
+                                )
+                              : Text(
+                                  'Save',
+                                  style: TextStyle(
+                                    fontSize: 8.5.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                     ],
                   ),

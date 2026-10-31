@@ -7,6 +7,7 @@ import '../model/funding_investor_list_model.dart';
 import '../model/investor_details_models.dart';
 import '../model/investor_payment_model.dart';
 import '../model/investor_transaction_history_model.dart';
+import '../model/update_due_dates_model.dart';
 
 class InvestorPaymentRepository {
   final Dio dio;
@@ -94,6 +95,59 @@ class InvestorPaymentRepository {
       rethrow;
     } catch (e) {
       log('Get Investor Details Error: $e');
+      rethrow;
+    }
+  }
+
+
+  Future<UpdateDueDatesResponseModel> updateDueDates({
+    required int investorId,
+    required int installmentNumber,
+    required DateTime dueDate,
+  }) async {
+    try {
+      log(
+        'UpdateDueDates request: investorId=$investorId, '
+            'installmentNumber=$installmentNumber, '
+            'dueDate=${UpdateDueDatesRequestModel.toApiIsoString(dueDate)}',
+        name: 'UpdateDueDatesAPI',
+      );
+
+      final request = UpdateDueDatesRequestModel(
+        investorId: investorId,
+        installmentNumber: installmentNumber,
+        dueDate: dueDate,
+      );
+
+      final response = await dio.post(
+        ApiEndpoints.updateDueDates,
+        data: request.toJson(),
+      );
+
+      log(
+        'UpdateDueDates response: ${response.data}',
+        name: 'UpdateDueDatesAPI',
+      );
+
+      return UpdateDueDatesResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e, stackTrace) {
+      log(
+        'UpdateDueDates API error: '
+            '${e.response?.data ?? e.message}',
+        name: 'UpdateDueDatesAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      log(
+        'Unexpected UpdateDueDates error: $e',
+        name: 'UpdateDueDatesAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }

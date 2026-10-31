@@ -59,6 +59,11 @@ class ApiEndpoints {
   static const String getPdfExcel = "/api/Investor/InvestorPaymentDetails";
   static const String getPaymentRequests = "/api/Investor/GetPaymentRequests";
   static const String acceptOrRejectPaymentRequest = "/api/Investor/ReviewPaymentRequest";
+  static const String investorRatingDetails = "/api/Investor/InvestorRatingDetails";
+  static const String saveInvestorRating = "/api/Investor/SaveInvestorStarRating";
+  static const String addTopInvestor = "/api/Investor/AddTopInvestor";
+  static const String removeTopInvestor = "/api/Investor/RemoveTopInvestor";
+  static const String updateDueDates = "/api/Investor/UpdateInvestorInstallmentDueDate";
 
 
 

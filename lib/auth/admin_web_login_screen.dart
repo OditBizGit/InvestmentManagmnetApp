@@ -120,8 +120,7 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                             ),
                             const SizedBox(height: 36),
                             Text(
-                              'Welcome Back',
-                              style: TextStyle(
+                              'Welcome Back',                               style: TextStyle(
                                 fontSize: 17.sp,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,

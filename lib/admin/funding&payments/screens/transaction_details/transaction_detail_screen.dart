@@ -110,7 +110,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               Expanded(
                 child: BlocConsumer<FundingPaymentsCubit, FundingPaymentsState>(
                   listenWhen: (previous, current) =>
-                      current is InvestorDetailsFailure,
+                      current is InvestorDetailsFailure ||
+                      current is UpdateDueDateSuccess ||
+                      current is UpdateDueDateFailure,
                   buildWhen: (previous, current) =>
                       current is InvestorDetailsLoading ||
                       current is InvestorDetailsSuccess ||
@@ -118,6 +120,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   listener: (context, state) {
                     if (state is InvestorDetailsFailure) {
                       AppToast.error(state.message, context: context);
+                    } else if (state is UpdateDueDateFailure) {
+                      AppToast.error(state.message, context: context);
+                    } else if (state is UpdateDueDateSuccess) {
+                      AppToast.success(state.message, context: context);
                     }
                   },
                   builder: (context, state) {

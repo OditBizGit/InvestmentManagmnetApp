@@ -187,6 +187,57 @@ class InvestorDetailsModel {
   String? get aadhaarPhotoUrl => resolveMediaUrl(aadhaarPhoto);
   String? get panCardPhotoUrl => resolveMediaUrl(panCardPhoto);
 
+  InvestorDetailsModel copyWith({
+    List<InvestorDueDateModel>? dueDates,
+  }) {
+    return InvestorDetailsModel(
+      userId: userId,
+      username: username,
+      fullName: fullName,
+      email: email,
+      phoneNumber: phoneNumber,
+      alternativeNumber: alternativeNumber,
+      profileImage: profileImage,
+      investorCode: investorCode,
+      investorType: investorType,
+      organization: organization,
+      address: address,
+      aadhaarNumber: aadhaarNumber,
+      panCardNumber: panCardNumber,
+      aadhaarPhoto: aadhaarPhoto,
+      panCardPhoto: panCardPhoto,
+      accountNumber: accountNumber,
+      ifscCode: ifscCode,
+      bankName: bankName,
+      dateOfBirth: dateOfBirth,
+      description: description,
+      investmentAmount: investmentAmount,
+      investmentDate: investmentDate,
+      investmentAdvanceAmount: investmentAdvanceAmount,
+      investmentSplitMonths: investmentSplitMonths,
+      investmentSplitGap: investmentSplitGap,
+      investmentSplitType: investmentSplitType,
+      totalPaidAmount: totalPaidAmount,
+      totalPendingAmount: totalPendingAmount,
+      lastPaymentAmount: lastPaymentAmount,
+      lastPaymentDate: lastPaymentDate,
+      nomineeName: nomineeName,
+      nomineeRelationship: nomineeRelationship,
+      nomineeAddress: nomineeAddress,
+      nomineeDateOfBirth: nomineeDateOfBirth,
+      nomineeAadhaarNumber: nomineeAadhaarNumber,
+      nomineePanCardNumber: nomineePanCardNumber,
+      nomineePhoneNumber: nomineePhoneNumber,
+      nomineeProfilePhoto: nomineeProfilePhoto,
+      nominees: nominees,
+      dueDates: dueDates ?? this.dueDates,
+      isActive: isActive,
+      createdDate: createdDate,
+      modifiedDate: modifiedDate,
+      userRole: userRole,
+    );
+  }
+
   factory InvestorDetailsModel.fromJson(
     Map<String, dynamic> json,
   ) {
@@ -336,6 +387,20 @@ class InvestorDueDateModel {
             ),
           )
           .toList(),
+    );
+  }
+
+  InvestorDueDateModel copyWith({
+    DateTime? dueDate,
+  }) {
+    return InvestorDueDateModel(
+      installmentNumber: installmentNumber,
+      dueDate: dueDate ?? this.dueDate,
+      installmentAmount: installmentAmount,
+      paidAmount: paidAmount,
+      pendingAmount: pendingAmount,
+      status: status,
+      payments: payments,
     );
   }
 }

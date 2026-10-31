@@ -77,3 +77,21 @@ final class InvestorDetailsFailure extends FundingPaymentsState {
 
   final String message;
 }
+
+final class UpdateDueDateLoading extends FundingPaymentsState {
+  UpdateDueDateLoading({required this.installmentNumber});
+
+  final int installmentNumber;
+}
+
+final class UpdateDueDateSuccess extends FundingPaymentsState {
+  UpdateDueDateSuccess(this.message);
+
+  final String message;
+}
+
+final class UpdateDueDateFailure extends FundingPaymentsState {
+  UpdateDueDateFailure(this.message);
+
+  final String message;
+}
