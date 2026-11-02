@@ -32,86 +32,93 @@ class InvestorRatingScreen extends StatelessWidget {
   }
 }
 
-class _InvestorRatingView extends StatefulWidget {
+class _InvestorRatingView extends StatelessWidget {
   const _InvestorRatingView({this.onBack});
 
   final VoidCallback? onBack;
 
   @override
-  State<_InvestorRatingView> createState() => _InvestorRatingViewState();
-}
-
-class _InvestorRatingViewState extends State<_InvestorRatingView> {
-  @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.screenBg,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontalPadding = constraints.maxWidth < 600 ? 16.0 : 24.0;
+    return BlocConsumer<InvestorRatingCubit, InvestorRatingState>(
+      listenWhen: (previous, current) {
+        final bannerChanged =
+            previous.bannerMessage != current.bannerMessage &&
+                current.bannerMessage != null;
+        final loadErrorChanged = previous.loadError != current.loadError &&
+            current.loadError != null &&
+            !current.isLoading;
+        return bannerChanged || loadErrorChanged;
+      },
+      listener: (context, state) {
+        final cubit = context.read<InvestorRatingCubit>();
+        const title = 'Investor Rating';
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  20,
-                  horizontalPadding,
-                  16,
-                ),
-                child: BlocBuilder<InvestorRatingCubit, InvestorRatingState>(
-                  builder: (context, state) {
-                    return _InvestorRatingHeader(
-                      onBack: widget.onBack,
+        if (state.bannerMessage != null) {
+          if (state.bannerIsError) {
+            AppToast.error(
+              state.bannerMessage!,
+              title: title,
+              context: context,
+            );
+          } else {
+            AppToast.success(
+              state.bannerMessage!,
+              title: title,
+              context: context,
+            );
+          }
+          cubit.dismissBanner();
+        } else if (state.loadError != null) {
+          AppToast.error(
+            state.loadError!,
+            title: title,
+            context: context,
+          );
+        }
+      },
+      builder: (context, state) {
+        final cubit = context.read<InvestorRatingCubit>();
+
+        return ColoredBox(
+          color: AppColors.screenBg,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final horizontalPadding =
+                  constraints.maxWidth < 600 ? 16.0 : 24.0;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      20,
+                      horizontalPadding,
+                      16,
+                    ),
+                    child: _InvestorRatingHeader(
+                      onBack: onBack,
                       isSaving: state.isSaving,
-                      onSave: () =>
-                          context.read<InvestorRatingCubit>().saveAllRatings(),
-                    );
-                  },
-                ),
-              ),
-              Expanded(
-                child: BlocConsumer<InvestorRatingCubit, InvestorRatingState>(
-                  listenWhen: (previous, current) {
-                    final bannerChanged =
-                        previous.bannerMessage != current.bannerMessage &&
-                            current.bannerMessage != null;
-                    final loadErrorChanged =
-                        previous.loadError != current.loadError &&
-                            current.loadError != null &&
-                            !current.isLoading;
-                    return bannerChanged || loadErrorChanged;
-                  },
-                  listener: (context, state) {
-                    final cubit = context.read<InvestorRatingCubit>();
-                    const title = 'Investor Rating';
-
-                    if (state.bannerMessage != null) {
-                      if (state.bannerIsError) {
-                        AppToast.error(
-                          state.bannerMessage!,
-                          title: title,
-                          context: context,
-                        );
-                      } else {
-                        AppToast.success(
-                          state.bannerMessage!,
-                          title: title,
-                          context: context,
-                        );
-                      }
-                      cubit.dismissBanner();
-                    } else if (state.loadError != null) {
-                      AppToast.error(
-                        state.loadError!,
-                        title: title,
-                        context: context,
-                      );
-                    }
-                  },
-                  builder: (context, state) {
-                    return SingleChildScrollView(
+                      onSave: cubit.saveAllRatings,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      12,
+                    ),
+                    child: _InvestorAddingFeatureToggle(
+                      value: state.topInvestorAddingEnabled,
+                      isUpdating: state.isUpdatingTopInvestorButton,
+                      onChanged: state.isUpdatingTopInvestorButton
+                          ? null
+                          : cubit.updateTopInvestorAddingFeature,
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
                         horizontalPadding,
                         0,
@@ -128,13 +135,68 @@ class _InvestorRatingViewState extends State<_InvestorRatingView> {
                           const InvestorRatingTableSection(),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _InvestorAddingFeatureToggle extends StatelessWidget {
+  const _InvestorAddingFeatureToggle({
+    required this.value,
+    required this.isUpdating,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool isUpdating;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(8),
+      child: SwitchListTile(
+        value: value,
+        onChanged: onChanged,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        activeThumbColor: AppColors.white,
+        activeTrackColor: AppColors.accent,
+        inactiveThumbColor: AppColors.white,
+        inactiveTrackColor: AppColors.border,
+        secondary: isUpdating
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.accent,
                 ),
-              ),
-            ],
-          );
-        },
+              )
+            : null,
+        title: Text(
+          'Investor adding',
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          isUpdating ? 'Updating…' : (value ? 'On' : 'Off'),
+          style: TextStyle(
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textMuted,
+          ),
+        ),
       ),
     );
   }

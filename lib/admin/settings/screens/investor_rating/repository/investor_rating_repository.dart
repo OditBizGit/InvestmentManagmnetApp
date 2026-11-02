@@ -7,6 +7,7 @@ import '../model/add_top_investor_model.dart';
 import '../model/investor_rating_details_model.dart';
 import '../model/investor_rating_update_model.dart';
 import '../model/remove_top_investor_model.dart';
+import '../model/top_investor_button_model.dart';
 import '../model/top_investors_model.dart';
 
 
@@ -201,6 +202,52 @@ class InvestorRatingRepository {
       log(
         'Unexpected RemoveTopInvestor error: $e',
         name: 'RemoveTopInvestorAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  Future<TopInvestorButtonResponseModel> updateTopInvestorButton({
+    required bool isEnabled,
+  }) async {
+    try {
+      log(
+        'TopInvestorButton request: isEnabled=$isEnabled',
+        name: 'TopInvestorButtonAPI',
+      );
+
+      final request = TopInvestorButtonRequestModel(
+        isEnabled: isEnabled,
+      );
+
+      final response = await dio.post(
+        ApiEndpoints.topInvestorButton,
+        data: request.toJson(),
+      );
+
+      log(
+        'TopInvestorButton response: ${response.data}',
+        name: 'TopInvestorButtonAPI',
+      );
+
+      return TopInvestorButtonResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e, stackTrace) {
+      log(
+        'TopInvestorButton API error: '
+            '${e.response?.data ?? e.message}',
+        name: 'TopInvestorButtonAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      log(
+        'Unexpected TopInvestorButton error: $e',
+        name: 'TopInvestorButtonAPI',
         error: e,
         stackTrace: stackTrace,
       );

@@ -9,9 +9,11 @@ class InvestorRatingState {
     required this.selectedInvestorCodes,
     required this.savingInvestorCodes,
     required this.removingTopInvestorUserIds,
+    this.topInvestorAddingEnabled = false,
     this.isLoading = false,
     this.isSaving = false,
     this.isLoadingTopInvestors = false,
+    this.isUpdatingTopInvestorButton = false,
     this.loadError,
     this.bannerMessage,
     this.bannerIsError = false,
@@ -23,9 +25,11 @@ class InvestorRatingState {
   final Set<String> selectedInvestorCodes;
   final Set<String> savingInvestorCodes;
   final Set<int> removingTopInvestorUserIds;
+  final bool topInvestorAddingEnabled;
   final bool isLoading;
   final bool isSaving;
   final bool isLoadingTopInvestors;
+  final bool isUpdatingTopInvestorButton;
   final String? loadError;
   final String? bannerMessage;
   final bool bannerIsError;
@@ -46,9 +50,11 @@ class InvestorRatingState {
     Set<String>? selectedInvestorCodes,
     Set<String>? savingInvestorCodes,
     Set<int>? removingTopInvestorUserIds,
+    bool? topInvestorAddingEnabled,
     bool? isLoading,
     bool? isSaving,
     bool? isLoadingTopInvestors,
+    bool? isUpdatingTopInvestorButton,
     String? loadError,
     String? bannerMessage,
     bool? bannerIsError,
@@ -64,10 +70,14 @@ class InvestorRatingState {
       savingInvestorCodes: savingInvestorCodes ?? this.savingInvestorCodes,
       removingTopInvestorUserIds:
           removingTopInvestorUserIds ?? this.removingTopInvestorUserIds,
+      topInvestorAddingEnabled:
+          topInvestorAddingEnabled ?? this.topInvestorAddingEnabled,
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
       isLoadingTopInvestors:
           isLoadingTopInvestors ?? this.isLoadingTopInvestors,
+      isUpdatingTopInvestorButton: isUpdatingTopInvestorButton ??
+          this.isUpdatingTopInvestorButton,
       loadError: clearLoadError ? null : (loadError ?? this.loadError),
       bannerMessage:
           clearBanner ? null : (bannerMessage ?? this.bannerMessage),

@@ -9,10 +9,10 @@ part 'investor_rating_state.dart';
 
 class InvestorRatingCubit extends Cubit<InvestorRatingState> {
   InvestorRatingCubit({
-    required this._repository,
+    required this.repository,
   }) : super(_initialState());
 
-  final InvestorRatingRepository _repository;
+  final InvestorRatingRepository repository;
 
   static InvestorRatingState _initialState() {
     return const InvestorRatingState(
@@ -38,7 +38,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     );
 
     try {
-      final response = await _repository.getInvestorRatingDetails();
+      final response = await repository.getInvestorRatingDetails();
       if (isClosed) return;
 
       if (!response.status) {
@@ -91,6 +91,78 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     }
   }
 
+  Future<void> updateTopInvestorAddingFeature(bool isEnabled) async {
+    if (state.isUpdatingTopInvestorButton) return;
+    if (state.topInvestorAddingEnabled == isEnabled) return;
+
+    final previousEnabled = state.topInvestorAddingEnabled;
+    emit(
+      state.copyWith(
+        topInvestorAddingEnabled: isEnabled,
+        isUpdatingTopInvestorButton: true,
+        clearBanner: true,
+      ),
+    );
+
+    try {
+      final response = await repository.updateTopInvestorButton(
+        isEnabled: isEnabled,
+      );
+      if (isClosed) return;
+
+      if (!response.status) {
+        emit(
+          state.copyWith(
+            topInvestorAddingEnabled: previousEnabled,
+            isUpdatingTopInvestorButton: false,
+            bannerMessage: response.message.isNotEmpty
+                ? response.message
+                : 'Failed to update investor adding setting.',
+            bannerIsError: true,
+          ),
+        );
+        return;
+      }
+
+      final enabled = response.data?.status ?? isEnabled;
+      emit(
+        state.copyWith(
+          isUpdatingTopInvestorButton: false,
+          topInvestorAddingEnabled: enabled,
+          bannerMessage: response.message.isNotEmpty
+              ? response.message
+              : enabled
+                  ? 'Investor adding is now on.'
+                  : 'Investor adding is now off.',
+          bannerIsError: false,
+        ),
+      );
+    } on DioException catch (e) {
+      if (isClosed) return;
+      final message = _dioErrorMessage(e);
+      emit(
+        state.copyWith(
+          topInvestorAddingEnabled: previousEnabled,
+          isUpdatingTopInvestorButton: false,
+          bannerMessage: message.isNotEmpty
+              ? message
+              : 'Failed to update investor adding setting.',
+          bannerIsError: true,
+        ),
+      );
+    } catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          topInvestorAddingEnabled: previousEnabled,
+          isUpdatingTopInvestorButton: false,
+          bannerMessage: e.toString().replaceFirst('Exception: ', ''),
+          bannerIsError: true,
+        ),
+      );
+    }
+  }
+
   Future<void> fetchTopInvestors({bool silent = false}) async {
     if (state.isLoadingTopInvestors) return;
 
@@ -104,7 +176,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     }
 
     try {
-      final response = await _repository.getTopInvestors();
+      final response = await repository.getTopInvestors();
       if (isClosed) return;
 
       if (!response.status) {
@@ -197,7 +269,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     );
 
     try {
-      final response = await _repository.removeTopInvestor(
+      final response = await repository.removeTopInvestor(
         investorIds: [userId],
       );
       if (isClosed) return;
@@ -345,7 +417,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     );
 
     try {
-      final response = await _repository.addTopInvestor(
+      final response = await repository.addTopInvestor(
         investorIds: investorIds,
       );
       if (isClosed) return;
@@ -468,7 +540,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     );
 
     try {
-      final response = await _repository.updateInvestorRating(
+      final response = await repository.updateInvestorRating(
         investorId: investor.userId,
         rating: rating,
       );
