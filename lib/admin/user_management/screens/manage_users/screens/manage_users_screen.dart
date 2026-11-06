@@ -60,6 +60,15 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
   @override
   void didUpdateWidget(covariant _ManageUsersView oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // Leaving Manage Users (e.g. side drawer) must drop the detail screen so
+    // returning always lands on the users list until a user is selected again.
+    if (!widget.isActive && oldWidget.isActive && _selectedUserId != null) {
+      _selectedUserId = null;
+      _selectedCommittedAmount = null;
+      _selectedPaidAmount = null;
+    }
+
     if (widget.isActive && !oldWidget.isActive) {
       _refreshIfActive();
     }

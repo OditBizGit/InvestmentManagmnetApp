@@ -20,6 +20,7 @@ import '../dashboard/dashboard_screen.dart';
 import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
 import '../pending_requests/screens/pending_requests/pending_requests_screen.dart';
 import '../reports/screens/reports_screen.dart';
+import '../reports/staff_report/staff_report_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -100,6 +101,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       case AdminDrawerItem.reports:
         return AdminReportsScreen(
           isActive: _selectedItem == AdminDrawerItem.reports,
+        );
+      case AdminDrawerItem.staffReport:
+        return StaffReportScreen(
+          isActive: _selectedItem == AdminDrawerItem.staffReport,
         );
       case AdminDrawerItem.manageUsers:
         return ManageUsersScreen(

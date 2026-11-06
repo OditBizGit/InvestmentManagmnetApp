@@ -24,6 +24,7 @@ class PendingRequestsCubit extends Cubit<PendingRequestsState> {
 
   Future<void> loadRequests({
     PendingRequestsListFilter? statusFilter,
+    bool silent = false,
   }) async {
     if (statusFilter != null) {
       _statusFilter = statusFilter;
@@ -34,7 +35,9 @@ class PendingRequestsCubit extends Cubit<PendingRequestsState> {
     _cancelToken = cancelToken;
 
     final previous = state;
-    _emitLoading(previous);
+    if (!silent) {
+      _emitLoading(previous);
+    }
 
     try {
       final response = await _repository.getPaymentRequests(
@@ -60,6 +63,7 @@ class PendingRequestsCubit extends Cubit<PendingRequestsState> {
       );
     } on DioException catch (error) {
       if (CancelToken.isCancel(error) || isClosed) return;
+      if (silent && previous is PendingRequestsSuccess) return;
       emit(
         PendingRequestsFailure(
           message: ApiErrorMessage.from(
@@ -72,6 +76,7 @@ class PendingRequestsCubit extends Cubit<PendingRequestsState> {
       );
     } catch (error) {
       if (isClosed) return;
+      if (silent && previous is PendingRequestsSuccess) return;
       emit(
         PendingRequestsFailure(
           message: ApiErrorMessage.from(

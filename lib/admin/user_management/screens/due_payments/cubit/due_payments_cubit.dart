@@ -218,6 +218,7 @@ extension PaymentStatusReportModelX on PaymentStatusReportModel {
       amountPaid: amountPaid,
       isBlocked: false,
       lastPaymentDate: paymentDate,
+      nextDueDate: dueDate,
     );
   }
 }

@@ -10,16 +10,24 @@ class PendingRequestsOverviewSection extends StatelessWidget {
   const PendingRequestsOverviewSection({
     super.key,
     required this.overview,
+    this.onRefresh,
+    this.isRefreshing = false,
   });
 
   final PendingRequestsOverviewStats overview;
+  final VoidCallback? onRefresh;
+  final bool isRefreshing;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Header(awaitingReview: overview.awaitingReview),
+        _Header(
+          awaitingReview: overview.awaitingReview,
+          onRefresh: onRefresh,
+          isRefreshing: isRefreshing,
+        ),
         const SizedBox(height: 20),
         UserManagementStatCards(
           stats: [
@@ -59,9 +67,15 @@ class PendingRequestsOverviewSection extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.awaitingReview});
+  const _Header({
+    required this.awaitingReview,
+    this.onRefresh,
+    this.isRefreshing = false,
+  });
 
   final int awaitingReview;
+  final VoidCallback? onRefresh;
+  final bool isRefreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -104,11 +118,35 @@ class _Header extends StatelessWidget {
           ),
         );
 
+        final refreshButton = IconButton(
+          tooltip: 'Refresh',
+          onPressed: onRefresh,
+          icon: isRefreshing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: AppColors.accent,
+                  ),
+                )
+              : const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.accent,
+                ),
+        );
+
         if (isCompact) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              titleBlock,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(child: titleBlock),
+                  refreshButton,
+                ],
+              ),
               const SizedBox(height: 12),
               queueBadge,
             ],
@@ -118,9 +156,11 @@ class _Header extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: titleBlock),
+            const Expanded(child: titleBlock),
             const SizedBox(width: 16),
             queueBadge,
+            const SizedBox(width: 4),
+            refreshButton,
           ],
         );
       },

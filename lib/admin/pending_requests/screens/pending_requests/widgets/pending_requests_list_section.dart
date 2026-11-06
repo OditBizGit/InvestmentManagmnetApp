@@ -45,7 +45,8 @@ class _PendingRequestsListSectionState
           request.requestId.toLowerCase().contains(query) ||
           request.email.toLowerCase().contains(query) ||
           request.phoneNumber.toLowerCase().contains(query) ||
-          request.allocation.toLowerCase().contains(query);
+          request.allocation.toLowerCase().contains(query) ||
+          request.paymentMethod.toLowerCase().contains(query);
     }).toList();
   }
 

@@ -246,22 +246,13 @@ class _PaymentRequestSummaryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: isReviewSubmitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              color: AppColors.white,
-                            ),
-                          )
-                        : Text(
-                            'Approve',
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                    child: Text(
+                      'Approve',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 );
                 final reject = SizedBox(

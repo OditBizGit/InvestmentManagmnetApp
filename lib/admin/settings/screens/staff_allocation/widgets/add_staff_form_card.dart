@@ -10,7 +10,7 @@ import 'package:sizer/sizer.dart';
 
 const staffDesignationOptions = [
   'Relationship Manager',
-  'Financial Manager'
+  // 'Financial Manager'
 ];
 
 class AddStaffFormCard extends StatelessWidget {

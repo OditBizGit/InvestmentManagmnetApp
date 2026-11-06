@@ -14,6 +14,7 @@ enum AdminDrawerItem {
   fundingPayments,
   workProgress,
   reports,
+  staffReport,
   manageUsers,
   duePayments,
   pendingRequests,
@@ -71,9 +72,20 @@ class AdminSideDrawer extends StatelessWidget {
       icon: ImageConstants.workProgress,
     ),
     _DrawerDestination(
-      item: AdminDrawerItem.reports,
       label: 'Reports',
       icon: ImageConstants.reports,
+      children: [
+        _DrawerDestination(
+          item: AdminDrawerItem.reports,
+          label: 'Overview',
+          icon: ImageConstants.reports,
+        ),
+        _DrawerDestination(
+          item: AdminDrawerItem.staffReport,
+          label: 'Staff Report',
+          icon: ImageConstants.team,
+        ),
+      ],
     ),
     _DrawerDestination(
       item: AdminDrawerItem.pendingRequests,

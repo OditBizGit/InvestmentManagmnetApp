@@ -40,8 +40,8 @@ class SettingsOptionCards extends StatelessWidget {
     ),
     _OptionData(
       type: SettingsOptionType.addAdmin,
-      title: 'Add New Admin',
-      description: 'Invite a new admin with role-based access',
+      title: 'Add New Admin & Manager',
+      description: 'Invite a new admin and manager with role-based access',
       icon: ImageConstants.username,
       iconColor: Color(0xFF2CB5A8),
       iconBg: Color(0xFFE6F7F5),

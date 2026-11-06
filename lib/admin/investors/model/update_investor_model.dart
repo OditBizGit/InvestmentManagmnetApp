@@ -5,6 +5,9 @@ class UpdateInvestorRequestModel {
   final int userId;
   final int? staffId;
   final String? staffName;
+  final int? staffId2;
+  final double? staffAllocationPercentage;
+  final double? staff2AllocationPercentage;
   final String fullName;
   final String? email;
   final String? phoneNumber;
@@ -44,6 +47,9 @@ class UpdateInvestorRequestModel {
     required this.userId,
     this.staffId,
     this.staffName,
+    this.staffId2,
+    this.staffAllocationPercentage,
+    this.staff2AllocationPercentage,
     required this.fullName,
     this.email,
     this.phoneNumber,
@@ -93,6 +99,20 @@ class UpdateInvestorRequestModel {
       MapEntry(
         'StaffId',
         staffId != null && staffId! > 0 ? staffId.toString() : '',
+      ),
+      MapEntry(
+        'StaffId2',
+        staffId2 != null && staffId2! > 0 ? staffId2.toString() : '',
+      ),
+      MapEntry(
+        'StaffAllocationPercentage',
+        (staffAllocationPercentage ?? 100).toString(),
+      ),
+      MapEntry(
+        'Staff2AllocationPercentage',
+        staffId2 != null && staffId2! > 0
+            ? (staff2AllocationPercentage ?? 0).toString()
+            : '',
       ),
       MapEntry('Description', _text(description)),
       MapEntry('InvestmentAmount', investmentAmount.toString()),

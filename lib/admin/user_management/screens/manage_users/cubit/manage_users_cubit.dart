@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -392,6 +393,16 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
             investorId,
             completedAt,
           ),
+          mouDocumentPath: _mergeDocumentPath(
+            latest.mouDocumentPath,
+            investorId,
+            response.effectiveDocumentPath,
+          ),
+          mouDocumentUpdatedAt: _mergeTimestamp(
+            latest.mouDocumentUpdatedAt,
+            investorId,
+            response.effectiveDocumentUpdatedAt,
+          ),
           clearMouLoadingUserId: true,
         ),
       );
@@ -422,6 +433,8 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
   Future<void> saveInvestorMouStatus({
     required int investorId,
     required DocumentProcessStatus status,
+    Uint8List? documentBytes,
+    String? documentFileName,
   }) async {
     final current = state;
     if (current is! ManageUsersSuccess) return;
@@ -432,8 +445,14 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
     final previousStatus =
         current.mouStatus[investorId] ?? DocumentProcessStatus.pending;
-    if (previousStatus == status) return;
-    if (!_canDowngradeDocumentStatus(previousStatus, status)) return;
+    final hasDocument = documentBytes != null &&
+        documentBytes.isNotEmpty &&
+        (documentFileName?.trim().isNotEmpty ?? false);
+
+    if (!hasDocument) {
+      if (previousStatus == status) return;
+      if (!_canDowngradeDocumentStatus(previousStatus, status)) return;
+    }
 
     emit(
       current.copyWith(
@@ -447,6 +466,8 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       final response = await _repository.saveInvestorMOU(
         investorId: investorId,
         status: status.apiValue,
+        documentBytes: hasDocument ? documentBytes : null,
+        documentFileName: hasDocument ? documentFileName!.trim() : null,
       );
       if (isClosed) return;
 
@@ -467,7 +488,9 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
       final message = response.message.trim().isNotEmpty
           ? response.message.trim()
-          : 'MOU status set to ${syncedStatus.label}';
+          : hasDocument
+              ? 'MOU document uploaded'
+              : 'MOU status set to ${syncedStatus.label}';
 
       emit(
         latest.copyWith(
@@ -482,10 +505,20 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
             investorId,
             completedAt,
           ),
+          mouDocumentPath: _mergeDocumentPath(
+            latest.mouDocumentPath,
+            investorId,
+            response.effectiveDocumentPath,
+          ),
+          mouDocumentUpdatedAt: _mergeTimestamp(
+            latest.mouDocumentUpdatedAt,
+            investorId,
+            response.effectiveDocumentUpdatedAt,
+          ),
           clearMouUpdatingUserId: true,
           statusFeedback: ManageUsersStatusFeedback(
             isSuccess: true,
-            title: 'MOU Updated',
+            title: hasDocument ? 'MOU Document Uploaded' : 'MOU Updated',
             message: message,
           ),
         ),
@@ -506,15 +539,56 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
           clearMouUpdatingUserId: true,
           statusFeedback: ManageUsersStatusFeedback(
             isSuccess: false,
-            title: 'MOU Update Failed',
+            title: hasDocument
+                ? 'MOU Document Upload Failed'
+                : 'MOU Update Failed',
             message: ApiErrorMessage.from(
               error,
-              fallback: 'Failed to save investor MOU',
+              fallback: hasDocument
+                  ? 'Failed to upload MOU document'
+                  : 'Failed to save investor MOU',
             ),
           ),
         ),
       );
     }
+  }
+
+  Future<void> uploadInvestorMouDocument({
+    required int investorId,
+    required Uint8List documentBytes,
+    required String documentFileName,
+  }) async {
+    final current = state;
+    if (current is! ManageUsersSuccess) return;
+
+    final status =
+        current.mouStatus[investorId] ?? DocumentProcessStatus.pending;
+
+    await saveInvestorMouStatus(
+      investorId: investorId,
+      status: status,
+      documentBytes: documentBytes,
+      documentFileName: documentFileName,
+    );
+  }
+
+  void clearInvestorMouDocument(int investorId) {
+    final current = state;
+    if (current is! ManageUsersSuccess) return;
+
+    final paths = Map<int, String>.from(current.mouDocumentPath)
+      ..remove(investorId);
+    final updatedAt = Map<int, DateTime>.from(current.mouDocumentUpdatedAt)
+      ..remove(investorId);
+
+    emit(
+      current.copyWith(
+        mouDocumentPath: paths,
+        mouDocumentUpdatedAt: updatedAt,
+        clearStatusFeedback: true,
+      ),
+    );
   }
 
   Future<void> fetchInvestorLlpStatus(int investorId) async {
@@ -561,6 +635,16 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
             investorId,
             completedAt,
           ),
+          llpDocumentPath: _mergeDocumentPath(
+            latest.llpDocumentPath,
+            investorId,
+            response.effectiveDocumentPath,
+          ),
+          llpDocumentUpdatedAt: _mergeTimestamp(
+            latest.llpDocumentUpdatedAt,
+            investorId,
+            response.effectiveDocumentUpdatedAt,
+          ),
           clearLlpLoadingUserId: true,
         ),
       );
@@ -591,6 +675,8 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
   Future<void> saveInvestorLlpStatus({
     required int investorId,
     required DocumentProcessStatus status,
+    Uint8List? documentBytes,
+    String? documentFileName,
   }) async {
     final current = state;
     if (current is! ManageUsersSuccess) return;
@@ -601,8 +687,14 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
     final previousStatus =
         current.llpStatus[investorId] ?? DocumentProcessStatus.pending;
-    if (previousStatus == status) return;
-    if (!_canDowngradeDocumentStatus(previousStatus, status)) return;
+    final hasDocument = documentBytes != null &&
+        documentBytes.isNotEmpty &&
+        (documentFileName?.trim().isNotEmpty ?? false);
+
+    if (!hasDocument) {
+      if (previousStatus == status) return;
+      if (!_canDowngradeDocumentStatus(previousStatus, status)) return;
+    }
 
     emit(
       current.copyWith(
@@ -616,6 +708,8 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       final response = await _repository.saveInvestorLLP(
         investorId: investorId,
         status: status.apiValue,
+        documentBytes: hasDocument ? documentBytes : null,
+        documentFileName: hasDocument ? documentFileName!.trim() : null,
       );
       if (isClosed) return;
 
@@ -636,7 +730,9 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
       final message = response.message.trim().isNotEmpty
           ? response.message.trim()
-          : 'LLP status set to ${syncedStatus.label}';
+          : hasDocument
+              ? 'LLP document uploaded'
+              : 'LLP status set to ${syncedStatus.label}';
 
       emit(
         latest.copyWith(
@@ -651,10 +747,20 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
             investorId,
             completedAt,
           ),
+          llpDocumentPath: _mergeDocumentPath(
+            latest.llpDocumentPath,
+            investorId,
+            response.effectiveDocumentPath,
+          ),
+          llpDocumentUpdatedAt: _mergeTimestamp(
+            latest.llpDocumentUpdatedAt,
+            investorId,
+            response.effectiveDocumentUpdatedAt,
+          ),
           clearLlpUpdatingUserId: true,
           statusFeedback: ManageUsersStatusFeedback(
             isSuccess: true,
-            title: 'LLP Updated',
+            title: hasDocument ? 'LLP Document Uploaded' : 'LLP Updated',
             message: message,
           ),
         ),
@@ -675,15 +781,56 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
           clearLlpUpdatingUserId: true,
           statusFeedback: ManageUsersStatusFeedback(
             isSuccess: false,
-            title: 'LLP Update Failed',
+            title: hasDocument
+                ? 'LLP Document Upload Failed'
+                : 'LLP Update Failed',
             message: ApiErrorMessage.from(
               error,
-              fallback: 'Failed to save investor LLP',
+              fallback: hasDocument
+                  ? 'Failed to upload LLP document'
+                  : 'Failed to save investor LLP',
             ),
           ),
         ),
       );
     }
+  }
+
+  Future<void> uploadInvestorLlpDocument({
+    required int investorId,
+    required Uint8List documentBytes,
+    required String documentFileName,
+  }) async {
+    final current = state;
+    if (current is! ManageUsersSuccess) return;
+
+    final status =
+        current.llpStatus[investorId] ?? DocumentProcessStatus.pending;
+
+    await saveInvestorLlpStatus(
+      investorId: investorId,
+      status: status,
+      documentBytes: documentBytes,
+      documentFileName: documentFileName,
+    );
+  }
+
+  void clearInvestorLlpDocument(int investorId) {
+    final current = state;
+    if (current is! ManageUsersSuccess) return;
+
+    final paths = Map<int, String>.from(current.llpDocumentPath)
+      ..remove(investorId);
+    final updatedAt = Map<int, DateTime>.from(current.llpDocumentUpdatedAt)
+      ..remove(investorId);
+
+    emit(
+      current.copyWith(
+        llpDocumentPath: paths,
+        llpDocumentUpdatedAt: updatedAt,
+        clearStatusFeedback: true,
+      ),
+    );
   }
 
   bool _canDowngradeDocumentStatus(
@@ -706,5 +853,15 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
   ) {
     if (value == null) return current;
     return {...current, investorId: value};
+  }
+
+  Map<int, String> _mergeDocumentPath(
+    Map<int, String> current,
+    int investorId,
+    String? path,
+  ) {
+    final trimmed = path?.trim();
+    if (trimmed == null || trimmed.isEmpty) return current;
+    return {...current, investorId: trimmed};
   }
 }

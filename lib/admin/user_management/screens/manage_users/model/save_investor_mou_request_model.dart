@@ -1,20 +1,42 @@
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+
+/// ===============================
+/// SAVE INVESTOR MOU REQUEST MODEL
+/// ===============================
 class SaveInvestorMOURequestModel {
   final int investorId;
   final String status;
+  final Uint8List? documentBytes;
+  final String? documentFileName;
 
   SaveInvestorMOURequestModel({
     required this.investorId,
     required this.status,
+    this.documentBytes,
+    this.documentFileName,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
+  FormData toFormData() {
+    final Map<String, dynamic> fields = {
       'investorId': investorId,
       'status': status,
     };
+
+    if (documentBytes != null && documentFileName != null) {
+      fields['Document'] = MultipartFile.fromBytes(
+        documentBytes!,
+        filename: documentFileName!,
+      );
+    }
+
+    return FormData.fromMap(fields);
   }
 }
 
+/// ===============================
+/// SAVE INVESTOR MOU RESPONSE MODEL
+/// ===============================
 class SaveInvestorMOUResponseModel {
   final bool status;
   final String message;
@@ -28,40 +50,76 @@ class SaveInvestorMOUResponseModel {
     required this.code,
   });
 
-  /// Current MOU/LLP record: furthest status, then newest by time/id.
+  /// Current MOU/LLP record:
+  /// Furthest status, then newest by time/id.
   SaveInvestorMOUDataModel? get latestRecord {
     if (data.isEmpty) return null;
 
     SaveInvestorMOUDataModel? best;
+
     for (final item in data) {
       if (best == null || item._isNewerThan(best)) {
         best = item;
       }
     }
+
     return best;
   }
 
-  /// Best matching record for a status label (e.g. `Issued`, `Completed`).
+  /// Best matching record for a status label.
   SaveInvestorMOUDataModel? recordForStatus(String statusLabel) {
     final target = statusLabel.trim().toLowerCase();
+
     if (target.isEmpty) return null;
 
     SaveInvestorMOUDataModel? best;
+
     for (final item in data) {
       if (item.status.trim().toLowerCase() != target) continue;
+
       if (best == null || item._isNewerThan(best)) {
         best = item;
       }
     }
+
     return best;
   }
 
   DateTime? timestampForStatus(String statusLabel) =>
       recordForStatus(statusLabel)?.effectiveUpdatedAt;
 
+  /// Record whose document should be shown in UI.
+  ///
+  /// Prefer the furthest/newest status that has a non-empty [documentPath].
+  /// Example: Completed with null path falls back to Issued/Pending that still
+  /// have an uploaded file.
+  SaveInvestorMOUDataModel? get latestDocumentRecord {
+    SaveInvestorMOUDataModel? best;
+
+    for (final item in data) {
+      final path = item.documentPath?.trim();
+      if (path == null || path.isEmpty) continue;
+
+      if (best == null || item._isNewerThan(best)) {
+        best = item;
+      }
+    }
+
+    return best;
+  }
+
+  String? get effectiveDocumentPath {
+    final path = latestDocumentRecord?.documentPath?.trim();
+    if (path == null || path.isEmpty) return null;
+    return path;
+  }
+
+  DateTime? get effectiveDocumentUpdatedAt =>
+      latestDocumentRecord?.effectiveUpdatedAt;
+
   factory SaveInvestorMOUResponseModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+      Map<String, dynamic> json,
+      ) {
     final rawData = json['data'] ?? json['Data'];
     final records = <SaveInvestorMOUDataModel>[];
 
@@ -76,7 +134,6 @@ class SaveInvestorMOUResponseModel {
         }
       }
     } else if (rawData is Map) {
-      // Save endpoints may still return a single object.
       records.add(
         SaveInvestorMOUDataModel.fromJson(
           Map<String, dynamic>.from(rawData),
@@ -88,17 +145,19 @@ class SaveInvestorMOUResponseModel {
       status: json['status'] == true || json['Status'] == true,
       message: (json['message'] ?? json['Message'] ?? '').toString(),
       data: records,
-      code: (json['code'] as num?)?.toInt() ??
-          (json['Code'] as num?)?.toInt() ??
-          0,
+      code: ((json['code'] ?? json['Code']) as num?)?.toInt() ?? 0,
     );
   }
 }
 
+/// ===============================
+/// SAVE INVESTOR MOU DATA MODEL
+/// ===============================
 class SaveInvestorMOUDataModel {
   final int id;
   final int investorId;
   final String status;
+  final String? documentPath;
   final DateTime? createdDateTime;
   final DateTime? modifiedDateTime;
 
@@ -106,11 +165,13 @@ class SaveInvestorMOUDataModel {
     required this.id,
     required this.investorId,
     required this.status,
+    this.documentPath,
     this.createdDateTime,
     this.modifiedDateTime,
   });
 
-  DateTime? get effectiveUpdatedAt => modifiedDateTime ?? createdDateTime;
+  DateTime? get effectiveUpdatedAt =>
+      modifiedDateTime ?? createdDateTime;
 
   int get _statusRank {
     switch (status.trim().toLowerCase()) {
@@ -132,9 +193,13 @@ class SaveInvestorMOUDataModel {
 
     final thisTime = effectiveUpdatedAt;
     final otherTime = other.effectiveUpdatedAt;
-    if (thisTime != null && otherTime != null && thisTime != otherTime) {
+
+    if (thisTime != null &&
+        otherTime != null &&
+        thisTime != otherTime) {
       return thisTime.isAfter(otherTime);
     }
+
     if (thisTime != null && otherTime == null) return true;
     if (thisTime == null && otherTime != null) return false;
 
@@ -142,22 +207,32 @@ class SaveInvestorMOUDataModel {
   }
 
   factory SaveInvestorMOUDataModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+      Map<String, dynamic> json,
+      ) {
     return SaveInvestorMOUDataModel(
-      id: (json['id'] as num?)?.toInt() ??
-          (json['Id'] as num?)?.toInt() ??
+      id: ((json['id'] ?? json['Id']) as num?)?.toInt() ?? 0,
+
+      investorId:
+      ((json['investorId'] ?? json['InvestorId']) as num?)
+          ?.toInt() ??
           0,
-      investorId: (json['investorId'] as num?)?.toInt() ??
-          (json['InvestorId'] as num?)?.toInt() ??
-          0,
+
       status: (json['status'] ?? json['Status'] ?? '').toString(),
+
+      documentPath:
+      (json['documentPath'] ?? json['DocumentPath'])?.toString(),
+
       createdDateTime: DateTime.tryParse(
-        (json['createdDateTime'] ?? json['CreatedDateTime'] ?? '')
+        (json['createdDateTime'] ??
+            json['CreatedDateTime'] ??
+            '')
             .toString(),
       ),
+
       modifiedDateTime: DateTime.tryParse(
-        (json['modifiedDateTime'] ?? json['ModifiedDateTime'] ?? '')
+        (json['modifiedDateTime'] ??
+            json['ModifiedDateTime'] ??
+            '')
             .toString(),
       ),
     );

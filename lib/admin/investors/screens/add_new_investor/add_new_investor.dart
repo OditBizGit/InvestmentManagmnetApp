@@ -5,6 +5,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/cubit/invest
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_entry.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_submit.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_staff_assignment.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/update_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_additional_information.dart';
@@ -107,6 +108,9 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   String? _investorType;
   int? _selectedStaffId;
   String? _selectedStaffName;
+  int? _selectedSecondStaffId;
+  String? _selectedSecondStaffName;
+  final _firstStaffPercentController = TextEditingController(text: '100');
   DateTime? _investmentDate = DateTime.now();
   PickedPhoto? _profilePhoto;
   String? _existingProfileImageUrl;
@@ -124,6 +128,15 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
 
   bool get _isEditing => widget.investorToEdit != null;
 
+  bool get _hasSecondStaff =>
+      _selectedSecondStaffId != null && _selectedSecondStaffId! > 0;
+
+  int get _secondStaffPercent {
+    if (!_hasSecondStaff) return 0;
+    final first = int.tryParse(_firstStaffPercentController.text.trim()) ?? 0;
+    return (100 - first).clamp(0, 100);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -131,6 +144,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _advancePaymentController.addListener(_rebuildPaymentSchedule);
     _customInstallmentController.addListener(_rebuildPaymentSchedule);
     _intervalController.addListener(_rebuildPaymentSchedule);
+    _firstStaffPercentController.addListener(_onFirstStaffPercentChanged);
     _prefillFromInvestor(widget.investorToEdit);
     _paymentSchedule = _buildPaymentSchedule();
   }
@@ -150,8 +164,36 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _addressController.text = investor.address ?? '';
     _usernameController.text = investor.username;
     _investorType = investor.investorType;
-    _selectedStaffId = investor.staffId;
-    _selectedStaffName = investor.staffName;
+    final allocations = investor.staffAllocations;
+    if (allocations.isNotEmpty) {
+      _selectedStaffId = allocations.first.staffId;
+      _selectedStaffName = allocations.first.staffName;
+      if (allocations.length > 1) {
+        _selectedSecondStaffId = allocations[1].staffId;
+        _selectedSecondStaffName = allocations[1].staffName;
+        final pct = allocations.first.allocationPercentage;
+        _firstStaffPercentController.text = (pct > 0 ? pct : 70)
+            .round()
+            .clamp(1, 99)
+            .toString();
+      } else {
+        _selectedSecondStaffId = null;
+        _selectedSecondStaffName = null;
+        _firstStaffPercentController.text = '100';
+      }
+    } else {
+      _selectedStaffId = investor.staffId;
+      _selectedStaffName = investor.staffName;
+      _selectedSecondStaffId = investor.staffId2;
+      _selectedSecondStaffName = investor.staffName2;
+      if (investor.staffId2 != null && investor.staffId2! > 0) {
+        final primaryPercent = investor.staffAllocationPercentage ?? 70;
+        _firstStaffPercentController.text =
+            primaryPercent.round().clamp(1, 99).toString();
+      } else {
+        _firstStaffPercentController.text = '100';
+      }
+    }
     _existingProfileImageUrl = investor.profileImageUrl;
     _existingAadhaarCardImageUrl = investor.aadhaarCardImageUrl;
     _existingPanCardImageUrl = investor.panCardImageUrl;
@@ -325,6 +367,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _advancePaymentController.removeListener(_rebuildPaymentSchedule);
     _customInstallmentController.removeListener(_rebuildPaymentSchedule);
     _intervalController.removeListener(_rebuildPaymentSchedule);
+    _firstStaffPercentController.removeListener(_onFirstStaffPercentChanged);
+    _firstStaffPercentController.dispose();
     _fullNameController.dispose();
     _organizationController.dispose();
     _mobileController.dispose();
@@ -564,6 +608,13 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       return;
     }
 
+    if (!_validateStaffAllocation()) {
+      return;
+    }
+
+    final staffAssignmentPayload = _buildStaffAssignmentPayload();
+    assert(staffAssignmentPayload.slots.isNotEmpty);
+
     if (_investmentDate == null) {
       AppToast.error('Please select investment date', context: context);
       return;
@@ -642,8 +693,13 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       final investor = widget.investorToEdit!;
       final updateRequest = UpdateInvestorRequestModel(
         userId: investor.userId,
-        staffId: _selectedStaffId,
+        staffId: staffAssignmentPayload.staffId,
         staffName: _selectedStaffName,
+        staffId2: staffAssignmentPayload.staffId2,
+        staffAllocationPercentage:
+            staffAssignmentPayload.staffAllocationPercentage,
+        staff2AllocationPercentage:
+            staffAssignmentPayload.staff2AllocationPercentage,
         fullName: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         description: _optionalText(_descriptionController.text),
@@ -687,7 +743,12 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       alternativeNumber: _alternateMobileController.text.trim(),
       phoneNumber: _mobileController.text.trim(),
       investorType: _investorType!.trim(),
-      staffId: _selectedStaffId!,
+      staffId: staffAssignmentPayload.staffId,
+      staffId2: staffAssignmentPayload.staffId2,
+      staffAllocationPercentage:
+          staffAssignmentPayload.staffAllocationPercentage,
+      staff2AllocationPercentage:
+          staffAssignmentPayload.staff2AllocationPercentage,
       organization: _organizationController.text.trim(),
       address: _addressController.text.trim(),
       investmentAmount: amount,
@@ -774,11 +835,100 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   void _onStaffChanged(int? staffId) {
     setState(() {
       _selectedStaffId = staffId;
-      _selectedStaffName = _resolveStaffName(staffId);
+      _selectedStaffName = _resolveStaffName(staffId, fallback: _selectedStaffName);
+      if (staffId != null &&
+          _selectedSecondStaffId != null &&
+          staffId == _selectedSecondStaffId) {
+        _selectedSecondStaffId = null;
+        _selectedSecondStaffName = null;
+        _firstStaffPercentController.text = '100';
+      }
+      if (!_hasSecondStaff) {
+        _firstStaffPercentController.text = '100';
+      }
     });
   }
 
-  String? _resolveStaffName(int? staffId) {
+  void _onSecondStaffChanged(int? staffId) {
+    setState(() {
+      if (staffId == null || staffId <= 0) {
+        _selectedSecondStaffId = null;
+        _selectedSecondStaffName = null;
+        _firstStaffPercentController.text = '100';
+        return;
+      }
+      if (staffId == _selectedStaffId) {
+        AppToast.error(
+          'Second staff must be different from the first',
+          context: context,
+        );
+        _selectedSecondStaffId = null;
+        _selectedSecondStaffName = null;
+        _firstStaffPercentController.text = '100';
+        return;
+      }
+      _selectedSecondStaffId = staffId;
+      _selectedSecondStaffName = _resolveStaffName(
+        staffId,
+        fallback: _selectedSecondStaffName,
+      );
+      if (_firstStaffPercentController.text.trim() == '100') {
+        _firstStaffPercentController.text = '70';
+      }
+    });
+  }
+
+  void _onFirstStaffPercentChanged() {
+    if (!_hasSecondStaff) return;
+    setState(() {});
+  }
+
+  bool _validateStaffAllocation() {
+    if (!_hasSecondStaff) {
+      return true;
+    }
+    if (_selectedSecondStaffId == _selectedStaffId) {
+      AppToast.error(
+        'Second staff must be different from the first',
+        context: context,
+      );
+      return false;
+    }
+    final first = int.tryParse(_firstStaffPercentController.text.trim());
+    if (first == null || first < 1 || first > 99) {
+      AppToast.error(
+        'Enter a valid allocation for staff 1 (1–99%) when two staff are assigned',
+        context: context,
+      );
+      return false;
+    }
+    if (first + _secondStaffPercent != 100) {
+      AppToast.error(
+        'Staff allocations must total 100%',
+        context: context,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  InvestorStaffAssignmentPayload _buildStaffAssignmentPayload() {
+    final primaryPercent = _hasSecondStaff
+        ? (int.tryParse(_firstStaffPercentController.text.trim()) ?? 100)
+            .toDouble()
+        : 100.0;
+    return InvestorStaffAssignmentPayload.fromSelections(
+      primaryStaffId: _selectedStaffId!,
+      primaryStaffName: _selectedStaffName,
+      primaryPercentage: primaryPercent,
+      secondaryStaffId: _selectedSecondStaffId,
+      secondaryStaffName: _selectedSecondStaffName,
+      secondaryPercentage:
+          _hasSecondStaff ? _secondStaffPercent.toDouble() : null,
+    );
+  }
+
+  String? _resolveStaffName(int? staffId, {String? fallback}) {
     if (staffId == null || staffId <= 0) return null;
 
     final staffMembers = context.read<InvestorsCubit>().staffList;
@@ -787,7 +937,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
         return member.fullName;
       }
     }
-    return _selectedStaffName;
+    return fallback;
   }
 
   void _addNominee() {
@@ -1018,6 +1168,12 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 selectedStaffId: _selectedStaffId,
                 selectedStaffName: _selectedStaffName,
                 onStaffChanged: _onStaffChanged,
+                selectedSecondStaffId: _selectedSecondStaffId,
+                selectedSecondStaffName: _selectedSecondStaffName,
+                onSecondStaffChanged: _onSecondStaffChanged,
+                firstStaffPercentController: _firstStaffPercentController,
+                secondStaffPercent: _secondStaffPercent,
+                hasSecondStaff: _hasSecondStaff,
                 investmentDate: _investmentDate,
                 onPickDate: _pickDate,
                 formatDate: _formatDate,

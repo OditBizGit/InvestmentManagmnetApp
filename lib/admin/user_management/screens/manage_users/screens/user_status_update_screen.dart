@@ -4,6 +4,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/model/
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/cubit/manage_users_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_benefits_summary_card.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_receipts_card.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_refund_card.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_status_checkbox_card.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/user_status_update_header.dart';
@@ -108,6 +109,12 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
               final mouCompletedAt = successState?.mouCompletedAt[user.id];
               final llpIssuedAt = successState?.llpIssuedAt[user.id];
               final llpCompletedAt = successState?.llpCompletedAt[user.id];
+              final mouDocumentPath = successState?.mouDocumentPath[user.id];
+              final llpDocumentPath = successState?.llpDocumentPath[user.id];
+              final mouDocumentUpdatedAt =
+                  successState?.mouDocumentUpdatedAt[user.id];
+              final llpDocumentUpdatedAt =
+                  successState?.llpDocumentUpdatedAt[user.id];
               final isRefundSaving =
                   successState?.refundUpdatingUserId == user.id;
               final isMouBusy = successState?.mouUpdatingUserId == user.id ||
@@ -179,6 +186,8 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                                 issuedAt: mouIssuedAt,
                                 completedAt: mouCompletedAt,
                                 isLoading: isMouBusy,
+                                documentPath: mouDocumentPath,
+                                documentUpdatedAt: mouDocumentUpdatedAt,
                                 onChanged: (status) {
                                   context
                                       .read<ManageUsersCubit>()
@@ -186,6 +195,20 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                                         investorId: user.id,
                                         status: status,
                                       );
+                                },
+                                onUploadDocument: (bytes, fileName) {
+                                  return context
+                                      .read<ManageUsersCubit>()
+                                      .uploadInvestorMouDocument(
+                                        investorId: user.id,
+                                        documentBytes: bytes,
+                                        documentFileName: fileName,
+                                      );
+                                },
+                                onRemoveDocument: () {
+                                  context
+                                      .read<ManageUsersCubit>()
+                                      .clearInvestorMouDocument(user.id);
                                 },
                               );
                               final llpCard = UserStatusCheckboxCard(
@@ -197,6 +220,8 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                                 issuedAt: llpIssuedAt,
                                 completedAt: llpCompletedAt,
                                 isLoading: isLlpBusy,
+                                documentPath: llpDocumentPath,
+                                documentUpdatedAt: llpDocumentUpdatedAt,
                                 onChanged: (status) {
                                   context
                                       .read<ManageUsersCubit>()
@@ -204,6 +229,20 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                                         investorId: user.id,
                                         status: status,
                                       );
+                                },
+                                onUploadDocument: (bytes, fileName) {
+                                  return context
+                                      .read<ManageUsersCubit>()
+                                      .uploadInvestorLlpDocument(
+                                        investorId: user.id,
+                                        documentBytes: bytes,
+                                        documentFileName: fileName,
+                                      );
+                                },
+                                onRemoveDocument: () {
+                                  context
+                                      .read<ManageUsersCubit>()
+                                      .clearInvestorLlpDocument(user.id);
                                 },
                               );
 
@@ -227,6 +266,8 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                               );
                             },
                           ),
+                          const SizedBox(height: 20),
+                          const UserReceiptsCard(),
                         ],
                       ),
                     ),

@@ -65,6 +65,10 @@ final class ManageUsersSuccess extends ManageUsersState {
     this.mouCompletedAt = const {},
     this.llpIssuedAt = const {},
     this.llpCompletedAt = const {},
+    this.mouDocumentPath = const {},
+    this.llpDocumentPath = const {},
+    this.mouDocumentUpdatedAt = const {},
+    this.llpDocumentUpdatedAt = const {},
     this.statusUpdatingUserId,
     this.refundUpdatingUserId,
     this.mouUpdatingUserId,
@@ -83,6 +87,10 @@ final class ManageUsersSuccess extends ManageUsersState {
   final Map<int, DateTime> mouCompletedAt;
   final Map<int, DateTime> llpIssuedAt;
   final Map<int, DateTime> llpCompletedAt;
+  final Map<int, String> mouDocumentPath;
+  final Map<int, String> llpDocumentPath;
+  final Map<int, DateTime> mouDocumentUpdatedAt;
+  final Map<int, DateTime> llpDocumentUpdatedAt;
   final int? statusUpdatingUserId;
   final int? refundUpdatingUserId;
   final int? mouUpdatingUserId;
@@ -110,6 +118,10 @@ final class ManageUsersSuccess extends ManageUsersState {
     Map<int, DateTime>? mouCompletedAt,
     Map<int, DateTime>? llpIssuedAt,
     Map<int, DateTime>? llpCompletedAt,
+    Map<int, String>? mouDocumentPath,
+    Map<int, String>? llpDocumentPath,
+    Map<int, DateTime>? mouDocumentUpdatedAt,
+    Map<int, DateTime>? llpDocumentUpdatedAt,
     int? statusUpdatingUserId,
     bool clearStatusUpdatingUserId = false,
     int? refundUpdatingUserId,
@@ -135,6 +147,12 @@ final class ManageUsersSuccess extends ManageUsersState {
       mouCompletedAt: mouCompletedAt ?? this.mouCompletedAt,
       llpIssuedAt: llpIssuedAt ?? this.llpIssuedAt,
       llpCompletedAt: llpCompletedAt ?? this.llpCompletedAt,
+      mouDocumentPath: mouDocumentPath ?? this.mouDocumentPath,
+      llpDocumentPath: llpDocumentPath ?? this.llpDocumentPath,
+      mouDocumentUpdatedAt:
+          mouDocumentUpdatedAt ?? this.mouDocumentUpdatedAt,
+      llpDocumentUpdatedAt:
+          llpDocumentUpdatedAt ?? this.llpDocumentUpdatedAt,
       statusUpdatingUserId: clearStatusUpdatingUserId
           ? null
           : statusUpdatingUserId ?? this.statusUpdatingUserId,

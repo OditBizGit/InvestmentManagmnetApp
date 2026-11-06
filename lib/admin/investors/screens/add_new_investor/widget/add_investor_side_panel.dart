@@ -133,7 +133,7 @@ class _NotesCard extends StatelessWidget {
     'Investment amount can be updated in the Funding & Payments section',
     // 'An email notification can be sent to the investor after adding',
     'Choose the correct investor type to keep reports and filters accurate',
-    'Assign or change the staff member linked to this investor (required)',
+    'Assign one or two staff members; split % when two are selected (required)',
     'Profile photo is optional; JPEG or PNG up to 2MB is supported',
     'Use the organization field for companies, funds, or institutions',
     'Double-check mobile number and email before saving contact details',

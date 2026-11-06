@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,20 +49,38 @@ class _PendingRequestsView extends StatefulWidget {
 }
 
 class _PendingRequestsViewState extends State<_PendingRequestsView> {
+  static const _silentRefreshInterval = Duration(minutes: 1);
+
   String? _selectedRequestId;
+  Timer? _silentRefreshTimer;
+  bool _isSilentRefreshing = false;
 
   @override
   void initState() {
     super.initState();
     _refreshIfActive();
+    if (widget.isActive) {
+      _startSilentRefresh();
+    }
   }
 
   @override
   void didUpdateWidget(covariant _PendingRequestsView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) {
+    if (widget.isActive == oldWidget.isActive) return;
+
+    if (widget.isActive) {
       _refreshIfActive();
+      _startSilentRefresh();
+    } else {
+      _stopSilentRefresh();
     }
+  }
+
+  @override
+  void dispose() {
+    _stopSilentRefresh();
+    super.dispose();
   }
 
   void _refreshIfActive() {
@@ -69,6 +89,39 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
       if (!mounted || !widget.isActive) return;
       context.read<PendingRequestsCubit>().loadRequests();
     });
+  }
+
+  void _startSilentRefresh() {
+    _silentRefreshTimer?.cancel();
+    _silentRefreshTimer = Timer.periodic(
+      _silentRefreshInterval,
+      (_) => _silentRefresh(),
+    );
+  }
+
+  void _stopSilentRefresh() {
+    _silentRefreshTimer?.cancel();
+    _silentRefreshTimer = null;
+  }
+
+  Future<void> _silentRefresh() async {
+    if (!mounted ||
+        !widget.isActive ||
+        _selectedRequestId != null ||
+        _isSilentRefreshing) {
+      return;
+    }
+
+    _isSilentRefreshing = true;
+    try {
+      await context.read<PendingRequestsCubit>().loadRequests(silent: true);
+    } finally {
+      _isSilentRefreshing = false;
+    }
+  }
+
+  void _manualRefresh() {
+    context.read<PendingRequestsCubit>().loadRequests();
   }
 
   void _openRequest(PendingRequestModel request) {
@@ -105,6 +158,8 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
               };
               final showOverview = state is PendingRequestsSuccess ||
                   state is PendingRequestsFailure;
+              final isRefreshing = state is PendingRequestsLoading ||
+                  (state is PendingRequestsSuccess && state.isListLoading);
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,12 +185,21 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (showOverview)
-                            PendingRequestsOverviewSection(overview: overview)
+                            PendingRequestsOverviewSection(
+                              overview: overview,
+                              onRefresh: isRefreshing ? null : _manualRefresh,
+                              isRefreshing: isRefreshing,
+                            )
                           else
-                            const UserManagementSectionHeader(
+                            UserManagementSectionHeader(
                               title: 'Pending Requests',
                               subtitle:
                                   'Review and approve investor payment requests',
+                              trailing: _RefreshButton(
+                                onPressed:
+                                    isRefreshing ? null : _manualRefresh,
+                                isRefreshing: isRefreshing,
+                              ),
                             ),
                           const SizedBox(height: 20),
                           PendingRequestsListSection(onReview: _openRequest),
@@ -149,6 +213,37 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
           );
         },
       ),
+    );
+  }
+}
+
+class _RefreshButton extends StatelessWidget {
+  const _RefreshButton({
+    required this.onPressed,
+    required this.isRefreshing,
+  });
+
+  final VoidCallback? onPressed;
+  final bool isRefreshing;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Refresh',
+      onPressed: onPressed,
+      icon: isRefreshing
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: AppColors.accent,
+              ),
+            )
+          : const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.accent,
+            ),
     );
   }
 }

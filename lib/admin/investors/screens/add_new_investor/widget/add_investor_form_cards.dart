@@ -61,6 +61,12 @@ class AddInvestorFormCards extends StatelessWidget {
     this.selectedStaffId,
     this.selectedStaffName,
     required this.onStaffChanged,
+    this.selectedSecondStaffId,
+    this.selectedSecondStaffName,
+    required this.onSecondStaffChanged,
+    required this.firstStaffPercentController,
+    required this.secondStaffPercent,
+    required this.hasSecondStaff,
     required this.investmentDate,
     required this.onPickDate,
     required this.formatDate,
@@ -126,6 +132,12 @@ class AddInvestorFormCards extends StatelessWidget {
   final int? selectedStaffId;
   final String? selectedStaffName;
   final ValueChanged<int?> onStaffChanged;
+  final int? selectedSecondStaffId;
+  final String? selectedSecondStaffName;
+  final ValueChanged<int?> onSecondStaffChanged;
+  final TextEditingController firstStaffPercentController;
+  final int secondStaffPercent;
+  final bool hasSecondStaff;
   final DateTime? investmentDate;
   final VoidCallback onPickDate;
   final String Function(DateTime) formatDate;
@@ -192,6 +204,12 @@ class AddInvestorFormCards extends StatelessWidget {
             selectedStaffId: selectedStaffId,
             selectedStaffName: selectedStaffName,
             onStaffChanged: onStaffChanged,
+            selectedSecondStaffId: selectedSecondStaffId,
+            selectedSecondStaffName: selectedSecondStaffName,
+            onSecondStaffChanged: onSecondStaffChanged,
+            firstStaffPercentController: firstStaffPercentController,
+            secondStaffPercent: secondStaffPercent,
+            hasSecondStaff: hasSecondStaff,
             profilePhoto: profilePhoto,
             existingProfileImageUrl: existingProfileImageUrl,
             onPickProfilePhoto: onPickProfilePhoto,
@@ -273,6 +291,12 @@ class _BasicInformationCard extends StatelessWidget {
     this.selectedStaffId,
     this.selectedStaffName,
     required this.onStaffChanged,
+    this.selectedSecondStaffId,
+    this.selectedSecondStaffName,
+    required this.onSecondStaffChanged,
+    required this.firstStaffPercentController,
+    required this.secondStaffPercent,
+    required this.hasSecondStaff,
     this.profilePhoto,
     this.existingProfileImageUrl,
     required this.onPickProfilePhoto,
@@ -292,6 +316,12 @@ class _BasicInformationCard extends StatelessWidget {
   final int? selectedStaffId;
   final String? selectedStaffName;
   final ValueChanged<int?> onStaffChanged;
+  final int? selectedSecondStaffId;
+  final String? selectedSecondStaffName;
+  final ValueChanged<int?> onSecondStaffChanged;
+  final TextEditingController firstStaffPercentController;
+  final int secondStaffPercent;
+  final bool hasSecondStaff;
   final PickedPhoto? profilePhoto;
   final String? existingProfileImageUrl;
   final VoidCallback onPickProfilePhoto;
@@ -382,14 +412,17 @@ class _BasicInformationCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    AddInvestorLabeledField(
-                      label: isEditing ? 'Assigned Staff' : 'Choose Staff',
-                      isRequired: true,
-                      child: _StaffDropdown(
-                        selectedStaffId: selectedStaffId,
-                        selectedStaffName: selectedStaffName,
-                        onChanged: onStaffChanged,
-                      ),
+                    _StaffAssignmentSection(
+                      isEditing: isEditing,
+                      selectedStaffId: selectedStaffId,
+                      selectedStaffName: selectedStaffName,
+                      onStaffChanged: onStaffChanged,
+                      selectedSecondStaffId: selectedSecondStaffId,
+                      selectedSecondStaffName: selectedSecondStaffName,
+                      onSecondStaffChanged: onSecondStaffChanged,
+                      firstStaffPercentController: firstStaffPercentController,
+                      secondStaffPercent: secondStaffPercent,
+                      hasSecondStaff: hasSecondStaff,
                     ),
                     const SizedBox(height: 14),
                     AddInvestorLabeledField(
@@ -496,14 +529,17 @@ class _BasicInformationCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  AddInvestorLabeledField(
-                    label: isEditing ? 'Assigned Staff' : 'Choose Staff',
-                    isRequired: true,
-                    child: _StaffDropdown(
-                      selectedStaffId: selectedStaffId,
-                      selectedStaffName: selectedStaffName,
-                      onChanged: onStaffChanged,
-                    ),
+                  _StaffAssignmentSection(
+                    isEditing: isEditing,
+                    selectedStaffId: selectedStaffId,
+                    selectedStaffName: selectedStaffName,
+                    onStaffChanged: onStaffChanged,
+                    selectedSecondStaffId: selectedSecondStaffId,
+                    selectedSecondStaffName: selectedSecondStaffName,
+                    onSecondStaffChanged: onSecondStaffChanged,
+                    firstStaffPercentController: firstStaffPercentController,
+                    secondStaffPercent: secondStaffPercent,
+                    hasSecondStaff: hasSecondStaff,
                   ),
                   const SizedBox(height: 14),
                   Row(
@@ -659,16 +695,278 @@ class _InvestorTypeDropdown extends StatelessWidget {
   }
 }
 
+class _StaffAssignmentSection extends StatelessWidget {
+  const _StaffAssignmentSection({
+    required this.isEditing,
+    required this.selectedStaffId,
+    this.selectedStaffName,
+    required this.onStaffChanged,
+    this.selectedSecondStaffId,
+    this.selectedSecondStaffName,
+    required this.onSecondStaffChanged,
+    required this.firstStaffPercentController,
+    required this.secondStaffPercent,
+    required this.hasSecondStaff,
+  });
+
+  final bool isEditing;
+  final int? selectedStaffId;
+  final String? selectedStaffName;
+  final ValueChanged<int?> onStaffChanged;
+  final int? selectedSecondStaffId;
+  final String? selectedSecondStaffName;
+  final ValueChanged<int?> onSecondStaffChanged;
+  final TextEditingController firstStaffPercentController;
+  final int secondStaffPercent;
+  final bool hasSecondStaff;
+
+  static final _percentInputFormatters = <TextInputFormatter>[
+    FilteringTextInputFormatter.digitsOnly,
+    LengthLimitingTextInputFormatter(3),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final staffLabel = isEditing ? 'Assigned Staff' : 'Choose Staff';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _StaffAssignmentRow(
+          staffLabel: '$staffLabel 1',
+          isRequired: true,
+          selectedStaffId: selectedStaffId,
+          selectedStaffName: selectedStaffName,
+          excludeStaffIds: [?selectedSecondStaffId],
+          onChanged: onStaffChanged,
+          percentController: firstStaffPercentController,
+          percentReadOnly: !hasSecondStaff,
+          percentHint: hasSecondStaff ? 'e.g. 70' : '100',
+        ),
+        const SizedBox(height: 14),
+        _StaffAssignmentRow(
+          staffLabel: '$staffLabel 2 (optional)',
+          isRequired: false,
+          selectedStaffId: selectedSecondStaffId,
+          selectedStaffName: selectedSecondStaffName,
+          excludeStaffIds: [?selectedStaffId],
+          onChanged: onSecondStaffChanged,
+          onClearSelection: hasSecondStaff
+              ? () => onSecondStaffChanged(null)
+              : null,
+          percentText: hasSecondStaff ? '$secondStaffPercent' : '—',
+          percentReadOnly: true,
+          percentHint: hasSecondStaff ? 'Auto' : '—',
+          showPercentField: hasSecondStaff,
+        ),
+        if (hasSecondStaff) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Remaining allocation is applied to staff 2 automatically.',
+            style: TextStyle(
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StaffAssignmentRow extends StatelessWidget {
+  const _StaffAssignmentRow({
+    required this.staffLabel,
+    required this.isRequired,
+    required this.selectedStaffId,
+    this.selectedStaffName,
+    required this.excludeStaffIds,
+    required this.onChanged,
+    this.percentController,
+    this.percentText,
+    required this.percentReadOnly,
+    required this.percentHint,
+    this.showPercentField = true,
+    this.onClearSelection,
+  });
+
+  final String staffLabel;
+  final bool isRequired;
+  final int? selectedStaffId;
+  final String? selectedStaffName;
+  final List<int> excludeStaffIds;
+  final ValueChanged<int?> onChanged;
+  final VoidCallback? onClearSelection;
+  final TextEditingController? percentController;
+  final String? percentText;
+  final bool percentReadOnly;
+  final String percentHint;
+  final bool showPercentField;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 5,
+          child: AddInvestorLabeledField(
+            label: staffLabel,
+            isRequired: isRequired,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _StaffDropdown(
+                    key: ValueKey(
+                      'staff-row-$staffLabel-${selectedStaffId ?? 'none'}',
+                    ),
+                    selectedStaffId: selectedStaffId,
+                    selectedStaffName: selectedStaffName,
+                    excludeStaffIds: excludeStaffIds,
+                    isRequired: isRequired,
+                    onChanged: onChanged,
+                  ),
+                ),
+                if (onClearSelection != null &&
+                    selectedStaffId != null &&
+                    selectedStaffId! > 0) ...[
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Tooltip(
+                      message: 'Remove second staff',
+                      child: Material(
+                        color: AppColors.white,
+                        shape: const CircleBorder(
+                          side: BorderSide(color: AppColors.newBorder),
+                        ),
+                        child: InkWell(
+                          onTap: onClearSelection,
+                          customBorder: const CircleBorder(),
+                          child: const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (showPercentField) ...[
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: AddInvestorLabeledField(
+              label: 'Allocation %',
+              child: percentController != null
+                  ? AddInvestorTextInput(
+                      controller: percentController!,
+                      hint: percentHint,
+                      enabled: !percentReadOnly,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: _StaffAssignmentSection
+                          ._percentInputFormatters,
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: Text(
+                          '%',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                      validator: isRequired && !percentReadOnly
+                          ? (value) {
+                              final text = value?.trim() ?? '';
+                              if (text.isEmpty) {
+                                return 'Required';
+                              }
+                              final parsed = int.tryParse(text);
+                              if (parsed == null ||
+                                  parsed < 1 ||
+                                  parsed > 99) {
+                                return '1–99';
+                              }
+                              return null;
+                            }
+                          : null,
+                    )
+                  : _StaffPercentReadOnlyDisplay(value: percentText ?? ''),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StaffPercentReadOnlyDisplay extends StatelessWidget {
+  const _StaffPercentReadOnlyDisplay({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F4F7),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.newBorder, width: 1),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Text(
+            '%',
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StaffDropdown extends StatelessWidget {
   const _StaffDropdown({
+    super.key,
     required this.selectedStaffId,
     this.selectedStaffName,
     required this.onChanged,
+    this.isRequired = true,
+    this.excludeStaffIds = const [],
   });
 
   final int? selectedStaffId;
   final String? selectedStaffName;
   final ValueChanged<int?> onChanged;
+  final bool isRequired;
+  final List<int> excludeStaffIds;
 
   @override
   Widget build(BuildContext context) {
@@ -682,9 +980,12 @@ class _StaffDropdown extends StatelessWidget {
         final cubit = context.read<InvestorsCubit>();
         final isLoading = state is StaffListLoading ||
             (state is InvestorsInitial && cubit.staffList.isEmpty);
-        final staffMembers = state is StaffListSuccess
+        final allStaffMembers = state is StaffListSuccess
             ? state.staff
             : cubit.staffList;
+        final staffMembers = allStaffMembers
+            .where((member) => !excludeStaffIds.contains(member.staffId))
+            .toList();
 
         if (isLoading) {
           return Container(
@@ -730,6 +1031,7 @@ class _StaffDropdown extends StatelessWidget {
           initialValue: selectedStaffId,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (value) {
+            if (!isRequired) return null;
             if (value == null || value <= 0) {
               return 'Please select a staff member';
             }

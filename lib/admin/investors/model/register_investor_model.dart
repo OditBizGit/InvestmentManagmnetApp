@@ -13,6 +13,9 @@ class RegisterInvestorRequestModel {
   final String alternativeNumber;
   final String investorType;
   final int staffId;
+  final int staffId2;
+  final double staffAllocationPercentage;
+  final double staff2AllocationPercentage;
   final String organization;
   final String description;
   final String address;
@@ -49,6 +52,9 @@ class RegisterInvestorRequestModel {
     required this.alternativeNumber,
     required this.investorType,
     required this.staffId,
+    this.staffId2 = 0,
+    this.staffAllocationPercentage = 100,
+    this.staff2AllocationPercentage = 0,
     required this.organization,
     this.description = '',
     required this.address,
@@ -79,6 +85,18 @@ class RegisterInvestorRequestModel {
       MapEntry('Password', password),
       MapEntry('FullName', fullName),
       MapEntry('StaffId', staffId.toString()),
+      MapEntry(
+        'StaffId2',
+        staffId2 > 0 ? staffId2.toString() : '',
+      ),
+      MapEntry(
+        'StaffAllocationPercentage',
+        staffAllocationPercentage.toString(),
+      ),
+      MapEntry(
+        'Staff2AllocationPercentage',
+        staffId2 > 0 ? staff2AllocationPercentage.toString() : '',
+      ),
       MapEntry('Email', email),
       MapEntry('PhoneNumber', phoneNumber),
       MapEntry('AlternativeNumber', alternativeNumber),

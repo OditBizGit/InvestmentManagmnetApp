@@ -1,4 +1,5 @@
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_record.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/investor_staff_allocation_model.dart';
 import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 
 class InvestorModel {
@@ -13,6 +14,11 @@ class InvestorModel {
   final String? investorType;
   final int? staffId;
   final String? staffName;
+  final int? staffId2;
+  final String? staffName2;
+  final double? staffAllocationPercentage;
+  final double? staff2AllocationPercentage;
+  final List<InvestorStaffAllocationModel> staffAllocations;
   final String? organization;
   final String? description;
   final String? address;
@@ -79,6 +85,11 @@ class InvestorModel {
     this.investorType,
     this.staffId,
     this.staffName,
+    this.staffId2,
+    this.staffName2,
+    this.staffAllocationPercentage,
+    this.staff2AllocationPercentage,
+    this.staffAllocations = const [],
     this.organization,
     this.description,
     this.address,
@@ -156,6 +167,12 @@ class InvestorModel {
   String? get panCardImageUrl => resolveMediaUrl(panCardImage);
 
   factory InvestorModel.fromJson(Map<String, dynamic> json) {
+    final staffAllocations = parseInvestorStaffAllocations(json);
+    final primaryStaff =
+        staffAllocations.isNotEmpty ? staffAllocations.first : null;
+    final secondaryStaff =
+        staffAllocations.length > 1 ? staffAllocations[1] : null;
+
     return InvestorModel(
       userId: _readInt(
         json['userId'] ?? json['UserId'],
@@ -197,13 +214,46 @@ class InvestorModel {
         json['investorType'] ?? json['InvestorType'],
       ),
 
-      staffId: _readNullableInt(
-        json['staffId'] ?? json['StaffId'],
-      ),
+      staffAllocations: staffAllocations,
 
-      staffName: _readString(
-        json['staffName'] ?? json['StaffName'],
-      ),
+      staffId: primaryStaff != null
+          ? _staffIdOrNull(primaryStaff.staffId)
+          : _readNullableInt(
+              json['staffId'] ?? json['StaffId'],
+            ),
+
+      staffName: primaryStaff?.staffName ??
+          _readString(
+            json['staffName'] ?? json['StaffName'],
+          ),
+
+      staffId2: secondaryStaff != null
+          ? _staffIdOrNull(secondaryStaff.staffId)
+          : _readNullableInt(
+              json['staffId2'] ?? json['StaffId2'],
+            ),
+
+      staffName2: secondaryStaff?.staffName ??
+          _readString(
+            json['staffName2'] ??
+                json['StaffName2'] ??
+                json['staff2Name'] ??
+                json['Staff2Name'],
+          ),
+
+      staffAllocationPercentage: primaryStaff != null
+          ? primaryStaff.allocationPercentage
+          : _readNullableDouble(
+              json['staffAllocationPercentage'] ??
+                  json['StaffAllocationPercentage'],
+            ),
+
+      staff2AllocationPercentage: secondaryStaff != null
+          ? secondaryStaff.allocationPercentage
+          : _readNullableDouble(
+              json['staff2AllocationPercentage'] ??
+                  json['Staff2AllocationPercentage'],
+            ),
 
       organization: _readString(
         json['organization'] ?? json['Organization'],
@@ -474,6 +524,9 @@ class InvestorModel {
     return parsed > 0 ? parsed : null;
   }
 
+  static int? _staffIdOrNull(int staffId) =>
+      staffId > 0 ? staffId : null;
+
   static double _readDouble(dynamic value) {
     if (value is double) return value;
 
@@ -486,6 +539,11 @@ class InvestorModel {
     }
 
     return 0;
+  }
+
+  static double? _readNullableDouble(dynamic value) {
+    if (value == null) return null;
+    return _readDouble(value);
   }
 
   static bool _readBool(dynamic value) {

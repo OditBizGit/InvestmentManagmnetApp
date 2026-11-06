@@ -75,14 +75,16 @@ class UserManagementSectionHeader extends StatelessWidget {
     super.key,
     required this.title,
     required this.subtitle,
+    this.trailing,
   });
 
   final String title;
   final String subtitle;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final textBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -102,6 +104,16 @@ class UserManagementSectionHeader extends StatelessWidget {
             color: AppColors.textMuted,
           ),
         ),
+      ],
+    );
+
+    if (trailing == null) return textBlock;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: textBlock),
+        trailing!,
       ],
     );
   }

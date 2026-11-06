@@ -44,6 +44,7 @@ class PendingRequestModel {
     required this.email,
     required this.phoneNumber,
     required this.allocation,
+    required this.paymentMethod,
     required this.amount,
     required this.amountPayingNow,
     required this.submittedAt,
@@ -69,6 +70,7 @@ class PendingRequestModel {
   final String email;
   final String phoneNumber;
   final String allocation;
+  final String paymentMethod;
   final double amount;
   final double amountPayingNow;
   final DateTime submittedAt;
@@ -89,10 +91,11 @@ class PendingRequestModel {
   factory PendingRequestModel.fromPaymentRequest(
     PaymentRequestDataModel data,
   ) {
+    final paymentMethod = data.paymentMethod.trim();
     final allocation = data.narration.trim().isNotEmpty
         ? data.narration.trim()
-        : data.paymentMethod.trim().isNotEmpty
-            ? data.paymentMethod.trim()
+        : paymentMethod.isNotEmpty
+            ? paymentMethod
             : 'Payment request';
 
     return PendingRequestModel(
@@ -107,6 +110,7 @@ class PendingRequestModel {
       email: data.email,
       phoneNumber: data.phoneNumber,
       allocation: allocation,
+      paymentMethod: paymentMethod,
       amount: data.paidAmount,
       amountPayingNow: data.paidAmount,
       submittedAt: data.requestedDate ?? DateTime.now(),
@@ -158,6 +162,7 @@ class PendingRequestModel {
       email: email,
       phoneNumber: phoneNumber,
       allocation: allocation,
+      paymentMethod: paymentMethod,
       amount: amount,
       amountPayingNow: amountPayingNow,
       submittedAt: submittedAt,

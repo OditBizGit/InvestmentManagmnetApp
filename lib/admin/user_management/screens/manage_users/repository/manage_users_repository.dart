@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
@@ -164,6 +165,8 @@ class ManageUsersRepository {
   Future<SaveInvestorMOUResponseModel> saveInvestorMOU({
     required int investorId,
     required String status,
+    Uint8List? documentBytes,
+    String? documentFileName,
   }) async {
     try {
       const allowedStatuses = [
@@ -175,18 +178,20 @@ class ManageUsersRepository {
       if (!allowedStatuses.contains(status)) {
         throw ArgumentError(
           'Invalid status. Allowed values: '
-              'Pending, Issued, Completed.',
+          'Pending, Issued, Completed.',
         );
       }
 
       final request = SaveInvestorMOURequestModel(
         investorId: investorId,
         status: status,
+        documentBytes: documentBytes,
+        documentFileName: documentFileName,
       );
 
       final response = await dio.post(
         ApiEndpoints.saveMOU,
-        data: request.toJson(),
+        data: request.toFormData(),
       );
 
       final raw = response.data;
@@ -213,7 +218,7 @@ class ManageUsersRepository {
     } on DioException catch (error) {
       log(
         'Save investor MOU failed: ${error.message} '
-            '(status ${error.response?.statusCode})',
+        '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
@@ -286,6 +291,8 @@ class ManageUsersRepository {
   Future<SaveInvestorMOUResponseModel> saveInvestorLLP({
     required int investorId,
     required String status,
+    Uint8List? documentBytes,
+    String? documentFileName,
   }) async {
     try {
       const allowedStatuses = [
@@ -297,18 +304,20 @@ class ManageUsersRepository {
       if (!allowedStatuses.contains(status)) {
         throw ArgumentError(
           'Invalid status. Allowed values: '
-              'Pending, Issued, Completed.',
+          'Pending, Issued, Completed.',
         );
       }
 
       final request = SaveInvestorMOURequestModel(
         investorId: investorId,
         status: status,
+        documentBytes: documentBytes,
+        documentFileName: documentFileName,
       );
 
       final response = await dio.post(
         ApiEndpoints.saveLLP,
-        data: request.toJson(),
+        data: request.toFormData(),
       );
 
       final raw = response.data;
@@ -335,7 +344,7 @@ class ManageUsersRepository {
     } on DioException catch (error) {
       log(
         'Save investor LLP failed: ${error.message} '
-            '(status ${error.response?.statusCode})',
+        '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;

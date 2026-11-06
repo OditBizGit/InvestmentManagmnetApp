@@ -60,7 +60,7 @@ class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
       context: context,
       title: 'Approve request?',
       message:
-          'Approve ${request.applicantName}\'s payment request for ${request.allocation}?',
+          'Approve ${request.applicantName}\'s payment request for ${request.paymentMethod}?',
       confirmLabel: 'Approve',
       confirmColor: AppColors.green,
     );

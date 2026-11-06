@@ -1,13 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:maribel_wellness_centre_application/admin/user_management/model/managed_user_model.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/due_payments/model/payment_status_report_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:sizer/sizer.dart';
 
+String buildWhatsAppReminderMessage(PaymentStatusReportModel item) {
+  final invCode = item.investorCode.trim().isNotEmpty
+      ? item.investorCode
+      : '${item.userId}';
+
+  return 'Hi ${item.name},\n\n'
+      'This is a payment reminder from Maribel Wellness Centre.\n\n'
+      'INVCode: $invCode\n'
+      'Total payable: ${CurrencyFormatter.format(item.totalPayable)}\n'
+      'Amount paid: ${CurrencyFormatter.format(item.amountPaid)}\n'
+      'Due amount: ${CurrencyFormatter.format(item.dueAmount)}\n'
+      'Due date: ${_formatDueDate(item.dueDate)}\n\n'
+      'Please complete the pending payment at your earliest convenience.\n\n'
+      'Thank you.\n'
+      'Maribel Wellness Centre';
+}
+String _formatDueDate(DateTime? date) {
+  if (date == null) return 'N/A';
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${date.day.toString().padLeft(2, '0')} '
+      '${months[date.month - 1]}, ${date.year}';
+}
+
+String? normalizeWhatsAppPhone(String raw) {
+  final digits = raw.replaceAll(RegExp(r'\D'), '');
+  if (digits.length < 10) return null;
+  if (digits.length == 10) return '91$digits';
+  return digits;
+}
+
 Future<bool> showSendReminderPreviewDialog({
   required BuildContext context,
-  required ManagedUserModel user,
+  required PaymentStatusReportModel item,
 }) async {
+  final normalizedPhone = normalizeWhatsAppPhone(item.phoneNumber);
+  final phoneLabel = item.phoneNumber.trim().isEmpty
+      ? 'Phone not available'
+      : item.phoneNumber;
+  final canSend = normalizedPhone != null;
+  final message = buildWhatsAppReminderMessage(item);
+
   final sent = await showDialog<bool>(
     context: context,
     barrierDismissible: true,
@@ -27,7 +77,7 @@ Future<bool> showSendReminderPreviewDialog({
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Payment reminder preview',
+                  'WhatsApp reminder preview',
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
@@ -36,25 +86,21 @@ Future<bool> showSendReminderPreviewDialog({
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Dummy email only — nothing will be sent.',
+                  canSend
+                      ? 'Review the message, then confirm to open WhatsApp with this text.'
+                      : 'A valid phone number is required before WhatsApp can be opened.',
                   style: TextStyle(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
+                    color: canSend ? AppColors.textMuted : AppColors.error,
                   ),
                 ),
                 const SizedBox(height: 16),
-                _PreviewField(label: 'To', value: user.email),
-                const SizedBox(height: 10),
-                const _PreviewField(
-                  label: 'Subject',
-                  value: 'Payment reminder — Maribel Wellness Centre',
-                ),
+                _PreviewField(label: 'To', value: phoneLabel),
                 const SizedBox(height: 10),
                 _PreviewField(
                   label: 'Message',
-                  value:
-                      'Dear ${user.name},\n\nThis is a reminder that your account ${user.userId} has an outstanding balance of ${CurrencyFormatter.format(user.outstandingBalance)} against a total payable of ${CurrencyFormatter.format(user.totalPayable)}.\n\nAmount paid so far: ${CurrencyFormatter.format(user.amountPaid)}.\n\nPlease complete the pending payment at your earliest convenience.\n\nRegards,\nMaribel Wellness Centre',
+                  value: message,
                   multiline: true,
                 ),
                 const SizedBox(height: 20),
@@ -87,18 +133,21 @@ Future<bool> showSendReminderPreviewDialog({
                     SizedBox(
                       height: 36,
                       child: ElevatedButton(
-                        onPressed: () =>
-                            Navigator.of(dialogContext).pop(true),
+                        onPressed: canSend
+                            ? () => Navigator.of(dialogContext).pop(true)
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.white,
+                          disabledBackgroundColor: AppColors.border,
+                          disabledForegroundColor: AppColors.textMuted,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(9),
                           ),
                         ),
                         child: Text(
-                          'Send Reminder',
+                          'Send WhatsApp',
                           style: TextStyle(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w600,

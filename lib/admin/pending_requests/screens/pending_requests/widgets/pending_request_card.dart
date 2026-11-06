@@ -72,8 +72,10 @@ class _WideLayout extends StatelessWidget {
         Expanded(
           flex: 3,
           child: _LabeledValue(
-            label: 'Allocation',
-            title: request.allocation,
+            label: 'Payment',
+            title: request.paymentMethod.trim().isNotEmpty
+                ? request.paymentMethod.trim()
+                : '—',
             value: CurrencyFormatter.format(request.amount),
             valueColor: AppColors.textPrimary,
             emphasizeValue: true,
@@ -124,8 +126,10 @@ class _CompactLayout extends StatelessWidget {
           children: [
             Expanded(
               child: _LabeledValue(
-                label: 'Allocation',
-                title: request.allocation,
+                label: 'Payment',
+                title: request.paymentMethod.trim().isNotEmpty
+                    ? request.paymentMethod.trim()
+                    : '—',
                 value: CurrencyFormatter.format(request.amount),
                 valueColor: AppColors.textPrimary,
                 emphasizeValue: true,
