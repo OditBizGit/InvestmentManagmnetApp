@@ -104,7 +104,11 @@ class PaymentRequestDataModel {
       isFullSettlement: json['isFullSettlement'] ?? false,
       discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
       remarks: json['remarks'] ?? '',
-      medicalAllowance: (json['medicalAllowance'] as num?)?.toDouble(),
+
+      medicalAllowance: double.tryParse(
+        json['medicalAllowance']?.toString() ?? '0',
+      ) ?? 0.0,
+
       status: json['status'] ?? '',
       requestedDate: json['requestedDate'] != null
           ? DateTime.tryParse(json['requestedDate'].toString())

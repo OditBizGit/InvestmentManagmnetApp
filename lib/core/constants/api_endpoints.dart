@@ -49,6 +49,8 @@ class ApiEndpoints {
   static const String createStaff = "/api/Staff/CreateStaff";
   static const String getInvestorByStaff = "/api/Staff/GetInvestorsByStaff/{staffId}";
   static const String blockUser = "/api/Investor/UpdateInvestorStatus";
+  static const String getBlockRequests = "/api/Investor/GetBlockRequests";
+  static const String reviewBlockRequest = "/api/Investor/ReviewBlockRequest";
   static const String refundInvestor = "/api/Investor/RefundInvestor";
   static const String paymentStatusReport = "/api/Investor/PaymentStatusReport";
   static const String saveMOU = "/api/Investor/SaveInvestorMOU";
@@ -67,6 +69,7 @@ class ApiEndpoints {
   static const String topInvestorButton = "/api/Settings/UpdateTopInvestorsInvestorVisibility";
   static const String getStaffReport = "/api/Staff/GetStaffReport";
   static const String getStaffReportByID = "/api/Staff/GetStaffReportDetails/{staffId}";
+  static const String monthlyPaymentList = "/api/Investor/MonthlyPaymentList";
 
 
 

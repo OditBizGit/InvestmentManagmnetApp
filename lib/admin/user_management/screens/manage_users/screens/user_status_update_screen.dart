@@ -267,7 +267,9 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                             },
                           ),
                           const SizedBox(height: 20),
-                          const UserReceiptsCard(),
+                          UserReceiptsCard(
+                            userId: widget.userId.toString(),
+                          ),
                         ],
                       ),
                     ),

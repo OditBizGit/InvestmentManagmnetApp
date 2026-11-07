@@ -23,14 +23,12 @@ class AddNewInvestorScreen extends StatelessWidget {
     super.key,
     this.investorToEdit,
     this.onBack,
-    this.onAddSuccess,
     this.onUpdateSuccess,
   });
 
   /// When set, the form opens in update mode with these fields prefilled.
   final InvestorModel? investorToEdit;
   final VoidCallback? onBack;
-  final VoidCallback? onAddSuccess;
   final VoidCallback? onUpdateSuccess;
 
   @override
@@ -45,7 +43,6 @@ class AddNewInvestorScreen extends StatelessWidget {
         child: _AddNewInvestorView(
           investorToEdit: investorToEdit,
           onBack: onBack,
-          onAddSuccess: onAddSuccess,
           onUpdateSuccess: onUpdateSuccess,
         ),
       ),
@@ -57,13 +54,11 @@ class _AddNewInvestorView extends StatefulWidget {
   const _AddNewInvestorView({
     this.investorToEdit,
     this.onBack,
-    this.onAddSuccess,
     this.onUpdateSuccess,
   });
 
   final InvestorModel? investorToEdit;
   final VoidCallback? onBack;
-  final VoidCallback? onAddSuccess;
   final VoidCallback? onUpdateSuccess;
 
   @override
@@ -581,6 +576,58 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       return;
     }
     Navigator.of(context).maybePop();
+  }
+
+  void _resetFormAfterRegister() {
+    if (_isEditing) return;
+
+    FocusScope.of(context).unfocus();
+    _formKey.currentState?.reset();
+
+    for (final entry in _nominees) {
+      entry.dispose();
+    }
+
+    _fullNameController.clear();
+    _organizationController.clear();
+    _mobileController.clear();
+    _alternateMobileController.clear();
+    _emailController.clear();
+    _descriptionController.clear();
+    _addressController.clear();
+    _amountController.clear();
+    _usernameController.clear();
+    _passwordController.clear();
+    _customInstallmentController.clear();
+    _intervalController.clear();
+    _advancePaymentController.clear();
+    _aadhaarController.clear();
+    _panController.clear();
+    _bankNameController.clear();
+    _ifscController.clear();
+    _accountNumberController.clear();
+    _firstStaffPercentController.text = '100';
+
+    setState(() {
+      _investorType = null;
+      _selectedStaffId = null;
+      _selectedStaffName = null;
+      _selectedSecondStaffId = null;
+      _selectedSecondStaffName = null;
+      _investmentDate = DateTime.now();
+      _profilePhoto = null;
+      _existingProfileImageUrl = null;
+      _aadhaarCardPhoto = null;
+      _existingAadhaarCardImageUrl = null;
+      _panCardPhoto = null;
+      _existingPanCardImageUrl = null;
+      _dateOfBirth = null;
+      _selectedFrequency = 'Month';
+      _selectedInstallmentCount = '12';
+      _selectedPaymentMode = null;
+      _nominees = [InvestorNomineeEntry()];
+      _paymentSchedule = const [];
+    });
   }
 
   Future<void> _handleAdd() async {
@@ -1111,16 +1158,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       listener: (context, state) {
         if (state is RegisterInvestorSuccess) {
           AppToast.success(state.message, context: context);
-          // Defer navigation so this screen can finish the current frame
-          // before being removed from the tree.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            if (widget.onAddSuccess != null) {
-              widget.onAddSuccess!();
-              return;
-            }
-            _handleBack();
-          });
+          _resetFormAfterRegister();
         } else if (state is UpdateInvestorSuccess) {
           AppToast.success(state.message, context: context);
           WidgetsBinding.instance.addPostFrameCallback((_) {

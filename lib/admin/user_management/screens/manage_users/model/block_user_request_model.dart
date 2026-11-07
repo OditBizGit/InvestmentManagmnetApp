@@ -1,17 +1,24 @@
 class BlockUserRequestModel {
   final int userId;
   final bool isActive;
+  final String? remarks;
 
   const BlockUserRequestModel({
     required this.userId,
     required this.isActive,
+    this.remarks,
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = <String, dynamic>{
       'userId': userId,
       'isActive': isActive,
     };
+    final text = remarks?.trim();
+    if (text != null && text.isNotEmpty) {
+      json['remarks'] = text;
+    }
+    return json;
   }
 }
 

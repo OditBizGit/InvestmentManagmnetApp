@@ -8,6 +8,12 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:sizer/sizer.dart';
 
+import 'user_receipts_card.dart';
+
+export 'user_receipts_card.dart';
+
+typedef InvestorRefundCard = UserReceiptsCard;
+
 class UserRefundCard extends StatefulWidget {
   const UserRefundCard({
     super.key,

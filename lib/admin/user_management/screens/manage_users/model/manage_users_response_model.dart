@@ -116,6 +116,7 @@ class ManageUsersInvestor {
     this.joinedDate,
     this.depositDiscountAmount = 0,
     this.medicalAllowanceDescription = '',
+    this.terminateRemarks = '',
   });
 
   final int id;
@@ -130,6 +131,7 @@ class ManageUsersInvestor {
   final DateTime? joinedDate;
   final double depositDiscountAmount;
   final String medicalAllowanceDescription;
+  final String terminateRemarks;
 
   String get userId => id > 0 ? '$id' : '';
 
@@ -150,6 +152,7 @@ class ManageUsersInvestor {
     bool? isActive,
     double? amountPaid,
     double? totalPendingAmount,
+    String? terminateRemarks,
   }) {
     return ManageUsersInvestor(
       id: id,
@@ -164,6 +167,7 @@ class ManageUsersInvestor {
       joinedDate: joinedDate,
       depositDiscountAmount: depositDiscountAmount,
       medicalAllowanceDescription: medicalAllowanceDescription,
+      terminateRemarks: terminateRemarks ?? this.terminateRemarks,
     );
   }
 
@@ -214,6 +218,17 @@ class ManageUsersInvestor {
                 json['MedicalAllowanceNote'] ??
                 json['medicalAllowance'] ??
                 json['MedicalAllowance'],
+          ) ??
+          '',
+      terminateRemarks: _readString(
+            json['remarks'] ??
+                json['Remarks'] ??
+                json['terminateRemarks'] ??
+                json['TerminateRemarks'] ??
+                json['terminationRemarks'] ??
+                json['TerminationRemarks'] ??
+                json['blockRemarks'] ??
+                json['BlockRemarks'],
           ) ??
           '',
     );

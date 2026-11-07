@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/pending_requests/screens/pending_requests/widgets/pending_request_card.dart';
+import 'package:maribel_wellness_centre_application/admin/pending_requests/screens/pending_requests/widgets/terminated_investors_section.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/cubit/manage_users_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_list_toolbar.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_table_widgets.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
@@ -57,6 +59,8 @@ class _PendingRequestsListSectionState
       PendingRequestsListFilter.pending => 'No pending requests',
       PendingRequestsListFilter.approved => 'No approved requests',
       PendingRequestsListFilter.rejected => 'No rejected requests',
+      PendingRequestsListFilter.terminatedInvestor =>
+        'No terminated investor requests',
     };
   }
 
@@ -81,13 +85,17 @@ class _PendingRequestsListSectionState
         final filtered = _filtered(requests);
         final failureMessage =
             state is PendingRequestsFailure ? state.message : null;
+        final isTerminatedFilter =
+            statusFilter == PendingRequestsListFilter.terminatedInvestor;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             UserManagementTableCard(
               child: UserManagementListToolbar(
-                title: 'Payment requests',
+                title: isTerminatedFilter
+                    ? 'Terminated investors'
+                    : 'Payment requests',
                 searchController: _searchController,
                 searchHint: 'Search by name, request ID, email, phone...',
                 onSearchChanged: (value) => setState(() => _query = value),
@@ -98,14 +106,20 @@ class _PendingRequestsListSectionState
                 filters: _filters,
                 selectedFilterIndex: statusFilter.index,
                 onFilterSelected: (index) {
+                  final filter = PendingRequestsListFilter.values[index];
                   context.read<PendingRequestsCubit>().loadRequests(
-                        statusFilter: PendingRequestsListFilter.values[index],
+                        statusFilter: filter,
                       );
+                  if (filter == PendingRequestsListFilter.terminatedInvestor) {
+                    context.read<ManageUsersCubit>().fetchBlockRequests();
+                  }
                 },
               ),
             ),
             const SizedBox(height: 14),
-            if (isLoading)
+            if (isTerminatedFilter)
+              TerminatedInvestorsSection(searchQuery: _query)
+            else if (isLoading)
               const _ListLoading()
             else if (failureMessage != null)
               _ListError(

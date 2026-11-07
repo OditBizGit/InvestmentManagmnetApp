@@ -6,6 +6,9 @@ class AddInvestorPaymentRequestModel {
   final bool isFullSettlement;
   final double discountAmount;
   final String remarks;
+  final String medicalAllowance;
+  final double extraAmount;
+  final int days;
 
   AddInvestorPaymentRequestModel({
     required this.userId,
@@ -15,6 +18,9 @@ class AddInvestorPaymentRequestModel {
     this.isFullSettlement = false,
     this.discountAmount = 0,
     this.remarks = '',
+    this.medicalAllowance = '',
+    this.extraAmount = 0,
+    this.days = 0,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +32,9 @@ class AddInvestorPaymentRequestModel {
       'isFullSettlement': isFullSettlement,
       'discountAmount': discountAmount,
       'remarks': remarks,
+      'medicalAllowance': medicalAllowance,
+      'extraAmount': extraAmount,
+      'days': days,
     };
   }
 }

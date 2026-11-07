@@ -199,9 +199,11 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
                           const SizedBox(height: 20),
                           ManageUsersTableSection(
                             onUserTap: _openUser,
-                            onToggleBlock: (user) => context
-                                .read<ManageUsersCubit>()
-                                .toggleBlockStatus(user),
+                            onToggleBlock: (user, {required terminateRemarks}) =>
+                                context.read<ManageUsersCubit>().toggleBlockStatus(
+                                      user,
+                                      terminateRemarks: terminateRemarks,
+                                    ),
                           ),
                         ],
                       ),

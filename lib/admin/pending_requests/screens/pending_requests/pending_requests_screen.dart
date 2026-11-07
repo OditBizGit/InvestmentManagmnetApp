@@ -9,6 +9,8 @@ import 'package:maribel_wellness_centre_application/admin/pending_requests/repos
 import 'package:maribel_wellness_centre_application/admin/pending_requests/screens/pending_requests/widgets/pending_requests_list_section.dart';
 import 'package:maribel_wellness_centre_application/admin/pending_requests/screens/pending_requests/widgets/pending_requests_overview_section.dart';
 import 'package:maribel_wellness_centre_application/admin/pending_requests/screens/review_request/review_request_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/cubit/manage_users_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/repository/manage_users_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_stat_cards.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -34,13 +36,29 @@ class PendingRequestsScreen extends StatelessWidget {
       return const _PendingRequestsAccessDenied();
     }
 
-    return RepositoryProvider(
-      create: (_) => PaymentRequestRepository(dio: getIt<Dio>()),
-      child: BlocProvider(
-        create: (context) => PendingRequestsCubit(
-          repository: context.read<PaymentRequestRepository>(),
-          paymentRepository: getIt<InvestorPaymentRepository>(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider(
+          create: (_) => PaymentRequestRepository(dio: getIt<Dio>()),
         ),
+        RepositoryProvider(
+          create: (_) => ManageUsersRepository(dio: getIt<Dio>()),
+        ),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => PendingRequestsCubit(
+              repository: context.read<PaymentRequestRepository>(),
+              paymentRepository: getIt<InvestorPaymentRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => ManageUsersCubit(
+              repository: context.read<ManageUsersRepository>(),
+            ),
+          ),
+        ],
         child: _PendingRequestsView(isActive: isActive),
       ),
     );

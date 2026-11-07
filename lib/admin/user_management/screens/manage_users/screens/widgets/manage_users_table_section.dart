@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/model/managed_user_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/cubit/manage_users_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
-import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_confirm_dialog.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/screens/widgets/terminate_user_remarks_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_list_toolbar.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_table_widgets.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
@@ -18,7 +18,10 @@ class ManageUsersTableSection extends StatefulWidget {
     required this.onUserTap,
   });
 
-  final ValueChanged<ManageUsersInvestor> onToggleBlock;
+  final void Function(
+    ManageUsersInvestor user, {
+    required String terminateRemarks,
+  }) onToggleBlock;
   final ValueChanged<ManageUsersInvestor> onUserTap;
 
   @override
@@ -69,16 +72,12 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
     // Unblock is disabled — only allow terminate for active users.
     if (user.isBlocked) return;
 
-    final confirmed = await showUserManagementConfirmDialog(
+    final remarks = await showTerminateUserRemarksDialog(
       context: context,
-      title: 'Terminate user?',
-      message:
-          'This action will not be undone. Are you sure you want to continue terminating ${user.name}?',
-      confirmLabel: 'Terminate',
-      confirmColor: AppColors.error,
+      userName: user.name,
     );
-    if (!confirmed || !mounted) return;
-    widget.onToggleBlock(user);
+    if (remarks == null || remarks.trim().isEmpty || !mounted) return;
+    widget.onToggleBlock(user, terminateRemarks: remarks.trim());
   }
 
   Future<void> _handleExportSelected(

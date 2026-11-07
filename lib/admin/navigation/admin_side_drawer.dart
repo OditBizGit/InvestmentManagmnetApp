@@ -19,6 +19,7 @@ enum AdminDrawerItem {
   duePayments,
   pendingRequests,
   settings,
+  monthlyList,
 }
 
 /// Dispatched from dashboard quick actions to switch the admin shell tab.
@@ -91,6 +92,11 @@ class AdminSideDrawer extends StatelessWidget {
       item: AdminDrawerItem.pendingRequests,
       label: 'Pending Requests',
       icon: ImageConstants.documents,
+    ),
+    _DrawerDestination(
+      item: AdminDrawerItem.monthlyList,
+      label: 'Monthly List',
+      icon: ImageConstants.addPayment,
     ),
     _DrawerDestination(
       label: 'User Management',

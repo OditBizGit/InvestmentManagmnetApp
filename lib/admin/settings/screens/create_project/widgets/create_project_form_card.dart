@@ -98,7 +98,7 @@ class CreateProjectFormCard extends StatelessWidget {
             ],
             AddInvestorLabeledField(
               label: 'Project Image',
-              isRequired: !isEditing,
+              isRequired: true,
               child: _ProjectImagePicker(
                 photo: projectImage,
                 existingImageUrl: existingImageUrl,
@@ -108,11 +108,9 @@ class CreateProjectFormCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            const SizedBox(height: 18),
-
             AddInvestorLabeledField(
               label: 'Signature Image',
-              isRequired: false,
+              isRequired: true,
               child: _ProjectImagePicker(
                 photo: signatureImage,
                 existingImageUrl: existingSignatureImageUrl,

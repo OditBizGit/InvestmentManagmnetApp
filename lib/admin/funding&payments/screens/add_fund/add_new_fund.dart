@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit/funding_payments_cubit.dart';
@@ -63,6 +65,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   final _payingNowController = TextEditingController();
   final _discountController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _medicalAllowanceAmountController = TextEditingController();
+  final _medicalAllowanceDaysController = TextEditingController();
 
   InvestorModel? _selectedInvestor;
   _FundPaymentAction _paymentAction = _FundPaymentAction.none;
@@ -261,6 +265,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     _payingNowController.dispose();
     _discountController.dispose();
     _descriptionController.dispose();
+    _medicalAllowanceAmountController.dispose();
+    _medicalAllowanceDaysController.dispose();
     super.dispose();
   }
 
@@ -396,7 +402,16 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       isFullSettlement: isFullSettlement,
       discountAmount: discount,
       remarks: '',
+      medicalAllowance: _medicalAllowanceAmountController.text.trim(),
+      extraAmount: 0,
+      days: int.tryParse(
+        _medicalAllowanceDaysController.text.trim(),
+      ) ?? 0,
     );
+
+    debugPrint('========== ADD INVESTOR PAYMENT REQUEST ==========');
+    debugPrint(const JsonEncoder.withIndent('  ').convert(request.toJson()));
+    debugPrint('==================================================');
 
     await cubit.addInvestorPayment(request);
   }
@@ -526,6 +541,10 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 discountController: _discountController,
                 discountValidator: _validateDiscount,
                 descriptionController: _descriptionController,
+                medicalAllowanceAmountController:
+                _medicalAllowanceAmountController,
+                medicalAllowanceDaysController:
+                _medicalAllowanceDaysController,
                 paymentMethodOptions: kFundPaymentMethodOptions,
                 selectedPaymentMethod: _selectedPaymentMethod,
                 onPaymentMethodChanged: (value) =>

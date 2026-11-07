@@ -13,7 +13,6 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
-import 'package:maribel_wellness_centre_application/core/utils/success_screen.dart';
 
 class AdminInvestorsScreen extends StatelessWidget {
   const AdminInvestorsScreen({
@@ -137,26 +136,9 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
       _showAddInvestor = false;
       _editingInvestor = null;
     });
-  }
-
-  Future<void> _showAddSuccess() async {
-    setState(() {
-      _showAddInvestor = false;
-      _editingInvestor = null;
-    });
     _limitDialogShownForVisit = false;
-    await context.read<InvestorsCubit>().fetchInvestors();
-    await _loadProjectTotalFund();
-
-    if (!mounted) return;
-    await Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (context) => SuccessScreen(
-          onBack: () => Navigator.of(context).pop(),
-        ),
-      ),
-    );
+    context.read<InvestorsCubit>().fetchInvestors();
+    _loadProjectTotalFund();
   }
 
   Future<void> _showUpdateSuccess() async {
@@ -175,7 +157,6 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
       return AddNewInvestorScreen(
         investorToEdit: _editingInvestor,
         onBack: _backToInvestors,
-        onAddSuccess: _showAddSuccess,
         onUpdateSuccess: _showUpdateSuccess,
       );
     }

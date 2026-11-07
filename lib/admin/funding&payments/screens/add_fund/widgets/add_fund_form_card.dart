@@ -41,6 +41,8 @@ class AddFundFormCard extends StatelessWidget {
     required this.fundingDate,
     required this.onPickDate,
     required this.formatDate,
+    required this.medicalAllowanceAmountController,
+    required this.medicalAllowanceDaysController,
     this.isLoadingInvestors = false,
     this.canSettleFull = false,
   });
@@ -70,6 +72,8 @@ class AddFundFormCard extends StatelessWidget {
   final String Function(DateTime) formatDate;
   final bool isLoadingInvestors;
   final bool canSettleFull;
+  final TextEditingController medicalAllowanceAmountController;
+  final TextEditingController medicalAllowanceDaysController;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +243,26 @@ class AddFundFormCard extends StatelessWidget {
                     },
                   ),
                 );
+                final medicalAllowanceAmountField = _LabeledField(
+                  label: 'Medical Allowance Amount',
+                  child: _TextInput(
+                    controller: medicalAllowanceAmountController,
+                    hint: 'Enter allowance amount',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                );
+
+                final medicalAllowanceDaysField = _LabeledField(
+                  label: 'Medical Allowance Days',
+                  child: _TextInput(
+                    controller: medicalAllowanceDaysController,
+                    hint: 'Enter number of days',
+                    keyboardType: TextInputType.number,
+                  ),
+                );
+
                 final dateField = _LabeledField(
                   label: 'Funding Date',
                   child: _DateInput(
@@ -248,7 +272,7 @@ class AddFundFormCard extends StatelessWidget {
                   ),
                 );
                 final descriptionField = _LabeledField(
-                  label: 'Description Medical Allowances',
+                  label: 'Description',
                   child: _TextInput(
                     controller: descriptionController,
                     hint: 'Enter payment description / narration',
@@ -278,6 +302,15 @@ class AddFundFormCard extends StatelessWidget {
                       discountField,
                       const SizedBox(height: 14),
                       paymentMethodField,
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: medicalAllowanceAmountField),
+                          const SizedBox(width: 14),
+                          Expanded(child: medicalAllowanceDaysField),
+                        ],
+                      ),
                       const SizedBox(height: 14),
                       dateField,
                       const SizedBox(height: 14),
@@ -327,6 +360,15 @@ class AddFundFormCard extends StatelessWidget {
                         Expanded(child: paymentMethodField),
                         const SizedBox(width: 14),
                         Expanded(child: dateField),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: medicalAllowanceAmountField),
+                        const SizedBox(width: 14),
+                        Expanded(child: medicalAllowanceDaysField),
                       ],
                     ),
                     const SizedBox(height: 14),

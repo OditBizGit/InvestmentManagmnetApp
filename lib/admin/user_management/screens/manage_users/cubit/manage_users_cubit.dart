@@ -4,11 +4,15 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/model/managed_user_model.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/investor_block_requests_model.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/review_block_request_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/pdf_excel_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/repository/manage_users_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/utils/manage_users_export_file.dart';
 import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
+
+import '../../../../../user/investments/model/investor_transaction_history_response_model.dart';
 
 part 'manage_users_state.dart';
 
@@ -179,12 +183,21 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     }
   }
 
-  Future<void> toggleBlockStatus(ManageUsersInvestor user) async {
+  Future<void> toggleBlockStatus(
+    ManageUsersInvestor user, {
+    String? terminateRemarks,
+  }) async {
     final current = state;
     if (current is! ManageUsersSuccess) return;
     if (current.statusUpdatingUserId != null) return;
 
     final targetIsActive = user.isBlocked;
+    final isTerminating = !targetIsActive;
+    if (isTerminating) {
+      final remarks = terminateRemarks?.trim() ?? '';
+      if (remarks.isEmpty) return;
+    }
+
     final displayName =
         user.name.trim().isEmpty ? 'User' : user.name.trim();
 
@@ -199,6 +212,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       final response = await _repository.blockUser(
         userId: user.id,
         isActive: targetIsActive,
+        remarks: isTerminating ? terminateRemarks?.trim() : null,
       );
       if (isClosed) return;
 
@@ -216,7 +230,12 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
           users: [
             for (final item in latest.users)
               if (item.id == user.id)
-                item.copyWith(isActive: targetIsActive)
+                item.copyWith(
+                  isActive: targetIsActive,
+                  terminateRemarks: isTerminating
+                      ? (terminateRemarks?.trim() ?? item.terminateRemarks)
+                      : item.terminateRemarks,
+                )
               else
                 item,
           ],
@@ -794,6 +813,344 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     }
+  }
+
+
+  Future<void> fetchInvestorTransactionHistory(String userId) async {
+    final current = state;
+    if (current is ManageUsersSuccess) {
+      emit(InvestorTransactionHistoryLoading.fromSuccess(current));
+    } else {
+      emit(const InvestorTransactionHistoryLoading());
+    }
+
+    try {
+      final response =
+          await _repository.getInvestorTransactionHistory(userId);
+
+      if (isClosed) return;
+
+      final latest = state;
+      if (latest is ManageUsersSuccess) {
+        emit(
+          InvestorTransactionHistorySuccess.fromSuccess(
+            success: latest,
+            response: response,
+          ),
+        );
+      } else {
+        emit(
+          InvestorTransactionHistorySuccess(
+            response: response,
+          ),
+        );
+      }
+    } on DioException catch (error) {
+      if (isClosed) return;
+
+      log(
+        'Fetch Investor Transaction History Error: ${error.message}',
+        name: 'ManageUsersCubit',
+      );
+
+      final message = ApiErrorMessage.from(
+        error,
+        fallback: 'Failed to load transaction history',
+      );
+
+      final latest = state;
+      if (latest is ManageUsersSuccess) {
+        emit(
+          InvestorTransactionHistoryFailure.fromSuccess(
+            success: latest,
+            message: message,
+          ),
+        );
+      } else {
+        emit(InvestorTransactionHistoryFailure(message));
+      }
+    } catch (error) {
+      if (isClosed) return;
+
+      log(
+        'Fetch Investor Transaction History Error: $error',
+        name: 'ManageUsersCubit',
+      );
+
+      final message = ApiErrorMessage.from(
+        error,
+        fallback: 'Failed to load transaction history',
+      );
+
+      final latest = state;
+      if (latest is ManageUsersSuccess) {
+        emit(
+          InvestorTransactionHistoryFailure.fromSuccess(
+            success: latest,
+            message: message,
+          ),
+        );
+      } else {
+        emit(InvestorTransactionHistoryFailure(message));
+      }
+    }
+  }
+
+  Future<void> fetchBlockRequests({String? status}) async {
+    final normalizedStatus = status?.trim();
+    final filter =
+        normalizedStatus != null && normalizedStatus.isNotEmpty
+            ? normalizedStatus
+            : null;
+
+    final current = state;
+    if (current is ManageUsersSuccess) {
+      emit(
+        current.copyWith(
+          isBlockRequestsLoading: true,
+          clearBlockRequestsError: true,
+          blockRequestsStatusFilter: filter,
+        ),
+      );
+    } else {
+      emit(
+        ManageUsersSuccess(
+          users: const [],
+          isBlockRequestsLoading: true,
+          blockRequestsStatusFilter: filter,
+        ),
+      );
+    }
+
+    try {
+      final response = await _repository.getBlockRequests(status: filter);
+
+      if (isClosed) return;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return;
+
+      emit(
+        latest.copyWith(
+          blockRequestsResponse: response,
+          isBlockRequestsLoading: false,
+          clearBlockRequestsError: true,
+          blockRequestsStatusFilter: filter,
+        ),
+      );
+    } on DioException catch (error) {
+      if (isClosed) return;
+
+      log(
+        'Fetch block requests error: ${error.message}',
+        name: 'ManageUsersCubit',
+      );
+
+      final message = ApiErrorMessage.from(
+        error,
+        fallback: 'Failed to load block requests',
+      );
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return;
+
+      emit(
+        latest.copyWith(
+          isBlockRequestsLoading: false,
+          blockRequestsError: message,
+          clearBlockRequestsResponse: true,
+          blockRequestsStatusFilter: filter,
+        ),
+      );
+    } catch (error) {
+      if (isClosed) return;
+
+      log(
+        'Fetch block requests error: $error',
+        name: 'ManageUsersCubit',
+      );
+
+      final message = ApiErrorMessage.from(
+        error,
+        fallback: 'Failed to load block requests',
+      );
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return;
+
+      emit(
+        latest.copyWith(
+          isBlockRequestsLoading: false,
+          blockRequestsError: message,
+          clearBlockRequestsResponse: true,
+          blockRequestsStatusFilter: filter,
+        ),
+      );
+    }
+  }
+
+  Future<String?> reviewBlockRequest({
+    required int requestId,
+    required String status,
+    String remarks = '',
+  }) async {
+    final current = state;
+    if (current is! ManageUsersSuccess) return null;
+    if (current.blockRequestReviewingId != null) return null;
+
+    final normalizedStatus = _normalizeBlockReviewStatus(status);
+    if (normalizedStatus == null) return null;
+
+    emit(
+      current.copyWith(
+        blockRequestReviewingId: requestId,
+        clearStatusFeedback: true,
+      ),
+    );
+
+    try {
+      final response = await _repository.reviewBlockRequest(
+        requestId: requestId,
+        status: normalizedStatus,
+        remarks: remarks,
+      );
+
+      if (isClosed) return null;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return null;
+
+      final message = response.message.trim().isNotEmpty
+          ? response.message.trim()
+          : normalizedStatus == 'Approved'
+              ? 'Block request approved.'
+              : 'Block request rejected.';
+
+      final updatedList = _mergeBlockRequestReview(
+        latest.blockRequestsResponse,
+        response.data,
+        requestId: requestId,
+        status: normalizedStatus,
+        reviewRemarks: remarks.trim().isEmpty ? null : remarks.trim(),
+      );
+
+      emit(
+        latest.copyWith(
+          blockRequestsResponse: updatedList,
+          clearBlockRequestReviewingId: true,
+          statusFeedback: ManageUsersStatusFeedback(
+            isSuccess: true,
+            title: normalizedStatus == 'Approved' ? 'Approved' : 'Rejected',
+            message: message,
+          ),
+        ),
+      );
+
+      return message;
+    } on DioException catch (error) {
+      log(
+        'Review block request error: ${error.message}',
+        name: 'ManageUsersCubit',
+      );
+      if (isClosed) return null;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return null;
+
+      final message = ApiErrorMessage.from(
+        error,
+        fallback: 'Failed to review block request',
+      );
+
+      emit(
+        latest.copyWith(
+          clearBlockRequestReviewingId: true,
+          statusFeedback: ManageUsersStatusFeedback(
+            isSuccess: false,
+            title: 'Review failed',
+            message: message,
+          ),
+        ),
+      );
+
+      return null;
+    } catch (error) {
+      log(
+        'Review block request error: $error',
+        name: 'ManageUsersCubit',
+      );
+      if (isClosed) return null;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return null;
+
+      final message = ApiErrorMessage.from(
+        error,
+        fallback: 'Failed to review block request',
+      );
+
+      emit(
+        latest.copyWith(
+          clearBlockRequestReviewingId: true,
+          statusFeedback: ManageUsersStatusFeedback(
+            isSuccess: false,
+            title: 'Review failed',
+            message: message,
+          ),
+        ),
+      );
+
+      return null;
+    }
+  }
+
+  String? _normalizeBlockReviewStatus(String status) {
+    final normalized = status.trim().toLowerCase();
+    if (normalized == 'approved') return 'Approved';
+    if (normalized == 'rejected') return 'Rejected';
+    return null;
+  }
+
+  InvestorBlockRequestsResponse? _mergeBlockRequestReview(
+    InvestorBlockRequestsResponse? current,
+    ReviewBlockRequestResult? result, {
+    required int requestId,
+    required String status,
+    String? reviewRemarks,
+  }) {
+    if (current == null) return null;
+
+    final updated = current.requests
+        .map(
+          (item) {
+            if (item.requestId != requestId) return item;
+            if (result != null) {
+              return item.copyWith(
+                isActive: result.isActive,
+                status: result.status.trim().isNotEmpty
+                    ? result.status
+                    : status,
+                reviewedBy: result.reviewedBy,
+                reviewedDate: result.reviewedDate ?? DateTime.now(),
+                reviewRemarks:
+                    result.reviewRemarks ?? reviewRemarks ?? item.reviewRemarks,
+              );
+            }
+            return item.copyWith(
+              status: status,
+              reviewedDate: DateTime.now(),
+              reviewRemarks: reviewRemarks,
+            );
+          },
+        )
+        .toList();
+
+    return InvestorBlockRequestsResponse(
+      status: current.status,
+      message: current.message,
+      requests: updated,
+      code: current.code,
+    );
   }
 
   Future<void> uploadInvestorLlpDocument({

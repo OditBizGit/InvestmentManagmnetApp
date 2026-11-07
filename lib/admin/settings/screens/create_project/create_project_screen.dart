@@ -204,6 +204,18 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
       return;
     }
 
+    final hasExistingSignature =
+        _editingProject?.projectSignaturePath != null &&
+        _editingProject!.projectSignaturePath!.trim().isNotEmpty;
+    if (_signatureImage == null && !_isEditing) {
+      AppToast.error('Please upload a signature image', context: context);
+      return;
+    }
+    if (_signatureImage == null && _isEditing && !hasExistingSignature) {
+      AppToast.error('Please upload a signature image', context: context);
+      return;
+    }
+
     final rawFund = _totalFundController.text.trim().replaceAll(',', '');
     final totalFund = double.tryParse(rawFund);
     if (totalFund == null || totalFund <= 0) {
@@ -611,6 +623,7 @@ class _ProjectNotesCard extends StatelessWidget {
     'Cancel discards unsaved changes and returns to Settings',
     'Double-check spelling before creating the project',
     'Project image is required before you can create the project',
+    'Project signature image is required before you can create the project',
   ];
 
   static const _editNotes = [
@@ -619,6 +632,7 @@ class _ProjectNotesCard extends StatelessWidget {
     'Tap Clear to discard edits and start a new project',
     'Leave the image unchanged if you do not need a new photo',
     'Uploading a new image replaces the current project image',
+    'Project and signature images are required (existing images count when editing)',
     'Total fund should reflect the latest approved funding goal',
     'Use View to pick a different project to update',
     'Save with Update Project after reviewing your changes',

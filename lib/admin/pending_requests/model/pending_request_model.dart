@@ -2,7 +2,13 @@ import 'package:maribel_wellness_centre_application/admin/pending_requests/model
 
 enum PendingRequestStatus { pending, approved, rejected }
 
-enum PendingRequestsListFilter { all, pending, approved, rejected }
+enum PendingRequestsListFilter {
+  all,
+  pending,
+  approved,
+  rejected,
+  terminatedInvestor,
+}
 
 extension PendingRequestsListFilterX on PendingRequestsListFilter {
   String get label => switch (this) {
@@ -10,7 +16,11 @@ extension PendingRequestsListFilterX on PendingRequestsListFilter {
         PendingRequestsListFilter.pending => 'Pending',
         PendingRequestsListFilter.approved => 'Approved',
         PendingRequestsListFilter.rejected => 'Rejected',
+        PendingRequestsListFilter.terminatedInvestor => 'Terminated Investor',
       };
+
+  bool get usesPaymentRequestApi =>
+      this != PendingRequestsListFilter.terminatedInvestor;
 
   String get apiStatus => label;
 }

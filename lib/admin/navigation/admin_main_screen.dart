@@ -18,6 +18,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 
 import '../dashboard/dashboard_screen.dart';
 import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
+import '../monthly_payment_list/screen/monthly_payments_list_screen.dart';
 import '../pending_requests/screens/pending_requests/pending_requests_screen.dart';
 import '../reports/screens/reports_screen.dart';
 import '../reports/staff_report/staff_report_screen.dart';
@@ -127,6 +128,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
         return PendingRequestsScreen(
           isActive: _selectedItem == AdminDrawerItem.pendingRequests,
         );
+      case AdminDrawerItem.monthlyList:
+        return const MonthlyPaymentListScreen();
       case AdminDrawerItem.settings:
         return const AdminSettingsScreen();
     }

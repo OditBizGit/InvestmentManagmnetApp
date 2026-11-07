@@ -247,7 +247,7 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: _ProvisionalReceiptBody(
+                            child: TransactionReceiptDocument(
                               ink: _ink,
                               muted: _muted,
                               line: _line,
@@ -414,8 +414,9 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
   }
 }
 
-class _ProvisionalReceiptBody extends StatelessWidget {
-  const _ProvisionalReceiptBody({
+/// On-screen / PDF receipt layout shared with admin receipt downloads.
+class TransactionReceiptDocument extends StatelessWidget {
+  const TransactionReceiptDocument({
     required this.ink,
     required this.muted,
     required this.line,

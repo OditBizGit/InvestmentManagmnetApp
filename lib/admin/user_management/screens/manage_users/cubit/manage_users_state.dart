@@ -78,6 +78,14 @@ final class ManageUsersSuccess extends ManageUsersState {
     this.statusFeedback,
     this.isTableLoading = false,
     this.isExporting = false,
+    this.transactionHistoryResponse,
+    this.isTransactionHistoryLoading = false,
+    this.transactionHistoryError,
+    this.blockRequestsResponse,
+    this.isBlockRequestsLoading = false,
+    this.blockRequestsError,
+    this.blockRequestsStatusFilter,
+    this.blockRequestReviewingId,
   });
 
   final List<ManageUsersInvestor> users;
@@ -100,6 +108,17 @@ final class ManageUsersSuccess extends ManageUsersState {
   final ManageUsersStatusFeedback? statusFeedback;
   final bool isTableLoading;
   final bool isExporting;
+  final InvestorTransactionHistoryResponseModel? transactionHistoryResponse;
+  final bool isTransactionHistoryLoading;
+  final String? transactionHistoryError;
+  final InvestorBlockRequestsResponse? blockRequestsResponse;
+  final bool isBlockRequestsLoading;
+  final String? blockRequestsError;
+  final String? blockRequestsStatusFilter;
+  final int? blockRequestReviewingId;
+
+  List<InvestorBlockRequestModel> get blockRequests =>
+      blockRequestsResponse?.requests ?? const [];
 
   int get totalUsers => users.length;
 
@@ -138,6 +157,20 @@ final class ManageUsersSuccess extends ManageUsersState {
     bool clearStatusFeedback = false,
     bool? isTableLoading,
     bool? isExporting,
+    InvestorTransactionHistoryResponseModel? transactionHistoryResponse,
+    bool clearTransactionHistoryResponse = false,
+    bool? isTransactionHistoryLoading,
+    String? transactionHistoryError,
+    bool clearTransactionHistoryError = false,
+    InvestorBlockRequestsResponse? blockRequestsResponse,
+    bool clearBlockRequestsResponse = false,
+    bool? isBlockRequestsLoading,
+    String? blockRequestsError,
+    bool clearBlockRequestsError = false,
+    String? blockRequestsStatusFilter,
+    bool clearBlockRequestsStatusFilter = false,
+    int? blockRequestReviewingId,
+    bool clearBlockRequestReviewingId = false,
   }) {
     return ManageUsersSuccess(
       users: users ?? this.users,
@@ -176,6 +209,28 @@ final class ManageUsersSuccess extends ManageUsersState {
           : statusFeedback ?? this.statusFeedback,
       isTableLoading: isTableLoading ?? this.isTableLoading,
       isExporting: isExporting ?? this.isExporting,
+      transactionHistoryResponse: clearTransactionHistoryResponse
+          ? null
+          : transactionHistoryResponse ?? this.transactionHistoryResponse,
+      isTransactionHistoryLoading:
+          isTransactionHistoryLoading ?? this.isTransactionHistoryLoading,
+      transactionHistoryError: clearTransactionHistoryError
+          ? null
+          : transactionHistoryError ?? this.transactionHistoryError,
+      blockRequestsResponse: clearBlockRequestsResponse
+          ? null
+          : blockRequestsResponse ?? this.blockRequestsResponse,
+      isBlockRequestsLoading:
+          isBlockRequestsLoading ?? this.isBlockRequestsLoading,
+      blockRequestsError: clearBlockRequestsError
+          ? null
+          : blockRequestsError ?? this.blockRequestsError,
+      blockRequestsStatusFilter: clearBlockRequestsStatusFilter
+          ? null
+          : blockRequestsStatusFilter ?? this.blockRequestsStatusFilter,
+      blockRequestReviewingId: clearBlockRequestReviewingId
+          ? null
+          : blockRequestReviewingId ?? this.blockRequestReviewingId,
     );
   }
 }
@@ -193,6 +248,183 @@ final class ManageUsersFailure extends ManageUsersState {
     return ManageUsersFailure(
       message ?? this.message,
       isExporting: isExporting ?? this.isExporting,
+    );
+  }
+}
+
+final class InvestorTransactionHistoryLoading extends ManageUsersSuccess {
+  const InvestorTransactionHistoryLoading({
+    super.users = const [],
+    super.mouStatus = const {},
+    super.llpStatus = const {},
+    super.mouIssuedAt = const {},
+    super.mouCompletedAt = const {},
+    super.llpIssuedAt = const {},
+    super.llpCompletedAt = const {},
+    super.mouDocumentPath = const {},
+    super.llpDocumentPath = const {},
+    super.mouDocumentUpdatedAt = const {},
+    super.llpDocumentUpdatedAt = const {},
+    super.statusUpdatingUserId,
+    super.refundUpdatingUserId,
+    super.mouUpdatingUserId,
+    super.mouLoadingUserId,
+    super.llpUpdatingUserId,
+    super.llpLoadingUserId,
+    super.statusFeedback,
+    super.isTableLoading = false,
+    super.isExporting = false,
+    super.transactionHistoryResponse,
+    super.isTransactionHistoryLoading = true,
+    super.transactionHistoryError,
+  });
+
+  factory InvestorTransactionHistoryLoading.fromSuccess(
+    ManageUsersSuccess success,
+  ) {
+    return InvestorTransactionHistoryLoading(
+      users: success.users,
+      mouStatus: success.mouStatus,
+      llpStatus: success.llpStatus,
+      mouIssuedAt: success.mouIssuedAt,
+      mouCompletedAt: success.mouCompletedAt,
+      llpIssuedAt: success.llpIssuedAt,
+      llpCompletedAt: success.llpCompletedAt,
+      mouDocumentPath: success.mouDocumentPath,
+      llpDocumentPath: success.llpDocumentPath,
+      mouDocumentUpdatedAt: success.mouDocumentUpdatedAt,
+      llpDocumentUpdatedAt: success.llpDocumentUpdatedAt,
+      statusUpdatingUserId: success.statusUpdatingUserId,
+      refundUpdatingUserId: success.refundUpdatingUserId,
+      mouUpdatingUserId: success.mouUpdatingUserId,
+      mouLoadingUserId: success.mouLoadingUserId,
+      llpUpdatingUserId: success.llpUpdatingUserId,
+      llpLoadingUserId: success.llpLoadingUserId,
+      statusFeedback: success.statusFeedback,
+      isTableLoading: success.isTableLoading,
+      isExporting: success.isExporting,
+      transactionHistoryResponse: success.transactionHistoryResponse,
+      isTransactionHistoryLoading: true,
+      transactionHistoryError: null,
+    );
+  }
+}
+
+final class InvestorTransactionHistorySuccess extends ManageUsersSuccess {
+  const InvestorTransactionHistorySuccess({
+    required this.response,
+    super.users = const [],
+    super.mouStatus = const {},
+    super.llpStatus = const {},
+    super.mouIssuedAt = const {},
+    super.mouCompletedAt = const {},
+    super.llpIssuedAt = const {},
+    super.llpCompletedAt = const {},
+    super.mouDocumentPath = const {},
+    super.llpDocumentPath = const {},
+    super.mouDocumentUpdatedAt = const {},
+    super.llpDocumentUpdatedAt = const {},
+    super.statusUpdatingUserId,
+    super.refundUpdatingUserId,
+    super.mouUpdatingUserId,
+    super.mouLoadingUserId,
+    super.llpUpdatingUserId,
+    super.llpLoadingUserId,
+    super.statusFeedback,
+    super.isTableLoading = false,
+    super.isExporting = false,
+    super.isTransactionHistoryLoading = false,
+    super.transactionHistoryError,
+  }) : super(transactionHistoryResponse: response);
+
+  final InvestorTransactionHistoryResponseModel response;
+
+  factory InvestorTransactionHistorySuccess.fromSuccess({
+    required ManageUsersSuccess success,
+    required InvestorTransactionHistoryResponseModel response,
+  }) {
+    return InvestorTransactionHistorySuccess(
+      response: response,
+      users: success.users,
+      mouStatus: success.mouStatus,
+      llpStatus: success.llpStatus,
+      mouIssuedAt: success.mouIssuedAt,
+      mouCompletedAt: success.mouCompletedAt,
+      llpIssuedAt: success.llpIssuedAt,
+      llpCompletedAt: success.llpCompletedAt,
+      mouDocumentPath: success.mouDocumentPath,
+      llpDocumentPath: success.llpDocumentPath,
+      mouDocumentUpdatedAt: success.mouDocumentUpdatedAt,
+      llpDocumentUpdatedAt: success.llpDocumentUpdatedAt,
+      statusUpdatingUserId: success.statusUpdatingUserId,
+      refundUpdatingUserId: success.refundUpdatingUserId,
+      mouUpdatingUserId: success.mouUpdatingUserId,
+      mouLoadingUserId: success.mouLoadingUserId,
+      llpUpdatingUserId: success.llpUpdatingUserId,
+      llpLoadingUserId: success.llpLoadingUserId,
+      statusFeedback: success.statusFeedback,
+      isTableLoading: success.isTableLoading,
+      isExporting: success.isExporting,
+    );
+  }
+}
+
+final class InvestorTransactionHistoryFailure extends ManageUsersSuccess {
+  const InvestorTransactionHistoryFailure(
+    this.message, {
+    super.users = const [],
+    super.mouStatus = const {},
+    super.llpStatus = const {},
+    super.mouIssuedAt = const {},
+    super.mouCompletedAt = const {},
+    super.llpIssuedAt = const {},
+    super.llpCompletedAt = const {},
+    super.mouDocumentPath = const {},
+    super.llpDocumentPath = const {},
+    super.mouDocumentUpdatedAt = const {},
+    super.llpDocumentUpdatedAt = const {},
+    super.statusUpdatingUserId,
+    super.refundUpdatingUserId,
+    super.mouUpdatingUserId,
+    super.mouLoadingUserId,
+    super.llpUpdatingUserId,
+    super.llpLoadingUserId,
+    super.statusFeedback,
+    super.isTableLoading = false,
+    super.isExporting = false,
+    super.transactionHistoryResponse,
+    super.isTransactionHistoryLoading = false,
+  }) : super(transactionHistoryError: message);
+
+  final String message;
+
+  factory InvestorTransactionHistoryFailure.fromSuccess({
+    required ManageUsersSuccess success,
+    required String message,
+  }) {
+    return InvestorTransactionHistoryFailure(
+      message,
+      users: success.users,
+      mouStatus: success.mouStatus,
+      llpStatus: success.llpStatus,
+      mouIssuedAt: success.mouIssuedAt,
+      mouCompletedAt: success.mouCompletedAt,
+      llpIssuedAt: success.llpIssuedAt,
+      llpCompletedAt: success.llpCompletedAt,
+      mouDocumentPath: success.mouDocumentPath,
+      llpDocumentPath: success.llpDocumentPath,
+      mouDocumentUpdatedAt: success.mouDocumentUpdatedAt,
+      llpDocumentUpdatedAt: success.llpDocumentUpdatedAt,
+      statusUpdatingUserId: success.statusUpdatingUserId,
+      refundUpdatingUserId: success.refundUpdatingUserId,
+      mouUpdatingUserId: success.mouUpdatingUserId,
+      mouLoadingUserId: success.mouLoadingUserId,
+      llpUpdatingUserId: success.llpUpdatingUserId,
+      llpLoadingUserId: success.llpLoadingUserId,
+      statusFeedback: success.statusFeedback,
+      isTableLoading: success.isTableLoading,
+      isExporting: success.isExporting,
+      transactionHistoryResponse: success.transactionHistoryResponse,
     );
   }
 }

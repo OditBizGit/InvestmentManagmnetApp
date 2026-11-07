@@ -6,7 +6,10 @@ import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
+import '../../../../../user/investments/model/investor_transaction_history_response_model.dart';
 import '../model/block_user_request_model.dart';
+import '../model/investor_block_requests_model.dart';
+import '../model/review_block_request_model.dart';
 import '../model/pdf_excel_model.dart';
 import '../model/refund_investor_request_model.dart';
 import '../model/save_investor_mou_request_model.dart';
@@ -43,14 +46,130 @@ class ManageUsersRepository {
     }
   }
 
+  Future<InvestorBlockRequestsResponse> getBlockRequests({
+    String? status,
+  }) async {
+    try {
+      final query = <String, dynamic>{};
+      final trimmedStatus = status?.trim();
+      if (trimmedStatus != null && trimmedStatus.isNotEmpty) {
+        query['status'] = trimmedStatus;
+      }
+
+      final response = await dio.get(
+        ApiEndpoints.getBlockRequests,
+        queryParameters: query.isEmpty ? null : query,
+      );
+
+      final payload = _decodePayload(response.data);
+      if (payload is! Map) {
+        throw const FormatException('Invalid block requests response');
+      }
+
+      final result = InvestorBlockRequestsResponse.fromJson(
+        Map<String, dynamic>.from(payload),
+      );
+
+      final succeeded = result.status || result.code == 200;
+      if (!succeeded) {
+        throw Exception(
+          result.message.trim().isNotEmpty
+              ? result.message.trim()
+              : 'Failed to load block requests',
+        );
+      }
+
+      return result;
+    } on DioException catch (error) {
+      log(
+        'Get block requests failed: ${error.message} '
+        '(status ${error.response?.statusCode})',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } on FormatException catch (error) {
+      log(
+        'Get block requests invalid response: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } catch (error) {
+      log(
+        'Get block requests failed: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    }
+  }
+
+  Future<ReviewBlockRequestResponse> reviewBlockRequest({
+    required int requestId,
+    required String status,
+    String remarks = '',
+  }) async {
+    try {
+      final request = ReviewBlockRequestModel(
+        requestId: requestId,
+        status: status,
+        remarks: remarks,
+      );
+
+      final response = await dio.post(
+        ApiEndpoints.reviewBlockRequest,
+        data: request.toJson(),
+      );
+
+      final payload = _decodePayload(response.data);
+      if (payload is! Map) {
+        throw const FormatException('Invalid review block request response');
+      }
+
+      final result = ReviewBlockRequestResponse.fromJson(
+        Map<String, dynamic>.from(payload),
+      );
+
+      final succeeded = result.status || result.code == 200;
+      if (!succeeded) {
+        throw Exception(
+          result.message.trim().isNotEmpty
+              ? result.message.trim()
+              : 'Failed to review block request',
+        );
+      }
+
+      return result;
+    } on DioException catch (error) {
+      log(
+        'Review block request failed: ${error.message} '
+        '(status ${error.response?.statusCode})',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } on FormatException catch (error) {
+      log(
+        'Review block request invalid response: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } catch (error) {
+      log(
+        'Review block request failed: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    }
+  }
+
   Future<BlockUserResponseModel> blockUser({
     required int userId,
     required bool isActive,
+    String? remarks,
   }) async {
     try {
       final request = BlockUserRequestModel(
         userId: userId,
         isActive: isActive,
+        remarks: remarks,
       );
 
       final response = await dio.post(
@@ -461,7 +580,30 @@ class ManageUsersRepository {
     }
   }
 
+  Future<InvestorTransactionHistoryResponseModel>
+  getInvestorTransactionHistory(String userId) async {
+    try {
+      final response = await dio.get(
+        '${ApiEndpoints.investorTransactionHistory}$userId',
+      );
 
+      return InvestorTransactionHistoryResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (error) {
+      log(
+        'Get Investor Transaction History Error: ${error.message}',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } catch (error) {
+      log(
+        'Get Investor Transaction History Error: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    }
+  }
 
 
   dynamic _decodePayload(dynamic data) {

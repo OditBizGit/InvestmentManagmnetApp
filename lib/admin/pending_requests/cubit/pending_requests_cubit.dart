@@ -35,6 +35,18 @@ class PendingRequestsCubit extends Cubit<PendingRequestsState> {
     _cancelToken = cancelToken;
 
     final previous = state;
+
+    if (!_statusFilter.usesPaymentRequestApi) {
+      emit(
+        PendingRequestsSuccess(
+          requests: const [],
+          overview: _overviewFromState(previous),
+          statusFilter: _statusFilter,
+        ),
+      );
+      return;
+    }
+
     if (!silent) {
       _emitLoading(previous);
     }
