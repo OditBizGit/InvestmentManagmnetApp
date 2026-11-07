@@ -7,6 +7,8 @@ import 'package:maribel_wellness_centre_application/core/constants/image_constan
 import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 import 'package:sizer/sizer.dart';
 
+import '../../../../../core/network/service_locator.dart';
+
 class CreateProjectFormCard extends StatelessWidget {
   const CreateProjectFormCard({
     super.key,
@@ -17,6 +19,10 @@ class CreateProjectFormCard extends StatelessWidget {
     required this.projectImage,
     required this.onPickImage,
     required this.onClearImage,
+    required this.signatureImage,
+    required this.onPickSignatureImage,
+    required this.onClearSignatureImage,
+    this.existingSignatureImageUrl,
     this.existingImageUrl,
     this.isEditing = false,
     this.hasExistingProject = false,
@@ -32,6 +38,10 @@ class CreateProjectFormCard extends StatelessWidget {
   final String? existingImageUrl;
   final bool isEditing;
   final bool hasExistingProject;
+  final PickedPhoto? signatureImage;
+  final VoidCallback onPickSignatureImage;
+  final VoidCallback onClearSignatureImage;
+  final String? existingSignatureImageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -94,8 +104,24 @@ class CreateProjectFormCard extends StatelessWidget {
                 existingImageUrl: existingImageUrl,
                 onPick: onPickImage,
                 onClear: onClearImage,
+                fieldName: 'Project Image',
               ),
             ),
+            const SizedBox(height: 18),
+            const SizedBox(height: 18),
+
+            AddInvestorLabeledField(
+              label: 'Signature Image',
+              isRequired: false,
+              child: _ProjectImagePicker(
+                photo: signatureImage,
+                existingImageUrl: existingSignatureImageUrl,
+                onPick: onPickSignatureImage,
+                onClear: onClearSignatureImage,
+                fieldName: 'Signature Image',
+              ),
+            ),
+
             const SizedBox(height: 18),
             AddInvestorLabeledField(
               label: 'Name',
@@ -177,6 +203,7 @@ class _ProjectImagePicker extends StatelessWidget {
     required this.photo,
     required this.onPick,
     required this.onClear,
+    required this.fieldName,
     this.existingImageUrl,
   });
 
@@ -184,6 +211,7 @@ class _ProjectImagePicker extends StatelessWidget {
   final String? existingImageUrl;
   final VoidCallback onPick;
   final VoidCallback onClear;
+  final String fieldName;
 
   @override
   Widget build(BuildContext context) {
@@ -199,10 +227,14 @@ class _ProjectImagePicker extends StatelessWidget {
         fit: BoxFit.cover,
       );
     } else if (hasExisting) {
-      image = DecorationImage(
-        image: NetworkImage(existingImageUrl!),
-        fit: BoxFit.cover,
-      );
+      final resolvedUrl = resolveMediaUrl(existingImageUrl);
+
+      if (resolvedUrl != null) {
+        image = DecorationImage(
+          image: NetworkImage(resolvedUrl),
+          fit: BoxFit.cover,
+        );
+      }
     }
 
     return Material(
@@ -264,8 +296,8 @@ class _ProjectImagePicker extends StatelessWidget {
                 children: [
                   Text(
                     hasImage
-                        ? 'Change Project Image'
-                        : 'Upload Project Image',
+                        ? 'Change $fieldName'
+                        : 'Upload $fieldName',
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -277,7 +309,7 @@ class _ProjectImagePicker extends StatelessWidget {
                     hasPicked
                         ? photo!.name
                         : hasExisting
-                            ? 'Current project image'
+                            ? 'Current image'
                             : 'JPEG, PNG (Max 2MB)',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

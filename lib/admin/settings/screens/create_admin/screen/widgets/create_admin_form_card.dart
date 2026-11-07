@@ -7,14 +7,14 @@ import 'package:sizer/sizer.dart';
 /// Display labels for the create-admin role dropdown.
 const List<String> createAdminRoleLabels = [
   'Admin',
-  'Financial Manager',
+  'Marketing Manager',
 ];
 
 /// Maps a role dropdown label to the API `userRole` value.
 String createAdminRoleApiValue(String label) {
   switch (label.trim().toLowerCase()) {
-    case 'financial manager':
-      return 'FinancialManager';
+    case 'marketing manager':
+      return 'MarketingManager';
     case 'admin':
     default:
       return 'Admin';

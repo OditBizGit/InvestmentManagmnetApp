@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/reports/staff_report/cubit/staff_report_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/model/staff_investor_amount_model.dart';
+import 'package:maribel_wellness_centre_application/admin/reports/staff_report/model/staff_report_details_model.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/model/staff_report_row_model.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/widgets/staff_details_investors_section.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/widgets/staff_report_table_section.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:sizer/sizer.dart';
 
@@ -16,52 +20,102 @@ class StaffDetailsScreen extends StatefulWidget {
     super.key,
     required this.staff,
     required this.period,
+    this.customFromDate,
+    this.customToDate,
     required this.onBack,
     required this.onPeriodChanged,
   });
 
   final StaffReportRowModel staff;
   final StaffReportPeriod period;
+  final DateTime? customFromDate;
+  final DateTime? customToDate;
   final VoidCallback onBack;
-  final ValueChanged<StaffReportPeriod> onPeriodChanged;
+  final void Function(
+    StaffReportPeriod period, {
+    DateTime? customFromDate,
+    DateTime? customToDate,
+    bool clearCustomDates,
+  }) onPeriodChanged;
 
   @override
   State<StaffDetailsScreen> createState() => _StaffDetailsScreenState();
 }
 
 class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
-  static final _sampleInvestors = <StaffInvestorAmountModel>[
-    StaffInvestorAmountModel(
-      investorCode: 'INV-1160',
-      investorName: 'Ashraf Ali',
-      amountReceived: 180000,
-      amountReceivedDate: DateTime(2026, 10, 4),
-    ),
-    StaffInvestorAmountModel(
-      investorCode: 'INV-1184',
-      investorName: 'Noorjahan',
-      amountReceived: 155000,
-      amountReceivedDate: DateTime(2026, 10, 8),
-    ),
-    StaffInvestorAmountModel(
-      investorCode: 'INV-1201',
-      investorName: 'Zainab T',
-      amountReceived: 210000,
-      amountReceivedDate: DateTime(2026, 10, 12),
-    ),
-    StaffInvestorAmountModel(
-      investorCode: 'INV-1215',
-      investorName: 'Muhammed S',
-      amountReceived: 120000,
-      amountReceivedDate: DateTime(2026, 10, 18),
-    ),
-    StaffInvestorAmountModel(
-      investorCode: 'INV-1232',
-      investorName: 'Amina R',
-      amountReceived: 175000,
-      amountReceivedDate: DateTime(2026, 10, 22),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadDetails();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant StaffDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.staff.staffId != widget.staff.staffId ||
+        oldWidget.period != widget.period ||
+        oldWidget.customFromDate != widget.customFromDate ||
+        oldWidget.customToDate != widget.customToDate) {
+      _loadDetails();
+    }
+  }
+
+  String _formatApiDate(DateTime date) {
+    return '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  void _loadDetails() {
+    if (widget.period == StaffReportPeriod.custom &&
+        (widget.customFromDate == null || widget.customToDate == null)) {
+      return;
+    }
+
+    context.read<StaffReportCubit>().fetchStaffReportDetails(
+      staffId: widget.staff.staffId,
+      period: widget.period.apiValue,
+      fromDate: widget.period == StaffReportPeriod.custom &&
+              widget.customFromDate != null
+          ? _formatApiDate(widget.customFromDate!)
+          : null,
+      toDate: widget.period == StaffReportPeriod.custom &&
+              widget.customToDate != null
+          ? _formatApiDate(widget.customToDate!)
+          : null,
+    );
+  }
+
+  Future<void> _handlePeriodSelected(StaffReportPeriod period) async {
+    if (period == StaffReportPeriod.custom) {
+      final dateRange = await showStaffReportCustomDateRangeDialog(
+        context: context,
+        initialRange: widget.customFromDate != null &&
+                widget.customToDate != null
+            ? DateTimeRange(
+                start: widget.customFromDate!,
+                end: widget.customToDate!,
+              )
+            : null,
+      );
+
+      if (!mounted || dateRange == null) return;
+
+      widget.onPeriodChanged(
+        StaffReportPeriod.custom,
+        customFromDate: dateRange.start,
+        customToDate: dateRange.end,
+      );
+      return;
+    }
+
+    widget.onPeriodChanged(period, clearCustomDates: true);
+  }
 
   void _handleBack() {
     FocusManager.instance.primaryFocus?.unfocus();
@@ -97,64 +151,134 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
           final last = DateTime(now.year, now.month - 1);
           return 'Last Month (${months[last.month - 1]} ${last.year})';
         }(),
-      StaffReportPeriod.thisYear => 'This Year (${now.year})',
-      StaffReportPeriod.allTime => 'All Time',
+      StaffReportPeriod.custom => () {
+          final from = widget.customFromDate;
+          final to = widget.customToDate;
+          if (from == null || to == null) {
+            return 'Custom';
+          }
+          return 'Custom (${_formatApiDate(from)} - ${_formatApiDate(to)})';
+        }(),
     };
+  }
+
+  double _totalAmountFromDetails(List<StaffReportDetailsModel> details) {
+    return details.fold<double>(
+      0,
+      (sum, item) => sum + item.paymentAmount,
+    );
+  }
+
+  List<StaffInvestorAmountModel> _mapInvestors(
+    List<StaffReportDetailsModel> details,
+  ) {
+    return details
+        .map(
+          (item) => StaffInvestorAmountModel(
+            investorCode: item.investorCode,
+            investorName: item.investorName,
+            amountReceived: item.paymentAmount,
+            amountReceivedDate: item.paymentDate,
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.screenBg,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontalPadding =
-              constraints.maxWidth < 600 ? 16.0 : 24.0;
+    return BlocConsumer<StaffReportCubit, StaffReportState>(
+      listenWhen: (previous, current) =>
+          current.detailsStatus == StaffReportDetailsStatus.failure &&
+          current.detailsErrorMessage != null &&
+          previous.detailsErrorMessage != current.detailsErrorMessage,
+      listener: (context, state) {
+        AppToast.error(state.detailsErrorMessage!, context: context);
+      },
+      buildWhen: (previous, current) =>
+          previous.detailsStatus != current.detailsStatus ||
+          previous.details != current.details ||
+          previous.detailsErrorMessage != current.detailsErrorMessage,
+      builder: (context, state) {
+        final isLoading =
+            state.detailsStatus == StaffReportDetailsStatus.loading;
+        final errorMessage =
+            state.detailsStatus == StaffReportDetailsStatus.failure
+                ? state.detailsErrorMessage
+                : null;
+        final investors = _mapInvestors(state.details);
+        final isTotalLoading =
+            state.detailsStatus == StaffReportDetailsStatus.loading;
+        final totalAmountLabel = switch (state.detailsStatus) {
+          StaffReportDetailsStatus.success => CurrencyFormatter.format(
+              _totalAmountFromDetails(state.details),
+            ),
+          StaffReportDetailsStatus.loading ||
+          StaffReportDetailsStatus.initial =>
+            CurrencyFormatter.format(widget.staff.totalAmount),
+          StaffReportDetailsStatus.failure => state.details.isNotEmpty
+              ? CurrencyFormatter.format(
+                  _totalAmountFromDetails(state.details),
+                )
+              : CurrencyFormatter.format(widget.staff.totalAmount),
+        };
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  20,
-                  horizontalPadding,
-                  16,
-                ),
-                child: const AdminTopBar(),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    0,
-                    horizontalPadding,
-                    24,
+        return ColoredBox(
+          color: AppColors.screenBg,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final horizontalPadding =
+                  constraints.maxWidth < 600 ? 16.0 : 24.0;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      20,
+                      horizontalPadding,
+                      16,
+                    ),
+                    child: const AdminTopBar(),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _StaffDetailsTitle(onBack: _handleBack),
-                      const SizedBox(height: 16),
-                      _StaffProfileCard(
-                        staff: widget.staff,
-                        periodLabel: _periodChipLabel,
-                        period: widget.period,
-                        onPeriodChanged: widget.onPeriodChanged,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        0,
+                        horizontalPadding,
+                        24,
                       ),
-                      const SizedBox(height: 18),
-                      StaffDetailsInvestorsSection(
-                        period: widget.period,
-                        items: _sampleInvestors,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _StaffDetailsTitle(onBack: _handleBack),
+                          const SizedBox(height: 16),
+                          _StaffProfileCard(
+                            staff: widget.staff,
+                            periodLabel: _periodChipLabel,
+                            onPeriodSelected: _handlePeriodSelected,
+                            totalAmountLabel: totalAmountLabel,
+                            isTotalLoading: isTotalLoading,
+                          ),
+                          const SizedBox(height: 18),
+                          StaffDetailsInvestorsSection(
+                            period: widget.period,
+                            isLoading: isLoading,
+                            errorMessage: errorMessage,
+                            onRetry: _loadDetails,
+                            items: investors,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -251,14 +375,16 @@ class _StaffProfileCard extends StatelessWidget {
   const _StaffProfileCard({
     required this.staff,
     required this.periodLabel,
-    required this.period,
-    required this.onPeriodChanged,
+    required this.onPeriodSelected,
+    required this.totalAmountLabel,
+    required this.isTotalLoading,
   });
 
   final StaffReportRowModel staff;
   final String periodLabel;
-  final StaffReportPeriod period;
-  final ValueChanged<StaffReportPeriod> onPeriodChanged;
+  final ValueChanged<StaffReportPeriod> onPeriodSelected;
+  final String totalAmountLabel;
+  final bool isTotalLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -331,8 +457,7 @@ class _StaffProfileCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               PopupMenuButton<StaffReportPeriod>(
-                initialValue: period,
-                onSelected: onPeriodChanged,
+                onSelected: onPeriodSelected,
                 color: AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -346,9 +471,7 @@ class _StaffProfileCard extends StatelessWidget {
                           option.label,
                           style: TextStyle(
                             fontSize: 10.sp,
-                            fontWeight: option == period
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            fontWeight: FontWeight.w400,
                             color: AppColors.textPrimary,
                           ),
                         ),
@@ -399,7 +522,8 @@ class _StaffProfileCard extends StatelessWidget {
               _ProfileStat(
                 icon: Icons.payments_outlined,
                 label: 'Total Amount',
-                value: CurrencyFormatter.format(staff.totalAmount),
+                value: totalAmountLabel,
+                isLoading: isTotalLoading,
               ),
             ],
           );
@@ -433,11 +557,13 @@ class _ProfileStat extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.isLoading = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -467,14 +593,24 @@ class _ProfileStat extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            if (isLoading)
+              SizedBox(
+                height: 13.sp * 1.2,
+                width: 13.sp * 1.2,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.accent,
+                ),
+              )
+            else
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
           ],
         ),
       ],

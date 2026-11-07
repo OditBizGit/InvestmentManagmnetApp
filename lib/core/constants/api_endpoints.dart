@@ -65,6 +65,8 @@ class ApiEndpoints {
   static const String removeTopInvestor = "/api/Investor/RemoveTopInvestor";
   static const String updateDueDates = "/api/Investor/UpdateInvestorInstallmentDueDate";
   static const String topInvestorButton = "/api/Settings/UpdateTopInvestorsInvestorVisibility";
+  static const String getStaffReport = "/api/Staff/GetStaffReport";
+  static const String getStaffReportByID = "/api/Staff/GetStaffReportDetails/{staffId}";
 
 
 

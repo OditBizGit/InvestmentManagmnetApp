@@ -7,6 +7,8 @@ class ProjectRequestModel {
   final String description;
   final double totalFund;
   final MultipartFile? image;
+  final MultipartFile? signatureImage;
+
 
   ProjectRequestModel({
     this.projectId = 0,
@@ -14,6 +16,7 @@ class ProjectRequestModel {
     required this.description,
     required this.totalFund,
     this.image,
+    this.signatureImage
   });
 
   Future<FormData> toFormData() async {
@@ -23,6 +26,7 @@ class ProjectRequestModel {
       'Description': description,
       'TotalFund': totalFund,
       if (image != null) 'Image': image,
+      if (signatureImage != null) 'SignatureImage': signatureImage,
     });
   }
 }
@@ -96,6 +100,7 @@ class ProjectModel {
   final double totalFund;
   final int status;
   final String? image;
+  final String? projectSignaturePath;
   final int? createdBy;
   final DateTime? createdDate;
   final int? modifiedBy;
@@ -108,6 +113,7 @@ class ProjectModel {
     required this.totalFund,
     required this.status,
     this.image,
+    this.projectSignaturePath,
     this.createdBy,
     this.createdDate,
     this.modifiedBy,
@@ -134,6 +140,8 @@ class ProjectModel {
       status: json['Status'] ?? json['status'] ?? 0,
 
       image: json['Image'] ?? json['image'],
+
+      projectSignaturePath: json['ProjectSignaturePath'] ?? json['projectSignaturePath'],
 
       createdBy:
       json['Createdby'] ?? json['createdby'],

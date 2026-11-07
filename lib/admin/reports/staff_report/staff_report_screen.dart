@@ -1,12 +1,19 @@
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:maribel_wellness_centre_application/admin/reports/staff_report/model/staff_report_row_model.dart';
+import 'package:maribel_wellness_centre_application/admin/reports/staff_report/repository/staff_report_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/staff_details_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/widgets/staff_report_table_section.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_stat_cards.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
 
-import 'model/staff_report_row_model.dart';
+import '../../../core/network/service_locator.dart';
+import 'cubit/staff_report_cubit.dart';
 
 class StaffReportScreen extends StatefulWidget {
   const StaffReportScreen({
@@ -14,7 +21,7 @@ class StaffReportScreen extends StatefulWidget {
     this.isActive = false,
   });
 
-  /// When true, this tab is visible in the admin [IndexedStack].
+  // When true, this tab is visible in the admin IndexedStack.
   final bool isActive;
 
   @override
@@ -22,46 +29,57 @@ class StaffReportScreen extends StatefulWidget {
 }
 
 class _StaffReportScreenState extends State<StaffReportScreen> {
-  static const _sampleItems = <StaffReportRowModel>[
-    StaffReportRowModel(
-      code: 'SM-001',
-      name: 'Rashid K',
-      mobileNumber: '+91 98456 12345',
-      totalAmount: 840000,
-    ),
-    StaffReportRowModel(
-      code: 'SM-002',
-      name: 'Anitha R',
-      mobileNumber: '+91 98765 43210',
-      totalAmount: 615000,
-    ),
-    StaffReportRowModel(
-      code: 'SM-003',
-      name: 'Faizal M',
-      mobileNumber: '+91 99001 11223',
-      totalAmount: 490000,
-    ),
-  ];
+  late final StaffReportCubit _cubit;
 
   StaffReportRowModel? _selectedStaff;
+
   StaffReportPeriod _period = StaffReportPeriod.thisMonth;
+  DateTime? _customFromDate;
+  DateTime? _customToDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = StaffReportCubit(
+      StaffReportRepository(getIt<Dio>()),
+    )..fetchStaffReport(period: 'ThisMonth');
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant StaffReportScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.isActive && oldWidget.isActive && _selectedStaff != null) {
+
+    if (!widget.isActive &&
+        oldWidget.isActive &&
+        _selectedStaff != null) {
       _selectedStaff = null;
+      _cubit.resetDetails();
     }
   }
 
-  void _openStaff(StaffReportRowModel staff, StaffReportPeriod period) {
+  void _openStaff(
+    StaffReportRowModel staff,
+    StaffReportPeriod period, {
+    DateTime? customFromDate,
+    DateTime? customToDate,
+  }) {
     FocusManager.instance.primaryFocus?.unfocus();
+
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       Future<void>.delayed(Duration.zero, () {
         if (!mounted) return;
+
         setState(() {
           _selectedStaff = staff;
           _period = period;
+          _customFromDate = customFromDate;
+          _customToDate = customToDate;
         });
       });
     });
@@ -69,28 +87,69 @@ class _StaffReportScreenState extends State<StaffReportScreen> {
 
   void _backToList() {
     FocusManager.instance.primaryFocus?.unfocus();
+
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       Future<void>.delayed(Duration.zero, () {
         if (!mounted) return;
-        setState(() => _selectedStaff = null);
+
+        setState(() {
+          _selectedStaff = null;
+        });
+        _cubit.resetDetails();
       });
+    });
+  }
+
+  void _onDetailsPeriodChanged(
+    StaffReportPeriod period, {
+    DateTime? customFromDate,
+    DateTime? customToDate,
+    bool clearCustomDates = false,
+  }) {
+    setState(() {
+      _period = period;
+      if (clearCustomDates) {
+        _customFromDate = null;
+        _customToDate = null;
+      } else {
+        _customFromDate = customFromDate;
+        _customToDate = customToDate;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final selected = _selectedStaff;
-    if (selected != null) {
-      return StaffDetailsScreen(
-        staff: selected,
-        period: _period,
-        onBack: _backToList,
-        onPeriodChanged: (period) {
-          setState(() => _period = period);
-        },
-      );
-    }
 
+    return BlocProvider.value(
+      value: _cubit,
+      child: selected != null
+          ? StaffDetailsScreen(
+              staff: selected,
+              period: _period,
+              customFromDate: _customFromDate,
+              customToDate: _customToDate,
+              onBack: _backToList,
+              onPeriodChanged: _onDetailsPeriodChanged,
+            )
+          : _StaffReportContent(onViewStaff: _openStaff),
+    );
+  }
+}
+
+class _StaffReportContent extends StatelessWidget {
+  const _StaffReportContent({required this.onViewStaff});
+
+  final void Function(
+    StaffReportRowModel staff,
+    StaffReportPeriod period, {
+    DateTime? customFromDate,
+    DateTime? customToDate,
+  }) onViewStaff;
+
+  @override
+  Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.screenBg,
       child: LayoutBuilder(
@@ -112,6 +171,7 @@ class _StaffReportScreenState extends State<StaffReportScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     horizontalPadding,
                     0,
@@ -127,8 +187,7 @@ class _StaffReportScreenState extends State<StaffReportScreen> {
                       ),
                       const SizedBox(height: 18),
                       StaffReportTableSection(
-                        items: _sampleItems,
-                        onViewStaff: _openStaff,
+                        onViewStaff: onViewStaff,
                       ),
                     ],
                   ),

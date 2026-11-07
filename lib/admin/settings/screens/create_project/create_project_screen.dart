@@ -19,11 +19,7 @@ enum _ProjectScreenMode { add, view }
 /// Create / update project page shown from Settings.
 /// Keeps the admin side drawer visible (in-shell navigation).
 class CreateProjectScreen extends StatelessWidget {
-  const CreateProjectScreen({
-    super.key,
-    this.onBack,
-    this.onCreateSuccess,
-  });
+  const CreateProjectScreen({super.key, this.onBack, this.onCreateSuccess});
 
   final VoidCallback? onBack;
   final VoidCallback? onCreateSuccess;
@@ -33,9 +29,9 @@ class CreateProjectScreen extends StatelessWidget {
     return RepositoryProvider<ProjectRepository>(
       create: (_) => ProjectRepository(dio: getIt<Dio>()),
       child: BlocProvider(
-        create: (context) => CreateProjectCubit(
-          repository: context.read<ProjectRepository>(),
-        )..getProjects(),
+        create: (context) =>
+            CreateProjectCubit(repository: context.read<ProjectRepository>())
+              ..getProjects(),
         child: _CreateProjectView(
           onBack: onBack,
           onCreateSuccess: onCreateSuccess,
@@ -46,10 +42,7 @@ class CreateProjectScreen extends StatelessWidget {
 }
 
 class _CreateProjectView extends StatefulWidget {
-  const _CreateProjectView({
-    this.onBack,
-    this.onCreateSuccess,
-  });
+  const _CreateProjectView({this.onBack, this.onCreateSuccess});
 
   final VoidCallback? onBack;
   final VoidCallback? onCreateSuccess;
@@ -65,6 +58,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
   final _totalFundController = TextEditingController();
 
   PickedPhoto? _projectImage;
+  PickedPhoto? _signatureImage;
   ProjectModel? _editingProject;
   _ProjectScreenMode _mode = _ProjectScreenMode.add;
 
@@ -96,6 +90,17 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
     setState(() => _projectImage = null);
   }
 
+  Future<void> _pickSignatureImage() async {
+    final photo = await PhotoPickerHelper.pickProfilePhoto();
+    if (photo == null || !mounted) return;
+
+    setState(() => _signatureImage = photo);
+  }
+
+  void _clearSignatureImage() {
+    setState(() => _signatureImage = null);
+  }
+
   void _resetForm() {
     _formKey.currentState?.reset();
     _nameController.clear();
@@ -103,11 +108,13 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
     _totalFundController.clear();
     _projectImage = null;
     _editingProject = null;
+    _signatureImage = null;
   }
 
   void _loadProjectForEdit(ProjectModel project) {
     _editingProject = project;
     _projectImage = null;
+    _signatureImage = null;
     _nameController.text = project.name;
     _descriptionController.text = project.description;
     final amount = project.totalFund;
@@ -185,7 +192,8 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
-    final hasExistingImage = _editingProject?.imageUrl != null &&
+    final hasExistingImage =
+        _editingProject?.imageUrl != null &&
         _editingProject!.imageUrl!.trim().isNotEmpty;
     if (_projectImage == null && !_isEditing) {
       AppToast.error('Please upload a project image', context: context);
@@ -196,8 +204,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
       return;
     }
 
-    final rawFund =
-        _totalFundController.text.trim().replaceAll(',', '');
+    final rawFund = _totalFundController.text.trim().replaceAll(',', '');
     final totalFund = double.tryParse(rawFund);
     if (totalFund == null || totalFund <= 0) {
       AppToast.error('Enter a valid fund amount', context: context);
@@ -227,6 +234,12 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
           ? MultipartFile.fromBytes(
               _projectImage!.bytes,
               filename: _projectImage!.name,
+            )
+          : null,
+      signatureImage: _signatureImage != null
+          ? MultipartFile.fromBytes(
+              _signatureImage!.bytes,
+              filename: _signatureImage!.name,
             )
           : null,
     );
@@ -270,8 +283,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
       builder: (context, state) {
         final cubit = context.read<CreateProjectCubit>();
         final projects = cubit.projects;
-        final isLoadingProjects =
-            state is ProjectsLoading && projects.isEmpty;
+        final isLoadingProjects = state is ProjectsLoading && projects.isEmpty;
         final projectsError = state is ProjectsFailure && projects.isEmpty
             ? state.message
             : null;
@@ -282,8 +294,9 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
           color: AppColors.screenBg,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final horizontalPadding =
-                  constraints.maxWidth < 600 ? 16.0 : 24.0;
+              final horizontalPadding = constraints.maxWidth < 600
+                  ? 16.0
+                  : 24.0;
               final isNarrow = constraints.maxWidth < 980;
 
               final formCard = CreateProjectFormCard(
@@ -293,10 +306,14 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                 totalFundController: _totalFundController,
                 projectImage: _projectImage,
                 existingImageUrl: _editingProject?.imageUrl,
+                existingSignatureImageUrl: _editingProject?.projectSignaturePath,
                 isEditing: _isEditing,
                 hasExistingProject: projects.isNotEmpty,
                 onPickImage: _pickProjectImage,
                 onClearImage: _clearProjectImage,
+                signatureImage: _signatureImage,
+                onPickSignatureImage: _pickSignatureImage,
+                onClearSignatureImage: _clearSignatureImage,
               );
 
               final sidePanel = _CreateProjectSidePanel(
@@ -362,8 +379,7 @@ class _CreateProjectViewState extends State<_CreateProjectView> {
                           ] else
                             IntrinsicHeight(
                               child: Row(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Expanded(flex: 7, child: formCard),
                                   const SizedBox(width: 16),
@@ -530,10 +546,7 @@ class _CreateProjectActionButtons extends StatelessWidget {
               ),
               child: Text(
                 cancelLabel,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -547,8 +560,9 @@ class _CreateProjectActionButtons extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.white,
-                disabledBackgroundColor:
-                    AppColors.accent.withValues(alpha: 0.6),
+                disabledBackgroundColor: AppColors.accent.withValues(
+                  alpha: 0.6,
+                ),
                 disabledForegroundColor: AppColors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -688,10 +702,7 @@ class _ProjectNotesCard extends StatelessWidget {
 }
 
 class _BreadcrumbHeader extends StatelessWidget {
-  const _BreadcrumbHeader({
-    required this.onBack,
-    this.isEditing = false,
-  });
+  const _BreadcrumbHeader({required this.onBack, this.isEditing = false});
 
   final VoidCallback onBack;
   final bool isEditing;

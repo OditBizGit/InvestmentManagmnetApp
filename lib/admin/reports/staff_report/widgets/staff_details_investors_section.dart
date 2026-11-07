@@ -12,10 +12,16 @@ class StaffDetailsInvestorsSection extends StatefulWidget {
   const StaffDetailsInvestorsSection({
     super.key,
     required this.period,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onRetry,
     required this.items,
   });
 
   final StaffReportPeriod period;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
   final List<StaffInvestorAmountModel> items;
 
   @override
@@ -26,9 +32,9 @@ class StaffDetailsInvestorsSection extends StatefulWidget {
 class _StaffDetailsInvestorsSectionState
     extends State<StaffDetailsInvestorsSection> {
   static const double _minTableWidth = 900;
+  static const double _searchFieldMaxWidth = 260;
 
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
 
   @override
   void dispose() {
@@ -36,11 +42,20 @@ class _StaffDetailsInvestorsSectionState
     super.dispose();
   }
 
-  List<StaffInvestorAmountModel> get _filteredItems {
-    final query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return widget.items;
+  void _clearSearch() {
+    _searchController.clear();
+  }
 
-    return widget.items.where((item) {
+  List<StaffInvestorAmountModel> _filterItems(
+    List<StaffInvestorAmountModel> allItems,
+    String rawQuery,
+  ) {
+    final query = rawQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return allItems;
+    }
+
+    return allItems.where((item) {
       return item.investorCode.toLowerCase().contains(query) ||
           item.investorName.toLowerCase().contains(query);
     }).toList(growable: false);
@@ -48,46 +63,96 @@ class _StaffDetailsInvestorsSectionState
 
   @override
   Widget build(BuildContext context) {
-    final items = _filteredItems;
-
     return UserManagementTableCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _InvestorsSectionHeader(
             period: widget.period,
+            searchFieldMaxWidth: _searchFieldMaxWidth,
             searchController: _searchController,
-            onSearchChanged: (value) {
-              setState(() => _searchQuery = value);
-            },
-            onClearSearch: () {
-              _searchController.clear();
-              setState(() => _searchQuery = '');
-            },
+            onClearSearch: _clearSearch,
           ),
           const SizedBox(height: 14),
-          UserManagementTableFrame(
-            minTableWidth: _minTableWidth,
-            header: const UserManagementHeaderRow(
-              children: [
-                UserManagementHeaderCell('#', flex: 1),
-                UserManagementHeaderCell('Investor Code', flex: 2),
-                UserManagementHeaderCell('Investor Name', flex: 3),
-                UserManagementHeaderCell('Amount Received', flex: 3),
-                UserManagementHeaderCell('Amount Received Date', flex: 3),
-              ],
+          if (widget.isLoading)
+            const SizedBox(
+              height: 260,
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.accent),
+              ),
+            )
+          else if (widget.errorMessage != null)
+            SizedBox(
+              height: 260,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.red,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        widget.errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: widget.onRetry,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, searchValue, _) {
+                final query = searchValue.text.trim().toLowerCase();
+                final items = _filterItems(widget.items, searchValue.text);
+
+                return UserManagementTableFrame(
+                  minTableWidth: _minTableWidth,
+                  header: const UserManagementHeaderRow(
+                    children: [
+                      UserManagementHeaderCell('#', flex: 1),
+                      UserManagementHeaderCell('Investor Code', flex: 2),
+                      UserManagementHeaderCell('Investor Name', flex: 3),
+                      UserManagementHeaderCell('Amount Received', flex: 3),
+                      UserManagementHeaderCell(
+                        'Amount Received Date',
+                        flex: 3,
+                      ),
+                    ],
+                  ),
+                  rowCount: items.length,
+                  emptyMessage: query.isEmpty
+                      ? 'No investor amounts found'
+                      : 'No investors match your search',
+                  rowBuilder: (context, index) {
+                    return _InvestorAmountRow(
+                      index: index,
+                      item: items[index],
+                    );
+                  },
+                );
+              },
             ),
-            rowCount: items.length,
-            emptyMessage: _searchQuery.trim().isEmpty
-                ? 'No investor amounts found'
-                : 'No investors match your search',
-            rowBuilder: (context, index) {
-              return _InvestorAmountRow(
-                index: index,
-                item: items[index],
-              );
-            },
-          ),
         ],
       ),
     );
@@ -97,14 +162,14 @@ class _StaffDetailsInvestorsSectionState
 class _InvestorsSectionHeader extends StatelessWidget {
   const _InvestorsSectionHeader({
     required this.period,
+    required this.searchFieldMaxWidth,
     required this.searchController,
-    required this.onSearchChanged,
     required this.onClearSearch,
   });
 
   final StaffReportPeriod period;
+  final double searchFieldMaxWidth;
   final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearSearch;
 
   @override
@@ -136,67 +201,73 @@ class _InvestorsSectionHeader extends StatelessWidget {
           ],
         );
 
-        final searchField = ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: isCompact ? double.infinity : 280,
-          ),
-          child: TextField(
-            controller: searchController,
-            onChanged: onSearchChanged,
-            style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.textPrimary,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Search investor by name or code',
-              hintStyle: TextStyle(
-                fontSize: 10.sp,
-                color: AppColors.hint,
-                fontWeight: FontWeight.w400,
-              ),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.all(12),
-                child: SvgPicture.asset(
-                  ImageConstants.search,
-                  width: 16,
-                  height: 16,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.hint,
-                    BlendMode.srcIn,
-                  ),
+        final searchField = SizedBox(
+          width: isCompact ? double.infinity : searchFieldMaxWidth,
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: searchController,
+            builder: (context, value, _) {
+              final hasText = value.text.isNotEmpty;
+
+              return TextField(
+                controller: searchController,
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textPrimary,
                 ),
-              ),
-              suffixIcon: searchController.text.isEmpty
-                  ? null
-                  : IconButton(
-                      onPressed: onClearSearch,
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: AppColors.textMuted,
+                decoration: InputDecoration(
+                  hintText: 'Search investor by name or code',
+                  hintStyle: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.hint,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: SvgPicture.asset(
+                      ImageConstants.search,
+                      width: 16,
+                      height: 16,
+                      colorFilter: const ColorFilter.mode(
+                        AppColors.hint,
+                        BlendMode.srcIn,
                       ),
                     ),
-              filled: true,
-              fillColor: AppColors.white,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.accent),
-              ),
-            ),
+                  ),
+                  suffixIcon: hasText
+                      ? IconButton(
+                          onPressed: onClearSearch,
+                          splashRadius: 18,
+                          tooltip: 'Clear search',
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: AppColors.textMuted,
+                          ),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: AppColors.white,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.accent),
+                  ),
+                ),
+              );
+            },
           ),
         );
 
@@ -285,7 +356,11 @@ class _InvestorAmountRow extends StatelessWidget {
   }
 }
 
-String _formatAmountReceivedDate(DateTime date) {
+String _formatAmountReceivedDate(DateTime? date) {
+  if (date == null) {
+    return '—';
+  }
+
   const months = [
     'Jan',
     'Feb',

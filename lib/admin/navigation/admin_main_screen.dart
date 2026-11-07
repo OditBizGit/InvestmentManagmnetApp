@@ -46,6 +46,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   void initState() {
     super.initState();
     _selectedItem = AdminNavPermissions.defaultDrawerItem(_userRole);
+    if (!AdminNavPermissions.canOpen(_selectedItem, _userRole)) {
+      _selectedItem = AdminDrawerItem.dashboard;
+    }
   }
 
   void _onSelect(AdminDrawerItem item) {
@@ -83,6 +86,12 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   }
 
   Widget _screenFor(AdminDrawerItem item) {
+    // IndexedStack builds every child. Skip screens this role cannot open
+    // so their init fetches (investors, reports, etc.) never run.
+    if (!AdminNavPermissions.canOpen(item, _userRole)) {
+      return const SizedBox.shrink();
+    }
+
     switch (item) {
       case AdminDrawerItem.dashboard:
         return AdminHomeScreen(
