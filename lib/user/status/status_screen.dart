@@ -8,6 +8,7 @@ import 'package:maribel_wellness_centre_application/core/account/account_status_
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/tab_reselect_notifier.dart';
 import 'package:maribel_wellness_centre_application/user/status/cubit/status_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/status/model/work_status_model.dart';
 import 'package:maribel_wellness_centre_application/user/status/utils/status_media_download.dart';
@@ -21,9 +22,13 @@ class UserStatusScreen extends StatelessWidget {
   const UserStatusScreen({
     super.key,
     this.isActive = false,
+    this.tabReselect,
   });
 
   final bool isActive;
+
+  /// When the Status tab is re-tapped while already selected, scroll to top.
+  final Listenable? tabReselect;
 
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
@@ -42,15 +47,22 @@ class UserStatusScreen extends StatelessWidget {
         AccountStatusMonitor.refresh();
         return cubit;
       },
-      child: _UserStatusView(isActive: isActive),
+      child: _UserStatusView(
+        isActive: isActive,
+        tabReselect: tabReselect,
+      ),
     );
   }
 }
 
 class _UserStatusView extends StatefulWidget {
-  const _UserStatusView({required this.isActive});
+  const _UserStatusView({
+    required this.isActive,
+    this.tabReselect,
+  });
 
   final bool isActive;
+  final Listenable? tabReselect;
 
   @override
   State<_UserStatusView> createState() => _UserStatusViewState();
@@ -60,6 +72,7 @@ class _UserStatusViewState extends State<_UserStatusView> {
   static const _silentRefreshInterval = Duration(seconds: 5);
 
   final ScrollController _scrollController = ScrollController();
+  TabReselectScrollBinder? _tabReselectBinder;
   final Set<String> _downloadingUrls = <String>{};
   Timer? _silentRefreshTimer;
   bool _isSilentRefreshing = false;
@@ -67,6 +80,13 @@ class _UserStatusViewState extends State<_UserStatusView> {
   @override
   void initState() {
     super.initState();
+    final tabReselect = widget.tabReselect;
+    if (tabReselect != null) {
+      _tabReselectBinder = TabReselectScrollBinder(
+        listenable: tabReselect,
+        scrollController: _scrollController,
+      );
+    }
     if (widget.isActive) {
       _startSilentRefresh();
     }
@@ -94,6 +114,7 @@ class _UserStatusViewState extends State<_UserStatusView> {
 
   @override
   void dispose() {
+    _tabReselectBinder?.dispose();
     _stopSilentRefresh();
     _scrollController.dispose();
     super.dispose();

@@ -7,8 +7,10 @@ import 'package:maribel_wellness_centre_application/core/constants/image_constan
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_llp_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_mou_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/document_screen/widgets/document_fullscreen_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum DocumentProcessStep { pending, issued, completed }
 
@@ -25,10 +27,10 @@ extension DocumentProcessStepX on DocumentProcessStep {
     }
   }
 
-  static DocumentProcessStep fromMouRecords(List<InvestorMouModel> records) {
-    if (records.isEmpty) return DocumentProcessStep.pending;
-
-    final sorted = [...records]
+  static List<InvestorMouModel> _sortedMouRecords(
+    List<InvestorMouModel> records,
+  ) {
+    return [...records]
       ..sort((a, b) {
         final aDate =
             a.createdDateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -38,26 +40,80 @@ extension DocumentProcessStepX on DocumentProcessStep {
         if (byDate != 0) return byDate;
         return b.id.compareTo(a.id);
       });
+  }
 
-    return DocumentProcessStepX.fromApi(sorted.first.status);
+  static DocumentProcessStep fromMouRecords(List<InvestorMouModel> records) {
+    if (records.isEmpty) return DocumentProcessStep.pending;
+    return DocumentProcessStepX.fromApi(_sortedMouRecords(records).first.status);
+  }
+
+  static String? mouDocumentUrl(List<InvestorMouModel> records) {
+    if (records.isEmpty) return null;
+
+    // Prefer the latest record's document; if empty, use the most recent
+    // prior status that still has a documentPath.
+    for (final record in _sortedMouRecords(records)) {
+      final path = record.documentPathUrl;
+      if (path != null && path.isNotEmpty) return path;
+    }
+    return null;
+  }
+
+  static List<InvestorLlpModel> _sortedLlpRecords(
+    List<InvestorLlpModel> records,
+  ) {
+    return [...records]
+      ..sort((a, b) {
+        final aDate =
+            a.createdDateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate =
+            b.createdDateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final byDate = bDate.compareTo(aDate);
+        if (byDate != 0) return byDate;
+        return b.id.compareTo(a.id);
+      });
   }
 
   static DocumentProcessStep fromLlpRecords(List<InvestorLlpModel> records) {
     if (records.isEmpty) return DocumentProcessStep.pending;
-
-    final sorted = [...records]
-      ..sort((a, b) {
-        final aDate =
-            a.createdDateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate =
-            b.createdDateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final byDate = bDate.compareTo(aDate);
-        if (byDate != 0) return byDate;
-        return b.id.compareTo(a.id);
-      });
-
-    return DocumentProcessStepX.fromApi(sorted.first.status);
+    return DocumentProcessStepX.fromApi(_sortedLlpRecords(records).first.status);
   }
+
+  static String? llpDocumentUrl(List<InvestorLlpModel> records) {
+    if (records.isEmpty) return null;
+
+    // Prefer the latest record's document; if empty, use the most recent
+    // prior status that still has a documentPath.
+    for (final record in _sortedLlpRecords(records)) {
+      final path = record.documentPathUrl;
+      if (path != null && path.isNotEmpty) return path;
+    }
+    return null;
+  }
+}
+
+bool _isImageDocumentPath(String path) {
+  final lower = path.split('?').first.toLowerCase();
+  return lower.endsWith('.jpg') ||
+      lower.endsWith('.jpeg') ||
+      lower.endsWith('.png') ||
+      lower.endsWith('.gif') ||
+      lower.endsWith('.webp') ||
+      lower.endsWith('.bmp');
+}
+
+String _documentFileName(String path) {
+  final withoutQuery = path.split('?').first;
+  final segments = withoutQuery.split('/');
+  final name = segments.isEmpty ? withoutQuery : segments.last;
+  return name.isEmpty ? 'Document' : Uri.decodeComponent(name);
+}
+
+String _documentExtensionLabel(String path) {
+  final name = _documentFileName(path);
+  final dot = name.lastIndexOf('.');
+  if (dot <= 0 || dot >= name.length - 1) return 'FILE';
+  return name.substring(dot + 1).toUpperCase();
 }
 
 class LegalDocumentationCard extends StatefulWidget {
@@ -78,6 +134,8 @@ class LegalDocumentationCardState extends State<LegalDocumentationCard> {
 
   DocumentProcessStep _mouStatus = DocumentProcessStep.pending;
   DocumentProcessStep _llpStatus = DocumentProcessStep.pending;
+  String? _mouDocumentUrl;
+  String? _llpDocumentUrl;
   bool _isLoadingMou = false;
   bool _isLoadingLlp = false;
 
@@ -101,6 +159,8 @@ class LegalDocumentationCardState extends State<LegalDocumentationCard> {
       setState(() {
         _mouStatus = DocumentProcessStep.pending;
         _llpStatus = DocumentProcessStep.pending;
+        _mouDocumentUrl = null;
+        _llpDocumentUrl = null;
         _isLoadingMou = false;
         _isLoadingLlp = false;
       });
@@ -136,21 +196,28 @@ class LegalDocumentationCardState extends State<LegalDocumentationCard> {
 
       setState(() {
         _isLoadingMou = false;
-        _mouStatus = looksSuccessful
-            ? DocumentProcessStepX.fromMouRecords(response.data)
-            : DocumentProcessStep.pending;
+        if (looksSuccessful) {
+          _mouStatus = DocumentProcessStepX.fromMouRecords(response.data);
+          _mouDocumentUrl =
+              DocumentProcessStepX.mouDocumentUrl(response.data);
+        } else {
+          _mouStatus = DocumentProcessStep.pending;
+          _mouDocumentUrl = null;
+        }
       });
     } on DioException {
       if (!mounted) return;
       setState(() {
         _isLoadingMou = false;
         _mouStatus = DocumentProcessStep.pending;
+        _mouDocumentUrl = null;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isLoadingMou = false;
         _mouStatus = DocumentProcessStep.pending;
+        _mouDocumentUrl = null;
       });
     }
   }
@@ -170,21 +237,28 @@ class LegalDocumentationCardState extends State<LegalDocumentationCard> {
 
       setState(() {
         _isLoadingLlp = false;
-        _llpStatus = looksSuccessful
-            ? DocumentProcessStepX.fromLlpRecords(response.data)
-            : DocumentProcessStep.pending;
+        if (looksSuccessful) {
+          _llpStatus = DocumentProcessStepX.fromLlpRecords(response.data);
+          _llpDocumentUrl =
+              DocumentProcessStepX.llpDocumentUrl(response.data);
+        } else {
+          _llpStatus = DocumentProcessStep.pending;
+          _llpDocumentUrl = null;
+        }
       });
     } on DioException {
       if (!mounted) return;
       setState(() {
         _isLoadingLlp = false;
         _llpStatus = DocumentProcessStep.pending;
+        _llpDocumentUrl = null;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isLoadingLlp = false;
         _llpStatus = DocumentProcessStep.pending;
+        _llpDocumentUrl = null;
       });
     }
   }
@@ -240,7 +314,11 @@ class LegalDocumentationCardState extends State<LegalDocumentationCard> {
               highlightColor: _shimmerHighlight,
             )
           else
-            _DocumentStatusBlock(label: 'MOU', status: _mouStatus),
+            _DocumentStatusBlock(
+              label: 'MOU',
+              status: _mouStatus,
+              documentUrl: _mouDocumentUrl,
+            ),
           Divider(
             height: 1,
             thickness: 1,
@@ -258,6 +336,7 @@ class LegalDocumentationCardState extends State<LegalDocumentationCard> {
             _DocumentStatusBlock(
               label: 'LLP Registration',
               status: _llpStatus,
+              documentUrl: _llpDocumentUrl,
             ),
         ],
       ),
@@ -269,13 +348,25 @@ class _DocumentStatusBlock extends StatelessWidget {
   const _DocumentStatusBlock({
     required this.label,
     required this.status,
+    this.documentUrl,
   });
 
   final String label;
   final DocumentProcessStep status;
+  final String? documentUrl;
+
+  Future<void> _openExternalDocument(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final url = documentUrl?.trim();
+    final hasDocument = url != null && url.isNotEmpty;
+    final isImage = hasDocument && _isImageDocumentPath(url);
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.6.h),
       child: Column(
@@ -291,7 +382,123 @@ class _DocumentStatusBlock extends StatelessWidget {
           ),
           SizedBox(height: 1.2.h),
           _DocumentStatusTimeline(activeStatus: status),
+          if (hasDocument) ...[
+            SizedBox(height: 1.4.h),
+            Text(
+              'Document',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textMuted,
+              ),
+            ),
+            SizedBox(height: 0.6.h),
+            _MouFileTile(
+              fileName: _documentFileName(url),
+              extensionLabel: _documentExtensionLabel(url),
+              isImage: isImage,
+              onTap: () {
+                if (isImage) {
+                  DocumentFullscreenImage.open(
+                    context,
+                    imageUrl: url,
+                    title: '$label Document',
+                  );
+                } else {
+                  _openExternalDocument(url);
+                }
+              },
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _MouFileTile extends StatelessWidget {
+  const _MouFileTile({
+    required this.fileName,
+    required this.extensionLabel,
+    required this.onTap,
+    this.isImage = false,
+  });
+
+  final String fileName;
+  final String extensionLabel;
+  final VoidCallback onTap;
+  final bool isImage;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPdf = extensionLabel == 'PDF';
+    final iconAsset = isPdf
+        ? ImageConstants.pdf
+        : isImage
+            ? ImageConstants.image
+            : ImageConstants.file;
+    final iconColor = isPdf ? AppColors.error : AppColors.accentDark;
+
+    return Material(
+      color: AppColors.cardBg,
+      borderRadius: BorderRadius.circular(2.w),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(2.w),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.2.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(2.w),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              SvgPicture.asset(
+                iconAsset,
+                width: 6.w,
+                height: 6.w,
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              ),
+              SizedBox(width: 2.5.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fileName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 0.2.h),
+                    Text(
+                      'Tap to open · $extensionLabel',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SvgPicture.asset(
+                ImageConstants.openFile,
+                width: 4.5.w,
+                height: 4.5.w,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.textMuted,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
+
 class InvestorLlpResponseModel {
   const InvestorLlpResponseModel({
     required this.status,
@@ -58,6 +60,7 @@ class InvestorLlpModel {
     required this.id,
     required this.investorId,
     required this.status,
+    this.documentPath,
     this.createdDateTime,
     this.modifiedDateTime,
   });
@@ -65,14 +68,21 @@ class InvestorLlpModel {
   final int id;
   final int investorId;
   final String status;
+  final String? documentPath;
   final DateTime? createdDateTime;
   final DateTime? modifiedDateTime;
+
+  /// Absolute URL for [documentPath] (handles relative API paths).
+  String? get documentPathUrl => resolveMediaUrl(documentPath);
 
   factory InvestorLlpModel.fromJson(Map<String, dynamic> json) {
     return InvestorLlpModel(
       id: _readInt(json['id'] ?? json['Id']),
       investorId: _readInt(json['investorId'] ?? json['InvestorId']),
       status: (json['status'] ?? json['Status'] ?? '').toString(),
+      documentPath: _readString(
+        json['documentPath'] ?? json['DocumentPath'],
+      ),
       createdDateTime: _readDateTime(
         json['createdDateTime'] ?? json['CreatedDateTime'],
       ),
@@ -87,6 +97,12 @@ class InvestorLlpModel {
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
     return 0;
+  }
+
+  static String? _readString(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    return text.isEmpty ? null : text;
   }
 
   static DateTime? _readDateTime(dynamic value) {

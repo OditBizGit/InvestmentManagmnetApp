@@ -7,10 +7,12 @@ class InvestorTransactionHistoryDataModel {
   final String investorCode;
   final String fullName;
   final String? profileImage;
+  final String? investorAddress;
   final int projectId;
   final String projectName;
   final String projectDescription;
   final String? projectImage;
+  final String? projectSignaturePath;
   final double totalInvestmentAmount;
   final double totalPaidAmount;
   final double totalPendingAmount;
@@ -23,10 +25,12 @@ class InvestorTransactionHistoryDataModel {
     required this.investorCode,
     required this.fullName,
     this.profileImage,
+    this.investorAddress,
     required this.projectId,
     required this.projectName,
     required this.projectDescription,
     this.projectImage,
+    this.projectSignaturePath,
     this.totalInvestmentAmount = 0,
     this.totalPaidAmount = 0,
     this.totalPendingAmount = 0,
@@ -39,6 +43,8 @@ class InvestorTransactionHistoryDataModel {
 
   String? get projectImageUrl => resolveMediaUrl(projectImage);
 
+  String? get projectSignaturePathUrl => resolveMediaUrl(projectSignaturePath);
+
   factory InvestorTransactionHistoryDataModel.fromJson(
     Map<String, dynamic> json,
   ) {
@@ -49,12 +55,19 @@ class InvestorTransactionHistoryDataModel {
       fullName: (json['fullName'] ?? json['FullName'] ?? '')
           .toString()
           .toTitleCase,
+      profileImage: _readString(json['profileImage'] ?? json['ProfileImage']),
+      investorAddress: _readString(
+        json['investorAddress'] ?? json['InvestorAddress'],
+      ),
       projectId: _readInt(json['projectId'] ?? json['ProjectId']),
       projectName: (json['projectName'] ?? json['ProjectName'] ?? '').toString(),
       projectDescription:
           (json['projectDescription'] ?? json['ProjectDescription'] ?? '')
               .toString(),
       projectImage: _readString(json['projectImage'] ?? json['ProjectImage']),
+      projectSignaturePath: _readString(
+        json['projectSignaturePath'] ?? json['ProjectSignaturePath'],
+      ),
       totalInvestmentAmount: _readDouble(
         json['totalInvestmentAmount'] ?? json['TotalInvestmentAmount'],
       ),

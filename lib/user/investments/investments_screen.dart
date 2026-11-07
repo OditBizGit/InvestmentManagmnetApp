@@ -15,11 +15,18 @@ import 'package:maribel_wellness_centre_application/user/investments/cubit/inves
 import 'package:maribel_wellness_centre_application/user/investments/model/investor_transaction_history_data_model.dart';
 import 'package:maribel_wellness_centre_application/user/investments/widgets/recent_transactions_section.dart';
 import 'package:maribel_wellness_centre_application/user/investments/widgets/work_progress_graph_card.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/tab_reselect_notifier.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
 class UserInvestmentsScreen extends StatelessWidget {
-  const UserInvestmentsScreen({super.key});
+  const UserInvestmentsScreen({
+    super.key,
+    this.tabReselect,
+  });
+
+  /// When the Investment tab is re-tapped while already selected, scroll to top.
+  final Listenable? tabReselect;
 
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _textSecondary = Color(0xFF8A8A8A);
@@ -37,7 +44,7 @@ class UserInvestmentsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<InvestmentsCubit>()..loadInvestments(),
-      child: const _UserInvestmentsView(),
+      child: _UserInvestmentsView(tabReselect: tabReselect),
     );
   }
 
@@ -91,7 +98,9 @@ class UserInvestmentsScreen extends StatelessWidget {
 }
 
 class _UserInvestmentsView extends StatefulWidget {
-  const _UserInvestmentsView();
+  const _UserInvestmentsView({this.tabReselect});
+
+  final Listenable? tabReselect;
 
   @override
   State<_UserInvestmentsView> createState() => _UserInvestmentsViewState();
@@ -101,6 +110,7 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
   static const _silentRefreshInterval = Duration(seconds: 5);
 
   final ScrollController _scrollController = ScrollController();
+  TabReselectScrollBinder? _tabReselectBinder;
   Timer? _silentRefreshTimer;
   bool _isSilentRefreshing = false;
   bool _showGoToTop = false;
@@ -109,6 +119,13 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    final tabReselect = widget.tabReselect;
+    if (tabReselect != null) {
+      _tabReselectBinder = TabReselectScrollBinder(
+        listenable: tabReselect,
+        scrollController: _scrollController,
+      );
+    }
     _silentRefreshTimer = Timer.periodic(
       _silentRefreshInterval,
       (_) => _silentRefresh(),
@@ -117,6 +134,7 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
 
   @override
   void dispose() {
+    _tabReselectBinder?.dispose();
     _silentRefreshTimer?.cancel();
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
@@ -242,6 +260,9 @@ class _UserInvestmentsViewState extends State<_UserInvestmentsView> {
                                     const WorkProgressGraphCard(),
                                     RecentTransactionsSection(
                                       projectName: data?.projectName ?? '',
+                                      investorAddress: data?.investorAddress,
+                                      projectSignaturePath:
+                                          data?.projectSignaturePathUrl,
                                       transactions:
                                           data?.transactions ?? const [],
                                     ),

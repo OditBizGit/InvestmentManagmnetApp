@@ -10,11 +10,6 @@ class PersonalInfoScreen extends StatelessWidget {
 
   final InvestorDetailsModel? details;
 
-  static String _displayValue(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Not Provided';
-    return value.trim();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,8 +58,7 @@ class PersonalInfoScreen extends StatelessWidget {
                     PersonalInfoCard(details: details),
                     SizedBox(height: 1.8.h),
                     RelationshipManagerCard(
-                      name: _displayValue(details?.staffName),
-                      phoneNumber: _displayValue(details?.staffPhoneNumber),
+                      staffAllocations: details?.staffAllocations ?? const [],
                     ),
                   ],
                 ),

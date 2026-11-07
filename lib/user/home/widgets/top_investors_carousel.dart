@@ -1,9 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
+// import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/top_investor_model.dart';
 import 'package:shimmer/shimmer.dart';
@@ -19,12 +19,24 @@ class TopInvestorsCarousel extends StatelessWidget {
   final bool isLoading;
   final List<TopInvestorModel> investors;
 
-  static const Color _cardBg = Color(0xFFF0EBF6);
-  static const Color _accent = Color(0xFFA28CC1);
   static const Color _textPrimary = Color(0xFF4A3F5C);
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
   static const int _shimmerCardCount = 3;
+
+  static const List<(Color bg, Color fg)> _avatarPalettes = [
+    (Color(0xFFE8F3FB), Color(0xFF5B9BC8)),
+    (Color(0xFFFDECF2), Color(0xFFC46B8A)),
+    (Color(0xFFE8F6F7), Color(0xFF4A9AA3)),
+    (Color(0xFFF0EBF6), Color(0xFFA28CC1)),
+    (Color(0xFFEAF7F0), Color(0xFF5BA87A)),
+    (Color(0xFFFFF0E8), Color(0xFFD4885A)),
+    (Color(0xFFF3EEFB), Color(0xFF8B7AB8)),
+    (Color(0xFFFFF6E5), Color(0xFFC9A227)), 
+  ];
+
+  static (Color bg, Color fg) avatarColorsFor(int index) =>
+      _avatarPalettes[index % _avatarPalettes.length];
 
   static CarouselOptions get _carouselOptions => CarouselOptions(
         height: 22.h,
@@ -82,6 +94,7 @@ class TopInvestorsCarousel extends StatelessWidget {
               final investor = investors[index];
               return _InvestorCard(
                 investor: investor,
+                avatarIndex: index,
                 showTopBadge: topAmount != null &&
                     investor.investmentAmount == topAmount,
               );
@@ -108,18 +121,22 @@ class TopInvestorsCarousel extends StatelessWidget {
 class _InvestorCard extends StatelessWidget {
   const _InvestorCard({
     required this.investor,
+    required this.avatarIndex,
     this.showTopBadge = false,
   });
 
   final TopInvestorModel investor;
+  final int avatarIndex;
   final bool showTopBadge;
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = investor.profileImageUrl;
-    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    // final imageUrl = investor.profileImageUrl;
+    // final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     final displayName =
         investor.fullName.trim().isNotEmpty ? investor.fullName.trim() : 'Investor';
+    final (avatarBg, avatarFg) =
+        TopInvestorsCarousel.avatarColorsFor(avatarIndex);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -130,17 +147,19 @@ class _InvestorCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 8.w,
-                backgroundColor: TopInvestorsCarousel._cardBg,
-                backgroundImage: hasImage ? NetworkImage(imageUrl) : null,
-                child: hasImage
-                    ? null
-                    : Icon(
-                        Icons.person_rounded,
-                        size: 8.w,
-                        color: TopInvestorsCarousel._accent,
-                      ),
+                backgroundColor: avatarBg,
+                child: Text(
+                  displayName.isNotEmpty
+                      ? displayName[0].toUpperCase()
+                      : 'I',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: avatarFg,
+                  ),
+                ),
               ),
-              SizedBox(height: 1.h),
+              SizedBox(height: 3.h),
               SizedBox(
                 width: double.infinity,
                 child: _SlidingText(
@@ -153,20 +172,20 @@ class _InvestorCard extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 0.2.h),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  TopInvestorsCarousel.formatAmount(investor.investmentAmount),
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 13.5.sp,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
+              // SizedBox(height: 0.2.h),
+              // FittedBox(
+              //   fit: BoxFit.scaleDown,
+              //   alignment: Alignment.centerLeft,
+              //   child: Text(
+              //     TopInvestorsCarousel.formatAmount(investor.investmentAmount),
+              //     maxLines: 1,
+              //     style: TextStyle(
+              //       fontSize: 13.5.sp,
+              //       fontWeight: FontWeight.w700,
+              //       color: Colors.black87,
+              //     ),
+              //   ),
+              // ),
               SizedBox(height: 0.6.h),
               _StarRating(
                 rating: investor.rating,
@@ -175,21 +194,21 @@ class _InvestorCard extends StatelessWidget {
             ],
           ),
         ),
-        if (showTopBadge)
-          Positioned(
-            top: 0.8.h,
-            right: 3.5.w,
-            child: SvgPicture.asset(
-              ImageConstants.topInvestor,
-              width: 5.w,
-              height: 5.w,
-              fit: BoxFit.contain,
-              colorFilter: ColorFilter.mode(
-                AppColors.accentDark,
-                BlendMode.srcIn,
-              ),
-            ),
-          ),
+        // if (showTopBadge)
+        //   Positioned(
+        //     top: 0.8.h,
+        //     right: 3.5.w,
+        //     child: SvgPicture.asset(
+        //       ImageConstants.topInvestor,
+        //       width: 5.w,
+        //       height: 5.w,
+        //       fit: BoxFit.contain,
+        //       colorFilter: ColorFilter.mode(
+        //         AppColors.accentDark,
+        //         BlendMode.srcIn,
+        //       ),
+        //     ),
+        //   ),
       ],
     );
   }
@@ -246,11 +265,11 @@ class _InvestorCardShimmer extends StatelessWidget {
       color: Colors.black87,
       height: 1.35,
     );
-    final amountStyle = TextStyle(
-      fontSize: 13.5.sp,
-      fontWeight: FontWeight.w700,
-      color: Colors.black87,
-    );
+    // final amountStyle = TextStyle(
+    //   fontSize: 13.5.sp,
+    //   fontWeight: FontWeight.w700,
+    //   color: Colors.black87,
+    // );
 
     return _InvestorCardShell(
       child: Shimmer.fromColors(
@@ -265,23 +284,23 @@ class _InvestorCardShimmer extends StatelessWidget {
               radius: 8.w,
               backgroundColor: Colors.white,
             ),
-            SizedBox(height: 1.h),
+            SizedBox(height: 3.h),
             SizedBox(
               width: double.infinity,
               child: _PlaceholderLine(
                 sample: 'Alexander Christopher',
                 style: nameStyle,
                 alignment: Alignment.center,
-                widthFactor: 0.78,
+                widthFactor: 0.58,
               ),
             ),
-            SizedBox(height: 0.2.h),
-            _PlaceholderLine(
-              sample: '₹25,00,000',
-              style: amountStyle,
-              alignment: Alignment.center,
-              widthFactor: 0.45,
-            ),
+            // SizedBox(height: 0.2.h),
+            // _PlaceholderLine(
+            //   sample: '₹25,00,000',
+            //   style: amountStyle,
+            //   alignment: Alignment.center,
+            //   widthFactor: 0.45,
+            // ),
             SizedBox(height: 0.6.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

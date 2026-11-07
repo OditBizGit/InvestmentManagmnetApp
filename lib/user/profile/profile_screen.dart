@@ -10,6 +10,7 @@ import 'package:maribel_wellness_centre_application/core/network/service_locator
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/core/utils/user_logout_confirm_dialog.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/tab_reselect_notifier.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/cubit/profile_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
@@ -23,7 +24,13 @@ import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserProfileScreen extends StatelessWidget {
-  const UserProfileScreen({super.key});
+  const UserProfileScreen({
+    super.key,
+    this.tabReselect,
+  });
+
+  /// When the Profile tab is re-tapped while already selected, scroll to top.
+  final Listenable? tabReselect;
 
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
@@ -32,13 +39,42 @@ class UserProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<ProfileCubit>()..loadProfile(),
-      child: const _UserProfileView(),
+      child: _UserProfileView(tabReselect: tabReselect),
     );
   }
 }
 
-class _UserProfileView extends StatelessWidget {
-  const _UserProfileView();
+class _UserProfileView extends StatefulWidget {
+  const _UserProfileView({this.tabReselect});
+
+  final Listenable? tabReselect;
+
+  @override
+  State<_UserProfileView> createState() => _UserProfileViewState();
+}
+
+class _UserProfileViewState extends State<_UserProfileView> {
+  final ScrollController _scrollController = ScrollController();
+  TabReselectScrollBinder? _tabReselectBinder;
+
+  @override
+  void initState() {
+    super.initState();
+    final tabReselect = widget.tabReselect;
+    if (tabReselect != null) {
+      _tabReselectBinder = TabReselectScrollBinder(
+        listenable: tabReselect,
+        scrollController: _scrollController,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabReselectBinder?.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   Future<void> _onLogout(BuildContext context) async {
     final confirmed = await showUserLogoutConfirmDialog(context);
@@ -108,6 +144,7 @@ class _UserProfileView extends StatelessWidget {
               onRefresh: () =>
                   context.read<ProfileCubit>().loadProfile(),
               child: SingleChildScrollView(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
                 child: Column(
@@ -249,28 +286,28 @@ class _ProfileDetailsContent extends StatelessWidget {
           ),
         ),
         SizedBox(height: 2.5.h),
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                iconPath: ImageConstants.totalCollection,
-                label: 'Total Collection',
-                value: formatCurrency(details?.totalPaidAmount ?? 0),
-                valueColor: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(width: 3.5.w),
-            Expanded(
-              child: _StatCard(
-                iconPath: ImageConstants.totalCommitment,
-                label: 'Total Commitment',
-                value: formatCurrency(details?.investmentAmount ?? 0),
-                valueColor: AppColors.green,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 2.2.h),
+        // Row(
+        //   children: [
+        //     Expanded(
+        //       child: _StatCard(
+        //         iconPath: ImageConstants.totalCollection,
+        //         label: 'Total Collection',
+        //         value: formatCurrency(details?.totalPaidAmount ?? 0),
+        //         valueColor: AppColors.textPrimary,
+        //       ),
+        //     ),
+        //     SizedBox(width: 3.5.w),
+        //     Expanded(
+        //       child: _StatCard(
+        //         iconPath: ImageConstants.totalCommitment,
+        //         label: 'Total Commitment',
+        //         value: formatCurrency(details?.investmentAmount ?? 0),
+        //         valueColor: AppColors.green,
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // SizedBox(height: 2.2.h),
         Container(
           decoration: BoxDecoration(
             color: AppColors.white,
@@ -371,30 +408,30 @@ class _ProfileDetailsShimmer extends StatelessWidget {
           ),
         ),
         SizedBox(height: 2.5.h),
-        Row(
-          children: [
-            const Expanded(
-              child: _StatCard(
-                iconPath: ImageConstants.totalCollection,
-                label: 'Total Collection',
-                value: '₹2,50,000',
-                valueColor: AppColors.textPrimary,
-                isLoading: true,
-              ),
-            ),
-            SizedBox(width: 3.5.w),
-            const Expanded(
-              child: _StatCard(
-                iconPath: ImageConstants.totalCommitment,
-                label: 'Total Commitment',
-                value: '₹50,000',
-                valueColor: AppColors.green,
-                isLoading: true,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 2.2.h),
+        // Row(
+        //   children: [
+        //     const Expanded(
+        //       child: _StatCard(
+        //         iconPath: ImageConstants.totalCollection,
+        //         label: 'Total Collection',
+        //         value: '₹2,50,000',
+        //         valueColor: AppColors.textPrimary,
+        //         isLoading: true,
+        //       ),
+        //     ),
+        //     SizedBox(width: 3.5.w),
+        //     const Expanded(
+        //       child: _StatCard(
+        //         iconPath: ImageConstants.totalCommitment,
+        //         label: 'Total Commitment',
+        //         value: '₹50,000',
+        //         valueColor: AppColors.green,
+        //         isLoading: true,
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // SizedBox(height: 2.2.h),
         Container(
           decoration: BoxDecoration(
             color: AppColors.white,

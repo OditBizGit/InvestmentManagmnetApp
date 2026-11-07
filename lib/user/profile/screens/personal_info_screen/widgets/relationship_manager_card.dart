@@ -4,21 +4,29 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/staff_allocation_model.dart';
 import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RelationshipManagerCard extends StatelessWidget {
   const RelationshipManagerCard({
     super.key,
-    required this.name,
-    required this.phoneNumber,
+    required this.staffAllocations,
   });
 
-  final String name;
-  final String phoneNumber;
+  final List<StaffAllocationModel> staffAllocations;
+
+  static String _displayValue(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Not Provided';
+    return value.trim();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final managers = staffAllocations.isEmpty
+        ? const [StaffAllocationModel()]
+        : staffAllocations;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -31,17 +39,15 @@ class RelationshipManagerCard extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 1.4.h),
-            child: Row(
-              children: [
-                Text(
-                  'Relationship Manager',
-                  style: TextStyle(
-                    fontSize: 14.5.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.disabled,
-                  ),
-                ),
-              ],
+            child: Text(
+              managers.length == 1
+                  ? 'Relationship Manager'
+                  : 'Relationship Managers',
+              style: TextStyle(
+                fontSize: 14.5.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.disabled,
+              ),
             ),
           ),
           Divider(
@@ -51,50 +57,78 @@ class RelationshipManagerCard extends StatelessWidget {
             indent: 4.w,
             endIndent: 4.w,
           ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 1.8.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 14.5.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.disabled,
-                    height: 1.35,
-                  ),
-                ),
-                SizedBox(height: 0.8.h),
-                Row(
-                  children: [
-                    SvgPicture.asset(
-                      ImageConstants.phone,
-                      width: 4.w,
-                      height: 4.w,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.disabled,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    SizedBox(width: 2.w),
-                    Expanded(
-                      child: Text(
-                        phoneNumber,
-                        style: TextStyle(
-                          fontSize: 14.5.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.disabled,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 1.6.h),
-                _SlideToCall(phoneNumber: phoneNumber),
-              ],
+          for (var i = 0; i < managers.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: AppColors.disabled.withValues(alpha: 0.25),
+                indent: 4.w,
+                endIndent: 4.w,
+              ),
+            _ManagerEntry(
+              name: _displayValue(managers[i].staffName),
+              phoneNumber: _displayValue(managers[i].staffPhoneNumber),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ManagerEntry extends StatelessWidget {
+  const _ManagerEntry({
+    required this.name,
+    required this.phoneNumber,
+  });
+
+  final String name;
+  final String phoneNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(4.w, 1.6.h, 4.w, 1.8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 14.5.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.disabled,
+              height: 1.35,
             ),
           ),
+          SizedBox(height: 0.8.h),
+          Row(
+            children: [
+              SvgPicture.asset(
+                ImageConstants.phone,
+                width: 4.w,
+                height: 4.w,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.disabled,
+                  BlendMode.srcIn,
+                ),
+              ),
+              SizedBox(width: 2.w),
+              Expanded(
+                child: Text(
+                  phoneNumber,
+                  style: TextStyle(
+                    fontSize: 14.5.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.disabled,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 1.6.h),
+          _SlideToCall(phoneNumber: phoneNumber),
         ],
       ),
     );

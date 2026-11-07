@@ -73,6 +73,10 @@ class ImageConstants {
   static const String createUpdates = '$_svgPath/create_updates.svg';
   static const String notificationBell = '$_svgPath/notification_bell.svg';
   static const String camera = '$_svgPath/camera.svg';
+  static const String openFile = '$_svgPath/open_file.svg';
+  static const String pdf = '$_svgPath/pdf.svg';
+  static const String file = '$_svgPath/file.svg';
+  static const String image = '$_svgPath/image.svg';
   static const String calender = '$_svgPath/calender.svg';
   static const String Meribel = '$_logoPath/Meribel.svg';
   static const String meribelIcon = '$_logoPath/Meribel_icon.svg';

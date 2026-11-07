@@ -10,6 +10,7 @@ import 'package:maribel_wellness_centre_application/core/network/service_locator
 import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
 import 'package:maribel_wellness_centre_application/user/home/home_screen.dart';
 import 'package:maribel_wellness_centre_application/user/investments/investments_screen.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/tab_reselect_notifier.dart';
 import 'package:maribel_wellness_centre_application/user/navigation/user_bottom_nav.dart';
 import 'package:maribel_wellness_centre_application/user/profile/profile_screen.dart';
 import 'package:maribel_wellness_centre_application/user/status/status_screen.dart';
@@ -31,9 +32,16 @@ class _UserMainScreenState extends State<UserMainScreen> {
 
   static const Duration _accountStatusInterval = Duration(seconds: 5);
 
+  static const int _tabCount = 5;
+
   int _currentIndex = UserBottomNav.homeIndex;
   DateTime? _lastBackPressedAt;
   Timer? _accountStatusTimer;
+
+  final List<TabReselectNotifier> _tabReselectNotifiers = List.generate(
+    _tabCount,
+    (_) => TabReselectNotifier(),
+  );
 
   @override
   void initState() {
@@ -50,6 +58,9 @@ class _UserMainScreenState extends State<UserMainScreen> {
   @override
   void dispose() {
     _accountStatusTimer?.cancel();
+    for (final notifier in _tabReselectNotifiers) {
+      notifier.dispose();
+    }
     super.dispose();
   }
 
@@ -68,6 +79,7 @@ class _UserMainScreenState extends State<UserMainScreen> {
     }
 
     if (_currentIndex == index) {
+      _tabReselectNotifiers[index].notifyReselect();
       return;
     }
 
@@ -76,15 +88,24 @@ class _UserMainScreenState extends State<UserMainScreen> {
   }
 
   List<Widget> get _screens => [
-        UserHomeScreen(isActive: _currentIndex == UserBottomNav.homeIndex),
-        const UserInvestmentsScreen(),
+        UserHomeScreen(
+          isActive: _currentIndex == UserBottomNav.homeIndex,
+          tabReselect: _tabReselectNotifiers[UserBottomNav.homeIndex],
+        ),
+        UserInvestmentsScreen(
+          tabReselect: _tabReselectNotifiers[UserBottomNav.investmentIndex],
+        ),
         UserStatusScreen(
           isActive: _currentIndex == UserBottomNav.statusIndex,
+          tabReselect: _tabReselectNotifiers[UserBottomNav.statusIndex],
         ),
         UserUpdatesScreen(
           isActive: _currentIndex == UserBottomNav.updatesIndex,
+          tabReselect: _tabReselectNotifiers[UserBottomNav.updatesIndex],
         ),
-        const UserProfileScreen(),
+        UserProfileScreen(
+          tabReselect: _tabReselectNotifiers[UserBottomNav.profileIndex],
+        ),
       ];
 
   void _handleBackPress({required bool isBlocked}) {

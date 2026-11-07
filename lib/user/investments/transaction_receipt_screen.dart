@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
@@ -14,10 +18,14 @@ class TransactionReceiptScreen extends StatefulWidget {
     super.key,
     required this.projectName,
     required this.transaction,
+    this.investorAddress,
+    this.projectSignaturePath,
   });
 
   final String projectName;
   final InvestorTransactionItemModel transaction;
+  final String? investorAddress;
+  final String? projectSignaturePath;
 
   @override
   State<TransactionReceiptScreen> createState() =>
@@ -25,15 +33,21 @@ class TransactionReceiptScreen extends StatefulWidget {
 }
 
 class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
-  static const Color _divider = Color(0xFFE8E4EE);
-  static const Color _dashed = Color(0xFFD0CBD8);
+  static const Color _ink = Color(0xFF1A1A1A);
+  static const Color _muted = Color(0xFF4A4A4A);
+  static const Color _line = Color(0xFF9A9A9A);
+  static const Color _cardBorder = Color(0xFFE0E0E0);
+
+  /// A5 landscape aspect ratio (210mm × 148mm).
+  static const double _a5LandscapeRatio = 210 / 148;
+
+  final GlobalKey _receiptBoundaryKey = GlobalKey();
 
   bool _isDownloading = false;
   bool _isSharing = false;
 
   bool get _isBusy => _isDownloading || _isSharing;
 
-  /// Keeps the snackbar just above the Share / Download row.
   EdgeInsets get _snackBarMargin => EdgeInsets.fromLTRB(5.w, 0, 5.w, 9.h);
 
   void _showSnackBar(String message, {IconData? icon}) {
@@ -45,13 +59,39 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
     );
   }
 
+  /// Captures the on-screen receipt widget so PDF/share match the UI exactly.
+  Future<Uint8List> _captureReceiptPng() async {
+    // Let network signature / SVG settle for a frame before capture.
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    await WidgetsBinding.instance.endOfFrame;
+
+    final boundary = _receiptBoundaryKey.currentContext?.findRenderObject()
+        as RenderRepaintBoundary?;
+    if (boundary == null) {
+      throw StateError('Receipt is not ready to capture');
+    }
+
+    final image = await boundary.toImage(pixelRatio: 3);
+    try {
+      final byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw StateError('Failed to encode receipt image');
+      }
+      return byteData.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
+  }
+
   Future<void> _shareReceipt() async {
     if (_isBusy) return;
 
     setState(() => _isSharing = true);
     try {
+      final pngBytes = await _captureReceiptPng();
       await TransactionReceiptPdf.share(
-        projectName: widget.projectName,
+        receiptPngBytes: pngBytes,
         transaction: widget.transaction,
       );
     } catch (_) {
@@ -70,8 +110,9 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
 
     setState(() => _isDownloading = true);
     try {
+      final pngBytes = await _captureReceiptPng();
       await TransactionReceiptPdf.download(
-        projectName: widget.projectName,
+        receiptPngBytes: pngBytes,
         transaction: widget.transaction,
       );
       if (!mounted) return;
@@ -96,21 +137,34 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
     final amount = transaction.paidAmount > 0
         ? transaction.paidAmount
         : transaction.receivedAmount;
-    final amountLabel = UserInvestmentsScreen.formatCurrency(amount);
+    final amountNumeric = CurrencyFormatter.format(amount, symbol: '');
     final amountInWords = CurrencyFormatter.amountInWords(amount);
-    final dateLabel = UserInvestmentsScreen.formatDate(transaction.date);
-    final timeLabel =
-        UserInvestmentsScreen.formatTransactionTime(transaction.date);
-    final dateTime =
-        timeLabel.isNotEmpty ? '$dateLabel · $timeLabel' : dateLabel;
-    final paymentMethod = transaction.paymentMethod.trim().isNotEmpty
-        ? transaction.paymentMethod
-        : (transaction.status.trim().isNotEmpty
-            ? transaction.status
-            : '—');
-    final displayProject = widget.projectName.trim().isNotEmpty
+    final date = transaction.date;
+    final dateLabel = UserInvestmentsScreen.formatDate(date);
+    final receiptNo = transaction.entryNo > 0
+        ? '${transaction.entryNo}'
+        : '${transaction.transactionId}';
+    final investorName = transaction.fullName.trim().isNotEmpty
+        ? transaction.fullName.trim()
+        : '—';
+    final projectName = widget.projectName.trim().isNotEmpty
         ? widget.projectName.trim()
-        : 'Investment';
+        : '—';
+    final address = (widget.investorAddress ?? '').trim().isNotEmpty
+        ? widget.investorAddress!.trim()
+        : '—';
+    final paymentMethod = transaction.paymentMethod.trim().toLowerCase();
+    final isCheque = paymentMethod.contains('cheque') ||
+        paymentMethod.contains('check');
+    final othersLabel = !isCheque && transaction.paymentMethod.trim().isNotEmpty
+        ? transaction.paymentMethod.trim()
+        : '';
+    final day = date != null ? '${date.day}' : '';
+    final month = date != null ? _monthName(date.month) : '';
+    final yearSuffix = date != null
+        ? (date.year % 100).toString().padLeft(2, '0')
+        : '';
+    final signatureUrl = (widget.projectSignaturePath ?? '').trim();
 
     return Scaffold(
       backgroundColor: AppColors.screenBg,
@@ -151,166 +205,72 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(5.w, 1.h, 5.w, 3.h),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.fromLTRB(5.w, 2.5.h, 5.w, 2.5.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _divider),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      SvgPicture.asset(
-                        ImageConstants.Meribel,
-                        height: 7.h,
-                        fit: BoxFit.contain,
-                      ),
-                      SizedBox(height: 0.8.h),
-                      Text(
-                        'TRANSACTION RECEIPT',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                          color: AppColors.accentDark,
-                        ),
-                      ),
-                      SizedBox(height: 0.1.h),
-                      Text(
-                        'Acknowledgement of payment received',
-                        style: TextStyle(
-                          fontSize: 11.5.sp,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        amountLabel,
-                        style: TextStyle(
-                          fontSize: 22.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.green,
-                        ),
-                      ),
-                      Text(
-                        amountInWords,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11.5.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 0.8.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 1.5.w,
-                          vertical: 0.5.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4.5.w),
-                          border: Border.all(
-                            color: AppColors.green.withValues(alpha: 0.4),
-                            width: 0.1.w,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final horizontalPad = 3.w;
+                  final availableWidth =
+                      constraints.maxWidth - (horizontalPad * 2);
+                  // Prefer a readable A5 landscape width; scroll horizontally
+                  // when the phone is narrower than the receipt.
+                  const preferredWidth = 640.0;
+                  final receiptWidth = availableWidth < preferredWidth
+                      ? preferredWidth
+                      : availableWidth;
+                  final receiptHeight = receiptWidth / _a5LandscapeRatio;
+
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPad,
+                      0.5.h,
+                      horizontalPad,
+                      2.h,
+                    ),
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: RepaintBoundary(
+                        key: _receiptBoundaryKey,
+                        child: Container(
+                          width: receiptWidth,
+                          height: receiptHeight,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: _cardBorder),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: _ProvisionalReceiptBody(
+                              ink: _ink,
+                              muted: _muted,
+                              line: _line,
+                              receiptNo: receiptNo,
+                              dateLabel: dateLabel,
+                              amountNumeric: amountNumeric,
+                              amountInWords: amountInWords,
+                              investorName: investorName,
+                              projectName: projectName,
+                              address: address,
+                              day: day,
+                              month: month,
+                              yearSuffix: yearSuffix,
+                              isCheque: isCheque,
+                              othersLabel: othersLabel,
+                              signatureUrl: signatureUrl,
+                            ),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(width: 0.8.w),
-                            SvgPicture.asset(
-                              ImageConstants.tick,
-                              width: 2.5.w,
-                              height: 2.5.w,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.green,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            SizedBox(width: 1.w),
-                            Text(
-                              'PAID',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.green,
-                              ),
-                            ),
-                            SizedBox(width: 1.w),
-                          ],
-                        ),
                       ),
-                      SizedBox(height: 2.h),
-                      _DashedDivider(color: _dashed),
-                      SizedBox(height: 1.5.h),
-                      _ReceiptRow(
-                        label: 'Project',
-                        value: displayProject.toUpperCase(),
-                      ),
-                      _ReceiptRow(
-                        label: 'Entry No',
-                        value: '${transaction.entryNo}'.toUpperCase(),
-                      ),
-                      _ReceiptRow(
-                        label: 'Investor',
-                        value: transaction.fullName.trim().isNotEmpty
-                            ? transaction.fullName.toUpperCase()
-                            : '—',
-                      ),
-                      _ReceiptRow(label: 'Date & Time', value: dateTime),
-                      _ReceiptRow(
-                        label: 'Payment Method',
-                        value: paymentMethod.toUpperCase(),
-                      ),
-                      if (transaction.narration.trim().isNotEmpty)
-                        _ReceiptRow(
-                          label: 'Narration',
-                          value: transaction.narration,
-                        ),
-                      _ReceiptRow(
-                        label: 'Closing Balance',
-                        value: UserInvestmentsScreen.formatCurrency(
-                          transaction.pendingAmount,
-                        ),
-                        valueColor: const Color(0xFFE05A4F),
-                      ),
-                      SizedBox(height: 1.5.h),
-                      _DashedDivider(color: _dashed),
-                      SizedBox(height: 2.h),
-                      Text(
-                        'Thank you for your investment',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12.5.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 0.1.h),
-                      Text(
-                        'Maribel Maternity Care',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.accentDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
             Padding(
@@ -433,82 +393,740 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
       ),
     );
   }
-}
 
-class _ReceiptRow extends StatelessWidget {
-  const _ReceiptRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 0.7.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 6,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 12.8.sp,
-                fontWeight: FontWeight.w600,
-                color: valueColor ?? AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  static String _monthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    if (month < 1 || month > 12) return '';
+    return months[month - 1];
   }
 }
 
-class _DashedDivider extends StatelessWidget {
-  const _DashedDivider({required this.color});
+class _ProvisionalReceiptBody extends StatelessWidget {
+  const _ProvisionalReceiptBody({
+    required this.ink,
+    required this.muted,
+    required this.line,
+    required this.receiptNo,
+    required this.dateLabel,
+    required this.amountNumeric,
+    required this.amountInWords,
+    required this.investorName,
+    required this.projectName,
+    required this.address,
+    required this.day,
+    required this.month,
+    required this.yearSuffix,
+    required this.isCheque,
+    required this.othersLabel,
+    required this.signatureUrl,
+  });
 
-  final Color color;
+  final Color ink;
+  final Color muted;
+  final Color line;
+  final String receiptNo;
+  final String dateLabel;
+  final String amountNumeric;
+  final String amountInWords;
+  final String investorName;
+  final String projectName;
+  final String address;
+  final String day;
+  final String month;
+  final String yearSuffix;
+  final bool isCheque;
+  final String othersLabel;
+  final String signatureUrl;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const dashWidth = 6.0;
-        const dashSpace = 4.0;
-        final count =
-            (constraints.maxWidth / (dashWidth + dashSpace)).floor();
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(
-            count,
-            (_) => SizedBox(
-              width: dashWidth,
-              height: 1.2,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: color),
+        final w = constraints.maxWidth;
+        final scale = (w / 640).clamp(0.72, 1.15);
+        final padH = 25.0 * scale;
+        final padV = 25.0 * scale;
+        final titleSize = 13.5 * scale;
+        final bodySize = 8.2 * scale;
+        final smallSize = 7.5 * scale;
+        final companySize = 8.0 * scale;
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(padH, 20, padH, padV * 1.5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Header(
+                ink: ink,
+                muted: muted,
+                companySize: companySize,
+                smallSize: smallSize,
+                logoHeight: 50 * scale,
               ),
-            ),
+              SizedBox(height: 16 * scale),
+              Text(
+                'PROVISIONAL PROJECT CONTRIBUTION RECEIPT',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                  color: ink,
+                ),
+              ),
+              SizedBox(height: 20 * scale),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2),
+                    child: Text(
+                      'Receipt No : ',
+                      style: _receiptBodyStyle(bodySize, ink),
+                    ),
+                  ),
+                  SizedBox(
+                    width: w * 0.1,
+                    child: _DottedValue(
+                      value: receiptNo,
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                    ),
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2),
+                    child: Text(
+                      'Date : ',
+                      style: _receiptBodyStyle(bodySize, ink),
+                    ),
+                  ),
+                  SizedBox(
+                    width: w * 0.15,
+                    child: _DottedValue(
+                      value: dateLabel,
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10 * scale),
+              _FillLine(
+                leading: 'This is to acknowledge the receipt of Rs. ',
+                value: amountInWords,
+                fontSize: bodySize,
+                color: ink,
+                lineColor: line,
+              ),
+              SizedBox(height: 8 * scale),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: _DottedValue(
+                      value: '',
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                      leadingGap: 0,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2, left: 6),
+                    child: Text(
+                      'Towards contribution to',
+                      style: _receiptBodyStyle(bodySize, ink),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: _DottedValue(
+                      value: projectName.toUpperCase(),
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8 * scale),
+              // Project of the LLP from Mr./Ms./ M/S [investor]
+              _FillLine(
+                leading: 'Project of the LLP from Mr./Ms./ M/S ',
+                value: investorName,
+                fontSize: bodySize,
+                color: ink,
+                lineColor: line,
+              ),
+              SizedBox(height: 8 * scale),
+              // Blank full-width dotted line (matches printed form)
+              _DottedValue(
+                value: '',
+                fontSize: bodySize,
+                color: ink,
+                lineColor: line,
+              ),
+              SizedBox(height: 8 * scale),
+              // Residing at... [address]
+              _FillLine(
+                leading: 'Residing at/ having registered office at ',
+                value: address,
+                fontSize: bodySize,
+                color: ink,
+                lineColor: line,
+              ),
+              SizedBox(height: 8 * scale),
+              // Blank dotted line ending with On (matches printed form)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: _DottedValue(
+                      value: '',
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                      leadingGap: 0,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2, left: 4),
+                    child: Text(
+                      'On',
+                      style: _receiptBodyStyle(bodySize, ink),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8 * scale),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    width: 40 * scale,
+                    child: _DottedValue(
+                      value: day,
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                      textAlign: TextAlign.center,
+                      leadingGap: 0,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2),
+                    child: Text(
+                      ' Day of ',
+                      style: _receiptBodyStyle(bodySize, ink),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 100 * scale,
+                    child: _DottedValue(
+                      value: month,
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                      textAlign: TextAlign.center,
+                      leadingGap: 0,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2),
+                    child: Text(
+                      ' Month of 20',
+                      style: _receiptBodyStyle(bodySize, ink),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 32 * scale,
+                    child: _DottedValue(
+                      value: yearSuffix,
+                      fontSize: bodySize,
+                      color: ink,
+                      lineColor: line,
+                      textAlign: TextAlign.center,
+                      leadingGap: 0,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _PaymentMethodBox(
+                    label: 'Cheque',
+                    value: isCheque ? 'Cheque' : '',
+                    fontSize: bodySize,
+                    color: ink,
+                    scale: scale,
+                    boxWidth: 108,
+                  ),
+                  SizedBox(width: 14 * scale),
+                  _PaymentMethodBox(
+                    label: 'Others',
+                    value: !isCheque ? othersLabel : '',
+                    fontSize: bodySize,
+                    color: ink,
+                    scale: scale,
+                    boxWidth: 118,
+                  ),
+                  const Spacer(),
+                  SizedBox(
+                    width: 150 * scale,
+                    child: Text(
+                      'for MARIBEL MATERNITY\nCARE MANJERI LLP',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: smallSize,
+                        fontWeight: FontWeight.w600,
+                        color: ink,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12 * scale),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    width: 148 * scale,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8 * scale,
+                      vertical: 5 * scale,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: ink, width: 1.1),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          '₹',
+                          style: TextStyle(
+                            fontSize: bodySize + 1,
+                            fontWeight: FontWeight.w700,
+                            color: ink,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 16 * scale,
+                          margin: EdgeInsets.symmetric(horizontal: 6 * scale),
+                          color: ink,
+                        ),
+                        Expanded(
+                          child: Text(
+                            amountNumeric,
+                            style: TextStyle(
+                              fontSize: bodySize,
+                              fontWeight: FontWeight.w700,
+                              color: ink,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        height: 48 * scale,
+                        width: 180 * scale,
+                        child: signatureUrl.isNotEmpty
+                            ? Image.network(
+                                signatureUrl,
+                                fit: BoxFit.contain,
+                                alignment: Alignment.centerRight,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      SizedBox(height: 10 * scale),
+                      Text(
+                        'Authorized Signature',
+                        style: TextStyle(
+                          fontSize: smallSize,
+                          fontWeight: FontWeight.w500,
+                          color: muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },
     );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.ink,
+    required this.muted,
+    required this.companySize,
+    required this.smallSize,
+    required this.logoHeight,
+  });
+
+  final Color ink;
+  final Color muted;
+  final double companySize;
+  final double smallSize;
+  final double logoHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'MARIBEL MATERNITY CARE MANJERI LLP',
+                style: TextStyle(
+                  fontSize: companySize,
+                  fontWeight: FontWeight.w700,
+                  color: ink,
+                  height: 1.2,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Thar Plaza Building, Pandikkad Rd Bypass,\n'
+                'Kovilakam Kundu, Manjeri, Kerala 676121',
+                style: TextStyle(
+                  fontSize: smallSize,
+                  fontWeight: FontWeight.w400,
+                  color: muted,
+                  height: 1.25,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Tel : +91 789 100 8002',
+                style: TextStyle(
+                  fontSize: smallSize,
+                  fontWeight: FontWeight.w500,
+                  color: muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 8),
+        SvgPicture.asset(
+          ImageConstants.Meribel,
+          height: logoHeight,
+          fit: BoxFit.contain,
+        ),
+      ],
+    );
+  }
+}
+
+TextStyle _receiptBodyStyle(double fontSize, Color color) {
+  return TextStyle(
+    fontSize: fontSize,
+    fontWeight: FontWeight.w500,
+    color: color,
+    height: 1.25,
+  );
+}
+
+class _DottedValue extends StatelessWidget {
+  const _DottedValue({
+    required this.value,
+    required this.fontSize,
+    required this.color,
+    required this.lineColor,
+    this.textAlign = TextAlign.left,
+    this.leadingGap = 10,
+  });
+
+  final String value;
+  final double fontSize;
+  final Color color;
+  final Color lineColor;
+  final TextAlign textAlign;
+  final double leadingGap;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _receiptBodyStyle(fontSize, color);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: value.isEmpty ? 0 : leadingGap),
+          child: Text(
+            value.isEmpty ? ' ' : value,
+            textAlign: textAlign,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        ),
+        const SizedBox(height: 1),
+        SizedBox(
+          height: 1.2,
+          width: double.infinity,
+          child: CustomPaint(
+            painter: _DottedLinePainter(color: lineColor),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DottedLinePainter extends CustomPainter {
+  const _DottedLinePainter({
+    required this.color,
+    this.dashWidth = 2.5,
+    this.dashSpace = 2.0,
+  });
+
+  final Color color;
+  final double dashWidth;
+  final double dashSpace;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    var x = 0.0;
+    final y = size.height / 2;
+    while (x < size.width) {
+      final end = (x + dashWidth).clamp(0.0, size.width);
+      canvas.drawLine(Offset(x, y), Offset(end, y), paint);
+      x += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DottedLinePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.dashWidth != dashWidth ||
+        oldDelegate.dashSpace != dashSpace;
+  }
+}
+
+class _FillLine extends StatelessWidget {
+  const _FillLine({
+    required this.leading,
+    required this.value,
+    required this.fontSize,
+    required this.color,
+    required this.lineColor,
+  });
+
+  final String leading;
+  final String value;
+  final double fontSize;
+  final Color color;
+  final Color lineColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Padding(
+          // Keep label text level with API value (above the dotted line).
+          padding: const EdgeInsets.only(bottom: 2.2),
+          child: Text(
+            leading,
+            style: _receiptBodyStyle(fontSize, color),
+          ),
+        ),
+        Expanded(
+          child: _DottedValue(
+            value: value,
+            fontSize: fontSize,
+            color: color,
+            lineColor: lineColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FillSegment {
+  const _FillSegment({
+    this.text,
+    this.value,
+    this.flex = 0,
+    this.isLabel = false,
+  });
+
+  final String? text;
+  final String? value;
+  final int flex;
+  final bool isLabel;
+}
+
+class _WrappedFillRow extends StatelessWidget {
+  const _WrappedFillRow({
+    required this.children,
+    required this.fontSize,
+    required this.color,
+    required this.lineColor,
+  });
+
+  final List<_FillSegment> children;
+  final double fontSize;
+  final Color color;
+  final Color lineColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final segment in children)
+          if (segment.isLabel)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2.2),
+              child: Text(
+                segment.text ?? '',
+                style: _receiptBodyStyle(fontSize, color),
+              ),
+            )
+          else
+            Expanded(
+              flex: segment.flex <= 0 ? 1 : segment.flex,
+              child: _DottedValue(
+                value: segment.value ?? '',
+                fontSize: fontSize,
+                color: color,
+                lineColor: lineColor,
+              ),
+            ),
+      ],
+    );
+  }
+}
+
+class _PaymentMethodBox extends StatelessWidget {
+  const _PaymentMethodBox({
+    required this.label,
+    required this.value,
+    required this.fontSize,
+    required this.color,
+    required this.scale,
+    required this.boxWidth,
+  });
+
+  final String label;
+  final String value;
+  final double fontSize;
+  final Color color;
+  final double scale;
+  final double boxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: _receiptBodyStyle(fontSize, color),
+        ),
+        SizedBox(width: 8 * scale),
+        CustomPaint(
+          painter: _DashedRectPainter(color: color.withValues(alpha: 0.85)),
+          child: SizedBox(
+            width: boxWidth * scale,
+            height: 26 * scale,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6 * scale),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text(
+                  value,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _receiptBodyStyle(fontSize * 0.95, color),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DashedRectPainter extends CustomPainter {
+  const _DashedRectPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.1
+      ..style = PaintingStyle.stroke;
+
+    const dash = 4.0;
+    const gap = 3.0;
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1),
+          const Radius.circular(1),
+        ),
+      );
+
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = (distance + dash).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRectPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }

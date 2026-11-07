@@ -9,6 +9,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/go_to_top_button.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/tab_reselect_notifier.dart';
 import 'package:maribel_wellness_centre_application/user/updates/cubit/updates_cubit.dart';
 import 'package:maribel_wellness_centre_application/user/updates/model/work_update_model.dart';
 import 'package:maribel_wellness_centre_application/user/updates/utils/work_update_media_cache.dart';
@@ -21,10 +22,14 @@ class UserUpdatesScreen extends StatelessWidget {
   const UserUpdatesScreen({
     super.key,
     this.isActive = false,
+    this.tabReselect,
   });
 
   /// When true, this tab is visible in the user [IndexedStack].
   final bool isActive;
+
+  /// When the Updates tab is re-tapped while already selected, scroll to top.
+  final Listenable? tabReselect;
 
   static const Color _shimmerBase = Color(0xFFE0E0E0);
   static const Color _shimmerHighlight = Color(0xFFF5F5F5);
@@ -43,15 +48,22 @@ class UserUpdatesScreen extends StatelessWidget {
         AccountStatusMonitor.refresh();
         return cubit;
       },
-      child: _UserUpdatesView(isActive: isActive),
+      child: _UserUpdatesView(
+        isActive: isActive,
+        tabReselect: tabReselect,
+      ),
     );
   }
 }
 
 class _UserUpdatesView extends StatefulWidget {
-  const _UserUpdatesView({required this.isActive});
+  const _UserUpdatesView({
+    required this.isActive,
+    this.tabReselect,
+  });
 
   final bool isActive;
+  final Listenable? tabReselect;
 
   @override
   State<_UserUpdatesView> createState() => _UserUpdatesViewState();
@@ -62,6 +74,7 @@ class _UserUpdatesViewState extends State<_UserUpdatesView> {
   static const _goToTopMinCardCount = 8;
 
   final ScrollController _scrollController = ScrollController();
+  TabReselectScrollBinder? _tabReselectBinder;
   Timer? _silentRefreshTimer;
   bool _isSilentRefreshing = false;
   bool _showGoToTop = false;
@@ -70,6 +83,13 @@ class _UserUpdatesViewState extends State<_UserUpdatesView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    final tabReselect = widget.tabReselect;
+    if (tabReselect != null) {
+      _tabReselectBinder = TabReselectScrollBinder(
+        listenable: tabReselect,
+        scrollController: _scrollController,
+      );
+    }
     if (widget.isActive) {
       _startSilentRefresh();
     }
@@ -97,6 +117,7 @@ class _UserUpdatesViewState extends State<_UserUpdatesView> {
 
   @override
   void dispose() {
+    _tabReselectBinder?.dispose();
     _stopSilentRefresh();
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();

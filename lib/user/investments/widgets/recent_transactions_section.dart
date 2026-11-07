@@ -12,10 +12,14 @@ class RecentTransactionsSection extends StatelessWidget {
     super.key,
     required this.projectName,
     required this.transactions,
+    this.investorAddress,
+    this.projectSignaturePath,
   });
 
   final String projectName;
   final List<InvestorTransactionItemModel> transactions;
+  final String? investorAddress;
+  final String? projectSignaturePath;
 
   static const Color _textPrimary = Color(0xFF3D3D3D);
   static const Color _textSecondary = Color(0xFF8A8A8A);
@@ -80,6 +84,8 @@ class RecentTransactionsSection extends StatelessWidget {
                     builder: (_) => TransactionReceiptScreen(
                       projectName: projectName,
                       transaction: transactions[i],
+                      investorAddress: investorAddress,
+                      projectSignaturePath: projectSignaturePath,
                     ),
                   ),
                 );

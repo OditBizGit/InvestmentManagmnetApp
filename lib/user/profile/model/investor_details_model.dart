@@ -2,6 +2,7 @@ import 'package:maribel_wellness_centre_application/core/utils/media_url.dart';
 import 'package:maribel_wellness_centre_application/core/utils/string_extensions.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investment_due_date_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_nominee_model.dart';
+import 'package:maribel_wellness_centre_application/user/profile/model/staff_allocation_model.dart';
 
 class InvestorDetailsModel {
   final int userId;
@@ -10,9 +11,7 @@ class InvestorDetailsModel {
   final String email;
   final String? phoneNumber;
   final String? alternativeNumber;
-  final int? staffId;
-  final String? staffName;
-  final String? staffPhoneNumber;
+  final List<StaffAllocationModel> staffAllocations;
   final String? profileImage;
   final String? investorCode;
   final String? investorType;
@@ -53,9 +52,7 @@ class InvestorDetailsModel {
     required this.email,
     this.phoneNumber,
     this.alternativeNumber,
-    this.staffId,
-    this.staffName,
-    this.staffPhoneNumber,
+    this.staffAllocations = const [],
     this.profileImage,
     this.investorCode,
     this.investorType,
@@ -111,10 +108,8 @@ class InvestorDetailsModel {
       alternativeNumber: _readString(
         json['alternativeNumber'] ?? json['AlternativeNumber'],
       ),
-      staffId: _readNullableInt(json['staffId'] ?? json['StaffId']),
-      staffName: _readName(json['staffName'] ?? json['StaffName']),
-      staffPhoneNumber: _readString(
-        json['staffPhoneNumber'] ?? json['StaffPhoneNumber'],
+      staffAllocations: _readStaffAllocations(
+        json['staffAllocations'] ?? json['StaffAllocations'],
       ),
       profileImage: _readString(json['profileImage'] ?? json['ProfileImage']),
       investorCode: _readString(json['investorCode'] ?? json['InvestorCode']),
@@ -188,6 +183,18 @@ class InvestorDetailsModel {
     );
   }
 
+  static List<StaffAllocationModel> _readStaffAllocations(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map(
+          (item) => StaffAllocationModel.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
+        .toList();
+  }
+
   static List<InvestorNomineeModel> _readNominees(Map<String, dynamic> json) {
     final raw = json['nominees'] ?? json['Nominees'];
     if (raw is List) {
@@ -222,23 +229,6 @@ class InvestorDetailsModel {
     if (value == null) return null;
     final text = value.toString().trim();
     return text.isEmpty ? null : text;
-  }
-
-  static String? _readName(dynamic value) {
-    final text = _readString(value);
-    return text?.toTitleCase;
-  }
-
-  static int? _readNullableInt(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) {
-      final text = value.trim();
-      if (text.isEmpty) return null;
-      return int.tryParse(text);
-    }
-    return null;
   }
 
   static int _readInt(dynamic value) {

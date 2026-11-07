@@ -17,6 +17,7 @@ import 'package:maribel_wellness_centre_application/user/home/widgets/latest_pro
 import 'package:maribel_wellness_centre_application/user/home/widgets/work_progress_card.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/service_gallery_carousel.dart';
 import 'package:maribel_wellness_centre_application/user/home/widgets/top_investors_carousel.dart';
+import 'package:maribel_wellness_centre_application/user/navigation/tab_reselect_notifier.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
 
@@ -24,10 +25,14 @@ class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({
     super.key,
     this.isActive = false,
+    this.tabReselect,
   });
 
   /// When true, this tab is visible in the user [IndexedStack].
   final bool isActive;
+
+  /// When the Home tab is re-tapped while already selected, scroll to top.
+  final Listenable? tabReselect;
 
   static const Color _textPrimary = Color(0xFF4A3F5C);
   static const Color _textSecondary = Color(0xFF8A8099);
@@ -37,15 +42,22 @@ class UserHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<HomeCubit>()..loadHome(),
-      child: _UserHomeView(isActive: isActive),
+      child: _UserHomeView(
+        isActive: isActive,
+        tabReselect: tabReselect,
+      ),
     );
   }
 }
 
 class _UserHomeView extends StatefulWidget {
-  const _UserHomeView({required this.isActive});
+  const _UserHomeView({
+    required this.isActive,
+    this.tabReselect,
+  });
 
   final bool isActive;
+  final Listenable? tabReselect;
 
   @override
   State<_UserHomeView> createState() => _UserHomeViewState();
@@ -54,6 +66,8 @@ class _UserHomeView extends StatefulWidget {
 class _UserHomeViewState extends State<_UserHomeView> {
   static const _silentRefreshInterval = Duration(seconds: 5);
 
+  final ScrollController _scrollController = ScrollController();
+  TabReselectScrollBinder? _tabReselectBinder;
   Timer? _silentRefreshTimer;
   bool _isSilentRefreshing = false;
   bool _commitmentOverlayShown = false;
@@ -62,6 +76,13 @@ class _UserHomeViewState extends State<_UserHomeView> {
   @override
   void initState() {
     super.initState();
+    final tabReselect = widget.tabReselect;
+    if (tabReselect != null) {
+      _tabReselectBinder = TabReselectScrollBinder(
+        listenable: tabReselect,
+        scrollController: _scrollController,
+      );
+    }
     if (widget.isActive) {
       _startSilentRefresh();
     }
@@ -86,7 +107,9 @@ class _UserHomeViewState extends State<_UserHomeView> {
 
   @override
   void dispose() {
+    _tabReselectBinder?.dispose();
     _stopSilentRefresh();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -208,6 +231,7 @@ class _UserHomeViewState extends State<_UserHomeView> {
                     onRefresh: () =>
                         context.read<HomeCubit>().loadHome(),
                     child: SingleChildScrollView(
+                      controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(4.w, 3.h, 4.w, 1.5.h),
                       child: Column(
