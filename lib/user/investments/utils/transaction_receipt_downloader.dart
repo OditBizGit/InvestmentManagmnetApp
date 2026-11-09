@@ -137,9 +137,7 @@ class TransactionReceiptDownloader {
             : '';
     final day = date != null ? '${date.day}' : '';
     final month = date != null ? _monthName(date.month) : '';
-    final yearSuffix = date != null
-        ? (date.year % 100).toString().padLeft(2, '0')
-        : '';
+    final yearSuffix = date != null ? '${date.year}' : '';
     final signatureUrl = (projectSignaturePath ?? '').trim();
     final height = _captureWidth / _a5LandscapeRatio;
 

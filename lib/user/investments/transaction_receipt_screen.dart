@@ -160,9 +160,7 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
         : '';
     final day = date != null ? '${date.day}' : '';
     final month = date != null ? _monthName(date.month) : '';
-    final yearSuffix = date != null
-        ? (date.year % 100).toString().padLeft(2, '0')
-        : '';
+    final yearSuffix = date != null ? '${date.year}' : '';
     final signatureUrl = (widget.projectSignaturePath ?? '').trim();
 
     return Scaffold(
@@ -614,12 +612,12 @@ class TransactionReceiptDocument extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2.2),
                     child: Text(
-                      ' Month of 20',
+                      ' Month of ',
                       style: _receiptBodyStyle(bodySize, ink),
                     ),
                   ),
                   SizedBox(
-                    width: 32 * scale,
+                    width: 44 * scale,
                     child: _DottedValue(
                       value: yearSuffix,
                       fontSize: bodySize,
