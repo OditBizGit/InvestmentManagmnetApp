@@ -14,11 +14,13 @@ class AuthRepository {
   Future<LoginResponseModel> login({
     required String username,
     required String password,
+    String? userRole,
   }) async {
     try {
       final request = LoginRequestModel(
         username: username,
         password: password,
+        userRole: userRole,
       );
 
       final response = await dio.post(

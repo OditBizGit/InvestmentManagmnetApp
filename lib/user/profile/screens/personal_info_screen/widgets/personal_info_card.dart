@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_model.dart';
 import 'package:sizer/sizer.dart';
 
@@ -14,16 +13,19 @@ class PersonalInfoCard extends StatelessWidget {
     return value.trim();
   }
 
-  static String _formatDate(DateTime? date) {
-    if (date == null) return 'Not Provided';
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day-$month-${date.year}';
-  }
+  // static String _formatDate(DateTime? date) {
+  //   if (date == null) return 'Not Provided';
+  //   final day = date.day.toString().padLeft(2, '0');
+  //   final month = date.month.toString().padLeft(2, '0');
+  //   return '$day-$month-${date.year}';
+  // }
 
-  static String _formatAllowance(double? amount) {
-    if (amount == null) return 'Not Provided';
-    return CurrencyFormatter.format(amount);
+  static String _formatAllowance(String? amount) {
+    if (amount == null || amount.trim().isEmpty) 
+    {
+      return 'Not Provided';
+    }
+    return amount.trim();
   }
 
   @override

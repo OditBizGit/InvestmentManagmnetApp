@@ -61,7 +61,6 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
 
   /// Captures the on-screen receipt widget so PDF/share match the UI exactly.
   Future<Uint8List> _captureReceiptPng() async {
-    // Let network signature / SVG settle for a frame before capture.
     await Future<void>.delayed(const Duration(milliseconds: 80));
     await WidgetsBinding.instance.endOfFrame;
 
@@ -210,8 +209,6 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
                   final horizontalPad = 3.w;
                   final availableWidth =
                       constraints.maxWidth - (horizontalPad * 2);
-                  // Prefer a readable A5 landscape width; scroll horizontally
-                  // when the phone is narrower than the receipt.
                   const preferredWidth = 640.0;
                   final receiptWidth = availableWidth < preferredWidth
                       ? preferredWidth
@@ -528,47 +525,15 @@ class TransactionReceiptDocument extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 10 * scale),
-              _FillLine(
-                leading: 'This is to acknowledge the receipt of Rs. ',
-                value: amountInWords,
+              _AmountInWordsLines(
+                amountInWords: amountInWords,
+                projectName: projectName,
                 fontSize: bodySize,
                 color: ink,
                 lineColor: line,
+                scale: scale,
               ),
               SizedBox(height: 8 * scale),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: _DottedValue(
-                      value: '',
-                      fontSize: bodySize,
-                      color: ink,
-                      lineColor: line,
-                      leadingGap: 0,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2.2, left: 6),
-                    child: Text(
-                      'Towards contribution to',
-                      style: _receiptBodyStyle(bodySize, ink),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: _DottedValue(
-                      value: projectName.toUpperCase(),
-                      fontSize: bodySize,
-                      color: ink,
-                      lineColor: line,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8 * scale),
-              // Project of the LLP from Mr./Ms./ M/S [investor]
               _FillLine(
                 leading: 'Project of the LLP from Mr./Ms./ M/S ',
                 value: investorName,
@@ -577,7 +542,6 @@ class TransactionReceiptDocument extends StatelessWidget {
                 lineColor: line,
               ),
               SizedBox(height: 8 * scale),
-              // Blank full-width dotted line (matches printed form)
               _DottedValue(
                 value: '',
                 fontSize: bodySize,
@@ -585,7 +549,6 @@ class TransactionReceiptDocument extends StatelessWidget {
                 lineColor: line,
               ),
               SizedBox(height: 8 * scale),
-              // Residing at... [address]
               _FillLine(
                 leading: 'Residing at/ having registered office at ',
                 value: address,
@@ -594,7 +557,6 @@ class TransactionReceiptDocument extends StatelessWidget {
                 lineColor: line,
               ),
               SizedBox(height: 8 * scale),
-              // Blank dotted line ending with On (matches printed form)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -855,11 +817,316 @@ class _Header extends StatelessWidget {
 
 TextStyle _receiptBodyStyle(double fontSize, Color color) {
   return TextStyle(
+    fontFamily: 'Montserrat',
     fontSize: fontSize,
     fontWeight: FontWeight.w500,
     color: color,
     height: 1.25,
   );
+}
+
+double _measureTextWidth(
+  String text,
+  TextStyle style, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  if (text.isEmpty) return 0;
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: textScaler,
+    maxLines: 1,
+  )..layout();
+  return painter.width;
+}
+
+
+List<String> _splitTextAcrossWidths(
+  String text,
+  TextStyle style,
+  List<double> maxWidths, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  if (text.isEmpty || maxWidths.isEmpty) {
+    return text.isEmpty ? const [] : [text];
+  }
+
+  final lines = <String>[];
+  var remaining = text.trim();
+
+  for (var i = 0; i < maxWidths.length; i++) {
+    final isLast = i == maxWidths.length - 1;
+    if (remaining.isEmpty) {
+      lines.add('');
+      continue;
+    }
+    if (isLast) {
+      lines.add(remaining);
+      remaining = '';
+      break;
+    }
+
+    final fitted = _fitTextToWidth(
+      remaining,
+      style,
+      maxWidths[i],
+      textScaler: textScaler,
+    );
+    lines.add(fitted.$1);
+    remaining = fitted.$2;
+  }
+
+
+  for (var i = 0; i < lines.length - 1; i++) {
+    while (lines[i].isNotEmpty &&
+        _measureTextWidth(lines[i], style, textScaler: textScaler) >
+            maxWidths[i]) {
+      final words = lines[i].split(RegExp(r'\s+'));
+      if (words.length <= 1) break;
+      final moved = words.removeLast();
+      lines[i] = words.join(' ');
+      lines[i + 1] =
+          lines[i + 1].isEmpty ? moved : '$moved ${lines[i + 1]}';
+    }
+  }
+
+  return lines;
+}
+
+
+(String, String) _fitTextToWidth(
+  String text,
+  TextStyle style,
+  double maxWidth, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty || maxWidth <= 0) return ('', trimmed);
+
+  final painter = TextPainter(
+    text: TextSpan(text: trimmed, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: textScaler,
+  )..layout(maxWidth: maxWidth);
+
+  final metrics = painter.computeLineMetrics();
+  if (metrics.length <= 1 && painter.width <= maxWidth + 0.5) {
+    return (trimmed, '');
+  }
+
+  final boundary = painter.getLineBoundary(const TextPosition(offset: 0));
+  var end = boundary.end.clamp(0, trimmed.length);
+  if (end < trimmed.length && end > 0 && trimmed[end - 1] != ' ') {
+    final lastSpace = trimmed.lastIndexOf(' ', end - 1);
+    if (lastSpace > 0) {
+      end = lastSpace;
+    }
+  }
+
+  if (end <= 0) {
+    return _fitCharsToWidth(
+      trimmed,
+      style,
+      maxWidth,
+      textScaler: textScaler,
+    );
+  }
+
+  final fitted = trimmed.substring(0, end).trimRight();
+  final rest = trimmed.substring(end).trimLeft();
+  if (fitted.isEmpty) {
+    return _fitCharsToWidth(
+      trimmed,
+      style,
+      maxWidth,
+      textScaler: textScaler,
+    );
+  }
+  return (fitted, rest);
+}
+
+(String, String) _fitCharsToWidth(
+  String text,
+  TextStyle style,
+  double maxWidth, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  if (_measureTextWidth(text, style, textScaler: textScaler) <= maxWidth) {
+    return (text, '');
+  }
+
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: textScaler,
+    maxLines: 1,
+  )..layout(maxWidth: maxWidth);
+
+  final pos = painter.getPositionForOffset(
+    Offset(maxWidth, painter.preferredLineHeight / 2),
+  );
+  var end = pos.offset.clamp(0, text.length);
+  if (end <= 0) end = 1.clamp(0, text.length);
+
+  return (text.substring(0, end), text.substring(end).trimLeft());
+}
+
+
+class _AmountInWordsLines extends StatelessWidget {
+  const _AmountInWordsLines({
+    required this.amountInWords,
+    required this.projectName,
+    required this.fontSize,
+    required this.color,
+    required this.lineColor,
+    required this.scale,
+  });
+
+  final String amountInWords;
+  final String projectName;
+  final double fontSize;
+  final Color color;
+  final Color lineColor;
+  final double scale;
+
+  static const String _leading =
+      'This is to acknowledge the receipt of Rs. ';
+  static const String _towardsLabel = 'Towards contribution to';
+  static const double _leadingGap = 10.0;
+  static const double _towardsLeftPad = 6.0;
+  static const double _safetyPad = 18.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = DefaultTextStyle.of(context)
+        .style
+        .merge(_receiptBodyStyle(fontSize, color));
+    final textScaler = MediaQuery.textScalerOf(context);
+
+    return LayoutBuilder(
+      builder: (context, lineConstraints) {
+        final leadingWidth = _measureTextWidth(
+          _leading,
+          style,
+          textScaler: textScaler,
+        );
+        final firstLineMax = (lineConstraints.maxWidth -
+                leadingWidth -
+                _leadingGap -
+                _safetyPad)
+            .clamp(0.0, lineConstraints.maxWidth);
+
+        final towardsWidth = _measureTextWidth(
+              _towardsLabel,
+              style,
+              textScaler: textScaler,
+            ) +
+            _towardsLeftPad;
+        final afterTowardsWidth =
+            (lineConstraints.maxWidth - towardsWidth)
+                .clamp(0.0, lineConstraints.maxWidth);
+        final towardsRowValueMax = (afterTowardsWidth * 5 / 8 -
+                _leadingGap -
+                _safetyPad)
+            .clamp(0.0, afterTowardsWidth);
+        final fullWidthMax = (lineConstraints.maxWidth -
+                _leadingGap -
+                _safetyPad)
+            .clamp(0.0, lineConstraints.maxWidth);
+
+        var split = _splitTextAcrossWidths(
+          amountInWords,
+          style,
+          [firstLineMax, towardsRowValueMax],
+          textScaler: textScaler,
+        );
+        final remainder =
+            split.length > 1 ? split[1] : '';
+        final needsFullWidthLine = remainder.isNotEmpty &&
+            _measureTextWidth(
+                  remainder,
+                  style,
+                  textScaler: textScaler,
+                ) >
+                towardsRowValueMax + 0.5;
+        if (needsFullWidthLine) {
+          split = _splitTextAcrossWidths(
+            amountInWords,
+            style,
+            [firstLineMax, fullWidthMax, towardsRowValueMax],
+            textScaler: textScaler,
+          );
+        }
+
+        final firstLine = split.isNotEmpty ? split[0] : '';
+        final fullWidthLine =
+            needsFullWidthLine && split.length > 2 ? split[1] : '';
+        final towardsRowLine = needsFullWidthLine
+            ? (split.length > 2 ? split[2] : '')
+            : (split.length > 1 ? split[1] : '');
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _FillLine(
+              leading: _leading,
+              value: firstLine,
+              fontSize: fontSize,
+              color: color,
+              lineColor: lineColor,
+              ellipsize: false,
+            ),
+            if (fullWidthLine.isNotEmpty) ...[
+              SizedBox(height: 8 * scale),
+              _DottedValue(
+                value: fullWidthLine,
+                fontSize: fontSize,
+                color: color,
+                lineColor: lineColor,
+                ellipsize: false,
+              ),
+            ],
+            SizedBox(height: 8 * scale),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: _DottedValue(
+                    value: towardsRowLine,
+                    fontSize: fontSize,
+                    color: color,
+                    lineColor: lineColor,
+                    leadingGap: towardsRowLine.isEmpty ? 0 : _leadingGap,
+                    ellipsize: false,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: 2.2,
+                    left: _towardsLeftPad,
+                  ),
+                  child: Text(
+                    _towardsLabel,
+                    style: style,
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: _DottedValue(
+                    value: projectName.toUpperCase(),
+                    fontSize: fontSize,
+                    color: color,
+                    lineColor: lineColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _DottedValue extends StatelessWidget {
@@ -870,6 +1137,7 @@ class _DottedValue extends StatelessWidget {
     required this.lineColor,
     this.textAlign = TextAlign.left,
     this.leadingGap = 10,
+    this.ellipsize = true,
   });
 
   final String value;
@@ -878,6 +1146,7 @@ class _DottedValue extends StatelessWidget {
   final Color lineColor;
   final TextAlign textAlign;
   final double leadingGap;
+  final bool ellipsize;
 
   @override
   Widget build(BuildContext context) {
@@ -892,7 +1161,9 @@ class _DottedValue extends StatelessWidget {
             value.isEmpty ? ' ' : value,
             textAlign: textAlign,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            overflow:
+                ellipsize ? TextOverflow.ellipsis : TextOverflow.clip,
             style: style,
           ),
         ),
@@ -952,6 +1223,7 @@ class _FillLine extends StatelessWidget {
     required this.fontSize,
     required this.color,
     required this.lineColor,
+    this.ellipsize = true,
   });
 
   final String leading;
@@ -959,6 +1231,7 @@ class _FillLine extends StatelessWidget {
   final double fontSize;
   final Color color;
   final Color lineColor;
+  final bool ellipsize;
 
   @override
   Widget build(BuildContext context) {
@@ -966,7 +1239,6 @@ class _FillLine extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Padding(
-          // Keep label text level with API value (above the dotted line).
           padding: const EdgeInsets.only(bottom: 2.2),
           child: Text(
             leading,
@@ -979,6 +1251,7 @@ class _FillLine extends StatelessWidget {
             fontSize: fontSize,
             color: color,
             lineColor: lineColor,
+            ellipsize: ellipsize,
           ),
         ),
       ],

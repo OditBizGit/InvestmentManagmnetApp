@@ -67,6 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
           username: _usernameController.text.trim(),
           password: _passwordController.text,
           requiredRole: 'Investor',
+          userRole: 'Investor',
         );
   }
 

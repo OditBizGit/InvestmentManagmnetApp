@@ -26,7 +26,7 @@ class InvestorDetailsModel {
   final String? bankName;
   final DateTime? dateOfBirth;
   final String? description;
-  final double? medicalAllowance;
+  final String? medicalAllowance;
   final double investmentAmount;
   final DateTime? investmentDate;
   final double investmentAdvanceAmount;
@@ -135,7 +135,7 @@ class InvestorDetailsModel {
       bankName: _readString(json['bankName'] ?? json['BankName']),
       dateOfBirth: _readDate(json['dateOfBirth'] ?? json['DateOfBirth']),
       description: _readString(json['description'] ?? json['Description']),
-      medicalAllowance: _readNullableDouble(
+      medicalAllowance: _readString(
         json['medicalAllowance'] ?? json['MedicalAllowance'],
       ),
       investmentAmount: _readDouble(

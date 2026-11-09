@@ -24,6 +24,7 @@ class LoginCubit extends Cubit<LoginState> {
     required String username,
     required String password,
     String? requiredRole,
+    String? userRole,
   }) async {
     AuthNavigationGuard.suppressAuthenticatedNavigation = false;
     AuthNavigationGuard.holdBlockedOverlay.value = false;
@@ -32,6 +33,7 @@ class LoginCubit extends Cubit<LoginState> {
       final response = await _authRepository.login(
         username: username,
         password: password,
+        userRole: userRole,
       );
 
       if (!response.status || response.data == null) {

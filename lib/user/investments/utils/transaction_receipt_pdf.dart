@@ -85,7 +85,7 @@ class TransactionReceiptPdf {
     final directory = await _resolveSaveDirectory();
     final safeEntry = entryNo > 0 ? entryNo : transactionId;
     final dateStamp = UserInvestmentsScreen.formatDate(transactionDate);
-    final fileName = 'Contribution Receipt-$safeEntry-$dateStamp.pdf';
+    final fileName = 'Payment Receipt - $safeEntry - $dateStamp.pdf';
     final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
     return file;
