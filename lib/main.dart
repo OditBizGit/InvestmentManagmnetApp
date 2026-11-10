@@ -62,18 +62,25 @@ const bool isAdmin = true;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await setupDi();
-
   // Notifications are ONLY for Android and iOS.
   // No notifications on Web or Windows.
-  if (!kIsWeb &&
-      !isAdmin &&
+  final isMobileNotificationPlatform = !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS)) {
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  // Firebase must be ready before setupDi(): on mobile it registers
+  // NotificationService, whose FirebaseMessaging.instance needs the default
+  // app. This also covers the admin build running on Android/iOS, where
+  // LoginCubit still receives a NotificationService.
+  if (isMobileNotificationPlatform && Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+  }
 
+  await setupDi();
+
+  if (isMobileNotificationPlatform && !isAdmin) {
     FirebaseMessaging.onBackgroundMessage(
       firebaseMessagingBackgroundHandler,
     );

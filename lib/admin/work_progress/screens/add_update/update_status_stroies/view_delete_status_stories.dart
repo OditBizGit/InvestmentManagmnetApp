@@ -10,6 +10,7 @@ import 'package:maribel_wellness_centre_application/admin/work_progress/screens/
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_status_stroies/model/add_work_status_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/network/token_refresh_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:open_filex/open_filex.dart';
@@ -156,10 +157,19 @@ class _ViewDeleteStatusStoriesState
   void initState() {
     super.initState();
     _mediaHeaders = _buildMediaHeaders();
+    _refreshMediaHeaders();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<UpdateStatusCubit>().fetchWorkStatusIfNeeded();
     });
+  }
+
+  /// Refreshes an about-to-expire access token, then rebuilds the media
+  /// headers so images/videos keep loading with a valid token.
+  Future<void> _refreshMediaHeaders() async {
+    final outcome = await getIt<TokenRefreshService>().refreshIfExpiring();
+    if (outcome != TokenRefreshOutcome.refreshed || !mounted) return;
+    setState(() => _mediaHeaders = _buildMediaHeaders());
   }
 
   Map<String, String>? _buildMediaHeaders() {

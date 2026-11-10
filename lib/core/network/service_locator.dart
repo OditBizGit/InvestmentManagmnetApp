@@ -17,6 +17,7 @@ import 'package:maribel_wellness_centre_application/core/constants/api_endpoints
 import 'package:maribel_wellness_centre_application/core/network/log_redaction.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:maribel_wellness_centre_application/core/network/session_expiry_handler.dart';
+import 'package:maribel_wellness_centre_application/core/network/token_refresh_service.dart';
 import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
@@ -76,6 +77,13 @@ Future<void> setupDi() async {
   );
 
   // ── Network ───────────────────────────────────────────────────────
+  getIt.registerLazySingleton<TokenRefreshService>(
+    () => TokenRefreshService(
+      localStorage: getIt<LocalStorage>(),
+      baseUrl: kBaseUrl,
+    ),
+  );
+
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio(
       BaseOptions(
@@ -92,13 +100,18 @@ Future<void> setupDi() async {
 
     dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           final isPublicRequest = isPublicAuthRequest(options);
 
           // Never attach a (possibly stale) token to login / public auth calls.
           if (isPublicRequest) {
             options.headers.remove('Authorization');
           } else {
+            // Proactive refresh shortly before the access token expires. The
+            // outcome is ignored here: a rejected refresh surfaces as a 401
+            // below and goes through the normal session-expiry handling.
+            await getIt<TokenRefreshService>().refreshIfExpiring();
+
             // Always read the latest token from LocalStorage.
             final token = getIt<LocalStorage>().getAuthToken();
             if (token != null && token.isNotEmpty) {
@@ -118,11 +131,34 @@ Future<void> setupDi() async {
           AccountStatusMonitor.onResponse(response);
           handler.next(response);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
           appLog(errorLogLine(error), name: 'http');
 
+          // On a 401, try to refresh the access token and replay the request
+          // once (concurrent 401s share a single refresh).
+          final recovery = await getIt<TokenRefreshService>()
+              .recoverFromUnauthorized(error, dio);
+
+          final replayed = recovery.response;
+          if (replayed != null) {
+            handler.resolve(replayed);
+            return;
+          }
+          final replayError = recovery.error;
+          if (replayError != null) {
+            handler.reject(replayError);
+            return;
+          }
+          if (recovery.passThrough) {
+            // Refresh failed temporarily (offline / server error): do not
+            // log the user out.
+            handler.next(error);
+            return;
+          }
+
           // Expired / invalid session handling (ignores login request and
-          // stale-token 401s).
+          // stale-token 401s). Reached when the refresh token was rejected
+          // or the error is not recoverable.
           SessionExpiryHandler.handleDioError(error);
 
           handler.next(error);
@@ -265,5 +301,7 @@ bool isPublicAuthRequest(RequestOptions options) {
   final path = options.path;
   final fullPath = options.uri.path;
   return path.contains(ApiEndpoints.login) ||
-      fullPath.contains(ApiEndpoints.login);
+      fullPath.contains(ApiEndpoints.login) ||
+      path.contains(ApiEndpoints.refreshToken) ||
+      fullPath.contains(ApiEndpoints.refreshToken);
 }

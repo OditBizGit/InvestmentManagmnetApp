@@ -33,6 +33,7 @@ class LoginDataModel {
   final String? profileImage;
   final String userRole;
   final String token;
+  final String? refreshToken;
   final bool isActive;
 
   LoginDataModel({
@@ -45,6 +46,7 @@ class LoginDataModel {
     this.profileImage,
     required this.userRole,
     required this.token,
+    this.refreshToken,
     required this.isActive,
   });
 
@@ -59,6 +61,7 @@ class LoginDataModel {
       profileImage: json['profileImage'],
       userRole: json['userRole'] ?? '',
       token: json['token'] ?? '',
+      refreshToken: json['refreshToken'],
       isActive: json['isActive'] ?? false,
     );
   }

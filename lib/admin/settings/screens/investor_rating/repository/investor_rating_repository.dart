@@ -189,6 +189,34 @@ class InvestorRatingRepository {
     }
   }
 
+  Future<AllSettingsResponseModel> getAllSettings() async {
+    try {
+      appLog('Fetching all settings', name: 'AllSettingsAPI');
+
+      final response = await dio.get(ApiEndpoints.getAllSettings);
+
+      return AllSettingsResponseModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e, stackTrace) {
+      appLog(
+        'Dio error fetching all settings: ${e.message}',
+        name: 'AllSettingsAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      appLog(
+        'Error fetching all settings: $e',
+        name: 'AllSettingsAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   Future<TopInvestorButtonResponseModel> updateTopInvestorButton({
     required bool isEnabled,
   }) async {

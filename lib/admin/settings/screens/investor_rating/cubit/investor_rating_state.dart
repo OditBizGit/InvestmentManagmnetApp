@@ -9,11 +9,12 @@ class InvestorRatingState {
     required this.selectedInvestorCodes,
     required this.savingInvestorCodes,
     required this.removingTopInvestorUserIds,
-    this.topInvestorAddingEnabled = false,
+    this.topInvestorAddingEnabled,
     this.isLoading = false,
     this.isSaving = false,
     this.isLoadingTopInvestors = false,
     this.isUpdatingTopInvestorButton = false,
+    this.isLoadingTopInvestorButton = false,
     this.loadError,
     this.bannerMessage,
     this.bannerIsError = false,
@@ -25,11 +26,14 @@ class InvestorRatingState {
   final Set<String> selectedInvestorCodes;
   final Set<String> savingInvestorCodes;
   final Set<int> removingTopInvestorUserIds;
-  final bool topInvestorAddingEnabled;
+  /// Saved "Investor adding" visibility from the backend; `null` until the
+  /// `GetAllSettings` response has been received (no assumed default).
+  final bool? topInvestorAddingEnabled;
   final bool isLoading;
   final bool isSaving;
   final bool isLoadingTopInvestors;
   final bool isUpdatingTopInvestorButton;
+  final bool isLoadingTopInvestorButton;
   final String? loadError;
   final String? bannerMessage;
   final bool bannerIsError;
@@ -55,6 +59,7 @@ class InvestorRatingState {
     bool? isSaving,
     bool? isLoadingTopInvestors,
     bool? isUpdatingTopInvestorButton,
+    bool? isLoadingTopInvestorButton,
     String? loadError,
     String? bannerMessage,
     bool? bannerIsError,
@@ -78,6 +83,8 @@ class InvestorRatingState {
           isLoadingTopInvestors ?? this.isLoadingTopInvestors,
       isUpdatingTopInvestorButton: isUpdatingTopInvestorButton ??
           this.isUpdatingTopInvestorButton,
+      isLoadingTopInvestorButton:
+          isLoadingTopInvestorButton ?? this.isLoadingTopInvestorButton,
       loadError: clearLoadError ? null : (loadError ?? this.loadError),
       bannerMessage:
           clearBanner ? null : (bannerMessage ?? this.bannerMessage),
