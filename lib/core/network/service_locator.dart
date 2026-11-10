@@ -14,6 +14,9 @@ import 'package:maribel_wellness_centre_application/auth/repository/login_reposi
 import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/account/account_status_monitor.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
+import 'package:maribel_wellness_centre_application/core/network/log_redaction.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
+import 'package:maribel_wellness_centre_application/core/network/session_expiry_handler.dart';
 import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:maribel_wellness_centre_application/user/home/cubit/home_cubit.dart';
@@ -90,10 +93,10 @@ Future<void> setupDi() async {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final isPublicAuthRequest = _isPublicAuthRequest(options);
+          final isPublicRequest = isPublicAuthRequest(options);
 
           // Never attach a (possibly stale) token to login / public auth calls.
-          if (isPublicAuthRequest) {
+          if (isPublicRequest) {
             options.headers.remove('Authorization');
           } else {
             // Always read the latest token from LocalStorage.
@@ -105,36 +108,22 @@ Future<void> setupDi() async {
             }
           }
 
-          if (kDebugMode) {
-            debugPrint(
-              '→ ${options.method} ${options.uri}\n'
-              '  headers: ${options.headers}\n'
-              '  data: ${options.data}',
-            );
-          }
+          appLog(requestLogLine(options), name: 'http');
 
           handler.next(options);
         },
         onResponse: (response, handler) {
-          if (kDebugMode) {
-            debugPrint(
-              '← ${response.statusCode} ${response.requestOptions.uri}\n'
-              '  data: ${response.data}',
-            );
-          }
+          appLog(responseLogLine(response), name: 'http');
 
           AccountStatusMonitor.onResponse(response);
           handler.next(response);
         },
         onError: (error, handler) {
-          if (kDebugMode) {
-            debugPrint(
-              '✖ ${error.response?.statusCode ?? 'NO_STATUS'} '
-              '${error.requestOptions.uri}\n'
-              '  message: ${error.message}\n'
-              '  data: ${error.response?.data}',
-            );
-          }
+          appLog(errorLogLine(error), name: 'http');
+
+          // Expired / invalid session handling (ignores login request and
+          // stale-token 401s).
+          SessionExpiryHandler.handleDioError(error);
 
           handler.next(error);
         },
@@ -272,7 +261,7 @@ Future<void> setupDi() async {
 }
 
 /// Public auth endpoints that must not send an Authorization header.
-bool _isPublicAuthRequest(RequestOptions options) {
+bool isPublicAuthRequest(RequestOptions options) {
   final path = options.path;
   final fullPath = options.uri.path;
   return path.contains(ApiEndpoints.login) ||

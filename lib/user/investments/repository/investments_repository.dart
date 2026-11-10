@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/work_progress_details_response_model.dart';
@@ -27,10 +27,10 @@ class InvestmentsRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Get Investor Transaction History Error: ${e.message}');
+      appLog('Get Investor Transaction History Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Investor Transaction History Error: $e');
+      appLog('Get Investor Transaction History Error: $e');
       rethrow;
     }
   }
@@ -73,10 +73,10 @@ class InvestmentsRepository {
 
       return List.unmodifiable(stages);
     } on DioException catch (e) {
-      log('Get Work Progress Stages Error: ${e.message}');
+      appLog('Get Work Progress Stages Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Work Progress Stages Error: $e');
+      appLog('Get Work Progress Stages Error: $e');
       rethrow;
     }
   }
@@ -108,10 +108,10 @@ class InvestmentsRepository {
 
       return List.unmodifiable(parsed.data);
     } on DioException catch (e) {
-      log('Get Work Progress Graph Error: ${e.message}');
+      appLog('Get Work Progress Graph Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Work Progress Graph Error: $e');
+      appLog('Get Work Progress Graph Error: $e');
       rethrow;
     }
   }

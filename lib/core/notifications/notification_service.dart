@@ -1,3 +1,4 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -91,12 +92,12 @@ class NotificationService {
     try {
       final token = await _messaging.getToken();
       if (token == null || token.isEmpty) {
-        debugPrint('FCM token unavailable');
+        appLog('FCM token unavailable');
         return;
       }
       await _registerToken(token);
     } catch (e) {
-      debugPrint('Failed to register FCM device token: $e');
+      appLog('Failed to register FCM device token: $e');
     }
   }
 
@@ -123,10 +124,10 @@ class NotificationService {
         platform: platform,
       );
       if (kDebugMode) {
-        debugPrint('FCM device registered ($platform)');
+        appLog('FCM device registered ($platform)');
       }
     } catch (e) {
-      debugPrint('registerDevice failed: $e');
+      appLog('registerDevice failed: $e');
     }
   }
 
@@ -163,7 +164,7 @@ class NotificationService {
       sound: true,
     );
     if (kDebugMode) {
-      debugPrint(
+      appLog(
         'Notification permission: ${settings.authorizationStatus}',
       );
     }
@@ -206,7 +207,7 @@ class NotificationService {
 
   void _handleNotificationTap(RemoteMessage message) {
     if (kDebugMode) {
-      debugPrint(
+      appLog(
         'Notification tapped type=${message.data['type']} '
         'relatedId=${message.data['relatedId'] ?? message.data['referenceId']}',
       );

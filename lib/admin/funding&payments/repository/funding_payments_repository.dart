@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
@@ -25,13 +25,12 @@ class InvestorPaymentRepository {
 
       return AddInvestorPaymentResponseModel.fromJson(response.data);
     } on DioException catch (e) {
-      log('Add Investor Payment Error: ${e.message}');
+      appLog('Add Investor Payment Error: ${e.message}');
 
-      log('Add Investor Payment Response: ${e.response?.data}');
 
       rethrow;
     } catch (e) {
-      log('Add Investor Payment Error: $e');
+      appLog('Add Investor Payment Error: $e');
 
       rethrow;
     }
@@ -44,11 +43,10 @@ class InvestorPaymentRepository {
 
       return FundingInvestorsResponseModel.fromJson(response.data);
     } on DioException catch (e) {
-      log('Get Funding Investors Error: ${e.message}');
-      log('Get Funding Investors Response: ${e.response?.data}');
+      appLog('Get Funding Investors Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Funding Investors Error: $e');
+      appLog('Get Funding Investors Error: $e');
       rethrow;
     }
   }
@@ -60,13 +58,12 @@ class InvestorPaymentRepository {
 
       return InvestorTransactionHistoryResponseModel.fromJson(response.data);
     } on DioException catch (e) {
-      log('Get All Investor Transaction History Error: ${e.message}');
+      appLog('Get All Investor Transaction History Error: ${e.message}');
 
-      log('Get All Investor Transaction History Response: ${e.response?.data}');
 
       rethrow;
     } catch (e) {
-      log('Get All Investor Transaction History Error: $e');
+      appLog('Get All Investor Transaction History Error: $e');
 
       rethrow;
     }
@@ -90,11 +87,10 @@ class InvestorPaymentRepository {
         Map<String, dynamic>.from(raw),
       );
     } on DioException catch (e) {
-      log('Get Investor Details Error: ${e.message}');
-      log('Get Investor Details Response: ${e.response?.data}');
+      appLog('Get Investor Details Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Investor Details Error: $e');
+      appLog('Get Investor Details Error: $e');
       rethrow;
     }
   }
@@ -106,7 +102,7 @@ class InvestorPaymentRepository {
     required DateTime dueDate,
   }) async {
     try {
-      log(
+      appLog(
         'UpdateDueDates request: investorId=$investorId, '
             'installmentNumber=$installmentNumber, '
             'dueDate=${UpdateDueDatesRequestModel.toApiIsoString(dueDate)}',
@@ -124,25 +120,20 @@ class InvestorPaymentRepository {
         data: request.toJson(),
       );
 
-      log(
-        'UpdateDueDates response: ${response.data}',
-        name: 'UpdateDueDatesAPI',
-      );
-
       return UpdateDueDatesResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'UpdateDueDates API error: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
         name: 'UpdateDueDatesAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Unexpected UpdateDueDates error: $e',
         name: 'UpdateDueDatesAPI',
         error: e,

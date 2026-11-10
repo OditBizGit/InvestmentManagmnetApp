@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -17,13 +17,11 @@ class DashboardRepository {
 
   Future<List<TopInvestorsModel>> getTopInvestors() async {
     try {
-      log('Fetching top investors...');
+      appLog('Fetching top investors...');
 
       final response = await dio.get(
         ApiEndpoints.topInvestors,
       );
-
-      log('Top Investors Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data;
@@ -70,11 +68,10 @@ class DashboardRepository {
         'Failed to load top investors (status ${response.statusCode})',
       );
     } on DioException catch (e) {
-      log('Top Investors Dio Error: ${e.message}');
-      log('Top Investors Dio Response: ${e.response?.data}');
+      appLog('Top Investors Dio Error: ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Top Investors Error: $e',
         stackTrace: stackTrace,
       );
@@ -85,14 +82,10 @@ class DashboardRepository {
 /// recent payments
   Future<List<TransactionHistoryModel>> getPaymentHistory() async {
     try {
-      log('Fetching investor transaction history...');
+      appLog('Fetching investor transaction history...');
 
       final response = await dio.get(
         ApiEndpoints.transactionHistory,
-      );
-
-      log(
-        'Transaction History Response: ${response.data}',
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -140,16 +133,12 @@ class DashboardRepository {
         'Failed to load recent payments (status ${response.statusCode})',
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Transaction History Dio Error: ${e.message}',
-      );
-      log(
-        'Transaction History Dio Response: '
-        '${e.response?.data}',
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Transaction History Error: $e',
         stackTrace: stackTrace,
       );
@@ -160,14 +149,10 @@ class DashboardRepository {
    //// recent updates
   Future<List<WorkUpdateModel>> recentWorkUpdates() async {
     try {
-      log('Fetching work updates...');
+      appLog('Fetching work updates...');
 
       final response = await dio.get(
         ApiEndpoints.getWorkUpdates,
-      );
-
-      log(
-        'Get Work Updates Response: ${response.data}',
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -217,16 +202,12 @@ class DashboardRepository {
         'Failed to load recent updates (status ${response.statusCode})',
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get Work Updates Dio Error: ${e.message}',
-      );
-      log(
-        'Get Work Updates Dio Response: '
-        '${e.response?.data}',
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Get Work Updates Error: $e',
         stackTrace: stackTrace,
       );
@@ -235,16 +216,21 @@ class DashboardRepository {
   }
 
   /// dashboard function
-  Future<DashboardModel> getDashboard() async {
+  Future<DashboardModel> getDashboard({
+    required String fromDate,
+    required String toDate,
+  }) async {
     try {
-      log('Fetching dashboard data...');
+      appLog(
+        'Fetching dashboard data ($fromDate — $toDate)...',
+      );
 
       final response = await dio.get(
         ApiEndpoints.getDashboard,
-      );
-
-      log(
-        'Get Dashboard Response: ${response.data}',
+        queryParameters: {
+          'FromDate': fromDate,
+          'ToDate': toDate,
+        },
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -288,16 +274,12 @@ class DashboardRepository {
         'Failed to load dashboard (status ${response.statusCode})',
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get Dashboard Dio Error: ${e.message}',
-      );
-      log(
-        'Get Dashboard Dio Response: '
-        '${e.response?.data}',
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Get Dashboard Error: $e',
         stackTrace: stackTrace,
       );

@@ -12,6 +12,12 @@ enum PaymentStatus {
   rejected,
 }
 
+/// Local UI choice for a pending row (approve vs reject — mutually exclusive).
+enum PaymentReviewIntent {
+  approve,
+  reject,
+}
+
 class MonthlyPayment {
   const MonthlyPayment({
     required this.id,
@@ -74,7 +80,7 @@ class MonthlyPaymentTable extends StatefulWidget {
   const MonthlyPaymentTable({
     super.key,
     required this.payments,
-    required this.selectedIds,
+    required this.reviewIntents,
     required this.searchController,
     required this.fromDate,
     required this.toDate,
@@ -82,15 +88,17 @@ class MonthlyPaymentTable extends StatefulWidget {
     required this.onClearSearch,
     required this.onFromDateChanged,
     required this.onToDateChanged,
-    required this.onSelectionChanged,
-    required this.onSelectAllChanged,
-    required this.onApprove,
-    required this.onReject,
+    required this.onApproveIntentChanged,
+    required this.onRejectIntentChanged,
+    required this.onSelectAllApproveChanged,
     required this.onApproveAll,
+    required this.onSaveRow,
+    required this.onViewHistory,
+    this.isReviewSubmitting = false,
   });
 
   final List<MonthlyPayment> payments;
-  final Set<int> selectedIds;
+  final Map<int, PaymentReviewIntent> reviewIntents;
   final TextEditingController searchController;
   final DateTime? fromDate;
   final DateTime? toDate;
@@ -99,21 +107,25 @@ class MonthlyPaymentTable extends StatefulWidget {
   final ValueChanged<DateTime?> onFromDateChanged;
   final ValueChanged<DateTime?> onToDateChanged;
 
-  final void Function(int id, bool selected) onSelectionChanged;
-  final ValueChanged<bool> onSelectAllChanged;
-  final ValueChanged<int> onApprove;
-  final ValueChanged<int> onReject;
+  final void Function(int id, bool selected) onApproveIntentChanged;
+  final void Function(int id, bool selected) onRejectIntentChanged;
+  final ValueChanged<bool> onSelectAllApproveChanged;
   final VoidCallback onApproveAll;
+  final ValueChanged<int> onSaveRow;
+  final VoidCallback onViewHistory;
+  final bool isReviewSubmitting;
+
+  static const Color _checkboxFillSelected = Color(0xFF6B4E8F);
 
   @override
   State<MonthlyPaymentTable> createState() => _MonthlyPaymentTableState();
 }
 
 class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
-  static const double _minTableWidth = 1040;
+  static const double _minTableWidth = 1080;
   static const double _tableBodyHeight = 540;
   static const double _rowHeight = 54;
-  static const double _actionsWidth = 84;
+  static const double _actionsWidth = 148;
   static const double _actionsLeadingGap = 16;
 
   final ScrollController _horizontalController = ScrollController();
@@ -157,15 +169,20 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
     required IconData icon,
     required Color color,
     required VoidCallback? onTap,
+    bool selected = false,
   }) {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: AppColors.white,
+        color: selected ? color.withValues(alpha: 0.12) : AppColors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
           side: BorderSide(
-            color: onTap == null ? AppColors.border : color.withValues(alpha: 0.45),
+            color: onTap == null
+                ? AppColors.border
+                : selected
+                    ? color
+                    : color.withValues(alpha: 0.45),
           ),
         ),
         child: InkWell(
@@ -177,7 +194,11 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
             child: Icon(
               icon,
               size: 18,
-              color: onTap == null ? AppColors.textMuted : color,
+              color: onTap == null
+                  ? AppColors.textMuted
+                  : selected
+                      ? color
+                      : color,
             ),
           ),
         ),
@@ -294,8 +315,34 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
     return SizedBox(width: width, child: label);
   }
 
+  Widget _selectionCheckbox({
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Checkbox(
+      value: value,
+      onChanged: onChanged == null
+          ? null
+          : (checked) => onChanged(checked ?? false),
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return MonthlyPaymentTable._checkboxFillSelected;
+        }
+        return AppColors.white;
+      }),
+      checkColor: AppColors.white,
+      side: const BorderSide(color: AppColors.border, width: 1.2),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
   Widget _tableRow(MonthlyPayment payment) {
     final isPending = payment.status == PaymentStatus.pending;
+    final intent = widget.reviewIntents[payment.id];
+    final isApproveSelected = intent == PaymentReviewIntent.approve;
+    final isRejectSelected = intent == PaymentReviewIntent.reject;
+    final hasPendingSelection = intent != null;
     final initial = payment.investorName.isEmpty
         ? '?'
         : payment.investorName[0].toUpperCase();
@@ -308,15 +355,14 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
         children: [
           SizedBox(
             width: 36,
-            child: Checkbox(
-              value: widget.selectedIds.contains(payment.id),
-              onChanged: isPending
-                  ? (value) =>
-                      widget.onSelectionChanged(payment.id, value ?? false)
+            child: _selectionCheckbox(
+              value: isApproveSelected,
+              onChanged: isPending && !widget.isReviewSubmitting
+                  ? (selected) => widget.onApproveIntentChanged(
+                        payment.id,
+                        selected,
+                      )
                   : null,
-              activeColor: AppColors.accent,
-              visualDensity: VisualDensity.compact,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
           _dataCell('${payment.id}', 40),
@@ -378,24 +424,54 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
                           tooltip: 'Approve',
                           icon: Icons.check_rounded,
                           color: AppColors.green,
-                          onTap: () => widget.onApprove(payment.id),
+                          selected: isApproveSelected,
+                          onTap: widget.isReviewSubmitting
+                              ? null
+                              : () => widget.onApproveIntentChanged(
+                                    payment.id,
+                                    !isApproveSelected,
+                                  ),
                         ),
                         const SizedBox(width: 4),
                         _iconAction(
                           tooltip: 'Reject',
                           icon: Icons.close_rounded,
                           color: AppColors.error,
-                          onTap: () => widget.onReject(payment.id),
+                          selected: isRejectSelected,
+                          onTap: widget.isReviewSubmitting
+                              ? null
+                              : () => widget.onRejectIntentChanged(
+                                    payment.id,
+                                    !isRejectSelected,
+                                  ),
                         ),
+                        if (hasPendingSelection) ...[
+                          const SizedBox(width: 6),
+                          FilledButton(
+                            onPressed: widget.isReviewSubmitting
+                                ? null
+                                : () => widget.onSaveRow(payment.id),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.accent,
+                              foregroundColor: AppColors.white,
+                              minimumSize: const Size(52, 32),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Save',
+                              style: TextStyle(
+                                fontSize: 8.5.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     )
-                  : Icon(
-                      payment.status == PaymentStatus.approved
-                          ? Icons.check_circle_outline_rounded
-                          : Icons.cancel_outlined,
-                      size: 18,
-                      color: AppColors.textMuted,
-                    ),
+                  : const SizedBox.shrink(),
             ),
           ),
         ],
@@ -493,8 +569,28 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
           ],
         );
 
+        final viewHistory = OutlinedButton.icon(
+          onPressed: widget.onViewHistory,
+          icon: const Icon(Icons.visibility_outlined, size: 18),
+          label: Text(
+            'View history',
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.accent,
+            side: const BorderSide(color: AppColors.accent),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+
         final approveAll = FilledButton.icon(
-          onPressed: widget.onApproveAll,
+          onPressed: widget.isReviewSubmitting ? null : widget.onApproveAll,
           icon: const Icon(Icons.done_all_rounded, size: 18),
           label: Text(
             'Approve All',
@@ -511,6 +607,16 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
+        );
+
+        final toolbarActions = Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.end,
+          children: [
+            viewHistory,
+            approveAll,
+          ],
         );
 
         final title = Text(
@@ -532,7 +638,7 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
               const SizedBox(height: 12),
               dates,
               const SizedBox(height: 12),
-              Align(alignment: Alignment.centerRight, child: approveAll),
+              Align(alignment: Alignment.centerRight, child: toolbarActions),
             ],
           );
         }
@@ -544,7 +650,7 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
             const SizedBox(width: 12),
             dates,
             const Spacer(),
-            approveAll,
+            toolbarActions,
           ],
         );
       },
@@ -553,13 +659,24 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
 
   @override
   Widget build(BuildContext context) {
-    final pendingIds = widget.payments
+    final pendingPayments = widget.payments
         .where((p) => p.status == PaymentStatus.pending)
-        .map((p) => p.id)
-        .toSet();
+        .toList();
 
-    final allPendingSelected = pendingIds.isNotEmpty &&
-        pendingIds.every(widget.selectedIds.contains);
+    final approveSelectedCount = pendingPayments
+        .where(
+          (p) =>
+              widget.reviewIntents[p.id] == PaymentReviewIntent.approve,
+        )
+        .length;
+
+    final bool? headerApproveValue = pendingPayments.isEmpty
+        ? false
+        : approveSelectedCount == 0
+            ? false
+            : approveSelectedCount == pendingPayments.length
+                ? true
+                : null;
 
     return UserManagementTableCard(
       child: Column(
@@ -596,17 +713,35 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
                               SizedBox(
                                 width: 36,
                                 child: Checkbox(
-                                  value: allPendingSelected,
-                                  onChanged: (value) => widget.onSelectAllChanged(
-                                    value ?? false,
+                                  tristate: true,
+                                  value: headerApproveValue,
+                                  onChanged: pendingPayments.isEmpty ||
+                                          widget.isReviewSubmitting
+                                      ? null
+                                      : (value) =>
+                                          widget.onSelectAllApproveChanged(
+                                            value ?? true,
+                                          ),
+                                  fillColor: WidgetStateProperty.resolveWith(
+                                    (states) {
+                                      if (states.contains(WidgetState.selected)) {
+                                        return MonthlyPaymentTable
+                                            ._checkboxFillSelected;
+                                      }
+                                      return AppColors.white;
+                                    },
                                   ),
-                                  activeColor: AppColors.accent,
+                                  checkColor: AppColors.white,
+                                  side: const BorderSide(
+                                    color: AppColors.border,
+                                    width: 1.2,
+                                  ),
                                   visualDensity: VisualDensity.compact,
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                               ),
-                              _headerCell('#', 40),
+                              _headerCell('#ID', 40),
                               _headerCell('Investor Name', 132),
                               _headerCell('Investor Code', 88),
                               _headerCell('Contact No.', 118),

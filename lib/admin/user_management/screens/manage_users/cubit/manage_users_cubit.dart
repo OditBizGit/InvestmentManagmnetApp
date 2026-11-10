@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -83,7 +83,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Export investor payment report failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -134,7 +134,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       if (isClosed) return;
 
       if (response.skippedCount > 0) {
-        log(
+        appLog(
           'Get manage users skipped ${response.skippedCount} invalid rows',
           name: 'ManageUsersCubit',
         );
@@ -170,7 +170,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Get manage users unexpected error: $error',
         name: 'ManageUsersCubit',
       );
@@ -248,7 +248,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Update user block status failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -342,7 +342,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       );
       return true;
     } catch (error) {
-      log(
+      appLog(
         'Refund user failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -426,7 +426,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Fetch investor MOU status failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -543,7 +543,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Save investor MOU status failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -668,7 +668,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Fetch investor LLP status failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -785,7 +785,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         ),
       );
     } catch (error) {
-      log(
+      appLog(
         'Save investor LLP status failed: $error',
         name: 'ManageUsersCubit',
       );
@@ -848,7 +848,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     } on DioException catch (error) {
       if (isClosed) return;
 
-      log(
+      appLog(
         'Fetch Investor Transaction History Error: ${error.message}',
         name: 'ManageUsersCubit',
       );
@@ -872,7 +872,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     } catch (error) {
       if (isClosed) return;
 
-      log(
+      appLog(
         'Fetch Investor Transaction History Error: $error',
         name: 'ManageUsersCubit',
       );
@@ -941,7 +941,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     } on DioException catch (error) {
       if (isClosed) return;
 
-      log(
+      appLog(
         'Fetch block requests error: ${error.message}',
         name: 'ManageUsersCubit',
       );
@@ -965,7 +965,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     } catch (error) {
       if (isClosed) return;
 
-      log(
+      appLog(
         'Fetch block requests error: $error',
         name: 'ManageUsersCubit',
       );
@@ -1048,7 +1048,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
       return message;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Review block request error: ${error.message}',
         name: 'ManageUsersCubit',
       );
@@ -1075,7 +1075,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
       return null;
     } catch (error) {
-      log(
+      appLog(
         'Review block request error: $error',
         name: 'ManageUsersCubit',
       );

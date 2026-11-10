@@ -19,6 +19,8 @@ class DashboardOverview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _DashboardTitleRow(),
+        const SizedBox(height: 16),
+        const _DashboardDateRangeFilter(),
         const SizedBox(height: 24),
         BlocBuilder<DashboardCubit, DashboardState>(
           buildWhen: (previous, current) =>
@@ -163,106 +165,250 @@ class _StatsGrid extends StatelessWidget {
 class _DashboardTitleRow extends StatelessWidget {
   const _DashboardTitleRow();
 
-  static const List<String> _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dashboard',
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Manage all investors and data that appears on the admin pannel',
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-  String _formatToday() {
-    final now = DateTime.now();
-    return '${_months[now.month - 1]} ${now.day}, ${now.year}';
+class _DashboardDateRangeFilter extends StatefulWidget {
+  const _DashboardDateRangeFilter();
+
+  @override
+  State<_DashboardDateRangeFilter> createState() =>
+      _DashboardDateRangeFilterState();
+}
+
+class _DashboardDateRangeFilterState extends State<_DashboardDateRangeFilter> {
+  late DateTime _fromDate;
+  late DateTime _toDate;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<DashboardCubit>().state;
+    _fromDate = state.fromDate;
+    _toDate = state.toDate;
+  }
+
+  String _formatPickerDate(DateTime value) {
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year}';
+  }
+
+  Future<void> _pickDate({required bool isFrom}) async {
+    final initial = isFrom ? _fromDate : _toDate;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      final dateOnly = DateTime(picked.year, picked.month, picked.day);
+      if (isFrom) {
+        _fromDate = dateOnly;
+      } else {
+        _toDate = dateOnly;
+      }
+    });
+  }
+
+  Future<void> _apply() async {
+    if (_toDate.isBefore(_fromDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('To date cannot be earlier than from date'),
+        ),
+      );
+      return;
+    }
+
+    await context.read<DashboardCubit>().applyDateRange(
+          fromDate: _fromDate,
+          toDate: _toDate,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 520;
+    return BlocListener<DashboardCubit, DashboardState>(
+      listenWhen: (previous, current) =>
+          previous.fromDate != current.fromDate ||
+          previous.toDate != current.toDate,
+      listener: (context, state) {
+        setState(() {
+          _fromDate = state.fromDate;
+          _toDate = state.toDate;
+        });
+      },
+      child: BlocBuilder<DashboardCubit, DashboardState>(
+        buildWhen: (previous, current) =>
+            previous.dashboardLoading != current.dashboardLoading,
+        builder: (context, state) {
+          final isBusy = state.dashboardLoading;
 
-        final titleBlock = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Dashboard',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Manage all investors and data that appears on the admin pannel',
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ],
-        );
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final stack = constraints.maxWidth < 520;
 
-        final dateButton = Material(
-          color: AppColors.accent,
+                final dates = Row(
+                  children: [
+                    Expanded(
+                      child: _DashboardDateField(
+                        label: 'From',
+                        value: _formatPickerDate(_fromDate),
+                        onTap: isBusy ? null : () => _pickDate(isFrom: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DashboardDateField(
+                        label: 'To',
+                        value: _formatPickerDate(_toDate),
+                        onTap: isBusy ? null : () => _pickDate(isFrom: false),
+                      ),
+                    ),
+                  ],
+                );
+
+                final apply = FilledButton(
+                  onPressed: isBusy ? null : _apply,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    'Apply',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+
+                if (stack) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      dates,
+                      const SizedBox(height: 12),
+                      Align(alignment: Alignment.centerRight, child: apply),
+                    ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(child: dates),
+                    const SizedBox(width: 12),
+                    apply,
+                  ],
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DashboardDateField extends StatelessWidget {
+  const _DashboardDateField({
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Material(
+          color: AppColors.screenBg,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
-            onTap: () {},
+            onTap: onTap,
             borderRadius: BorderRadius.circular(10),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
                     Icons.calendar_today_outlined,
-                    color: AppColors.white,
                     size: 16,
+                    color: AppColors.accent,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    _formatToday(),
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.white,
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 10.5.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        );
-
-        if (isCompact) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              titleBlock,
-              const SizedBox(height: 12),
-              dateButton,
-            ],
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: titleBlock),
-            const SizedBox(width: 16),
-            dateButton,
-          ],
-        );
-      },
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/funding&payments/cubit/funding_payments_cubit.dart';
@@ -408,10 +406,6 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
         _medicalAllowanceDaysController.text.trim(),
       ) ?? 0,
     );
-
-    debugPrint('========== ADD INVESTOR PAYMENT REQUEST ==========');
-    debugPrint(const JsonEncoder.withIndent('  ').convert(request.toJson()));
-    debugPrint('==================================================');
 
     await cubit.addInvestorPayment(request);
   }

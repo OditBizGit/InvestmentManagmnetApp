@@ -16,7 +16,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 import 'package:sizer/sizer.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 import '../../cubit/pending_requests_cubit.dart';
 import '../../model/pending_request_model.dart';
 
@@ -186,21 +186,12 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
                   state is PendingRequestsFailure;
               final isRefreshing = state is PendingRequestsLoading ||
                   (state is PendingRequestsSuccess && state.isListLoading);
+              final showRefetchProgress = isRefreshing && showOverview;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      20,
-                      horizontalPadding,
-                      16,
-                    ),
-                    child: const AdminTopBar(),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
+              return AdminMainScreenLayout(
+                horizontalPadding: horizontalPadding,
+                showRefetchProgress: showRefetchProgress,
+                body: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
                         horizontalPadding,
                         0,
@@ -232,8 +223,6 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
                         ],
                       ),
                     ),
-                  ),
-                ],
               );
             },
           );

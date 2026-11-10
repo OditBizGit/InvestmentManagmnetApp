@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -844,7 +844,7 @@ class _VideoThumbnailState extends State<_VideoThumbnail> {
 
       await _initController(VideoPlayerController.file(File(path)));
     } catch (e) {
-      log('Thumbnail failed for ${widget.url}: $e', name: 'WorkStatusThumb');
+      appLog('Thumbnail failed for ${widget.url}: $e', name: 'WorkStatusThumb');
     }
   }
 
@@ -1027,10 +1027,7 @@ class _NetworkVideoPlayerState extends State<_NetworkVideoPlayer> {
   String? _debugDetail;
 
   void _log(String message) {
-    log(message, name: _logTag);
-    if (kDebugMode) {
-      debugPrint('[$_logTag] $message');
-    }
+    appLog(message, name: _logTag);
   }
 
   @override
@@ -1131,7 +1128,6 @@ class _NetworkVideoPlayerState extends State<_NetworkVideoPlayer> {
         _log('DioException.type: ${e.type}');
         _log('DioException.message: ${e.message}');
         _log('DioException.status: ${e.response?.statusCode}');
-        _log('DioException.response data: ${e.response?.data}');
         _log('DioException.request uri: ${e.requestOptions.uri}');
       }
 

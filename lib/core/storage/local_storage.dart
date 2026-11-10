@@ -1,15 +1,86 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persists auth token and session/user data via [SharedPreferences].
+///
+/// Auth and refresh tokens live in [FlutterSecureStorage] on mobile/desktop
+/// and in [SharedPreferences] on web. They are mirrored in memory so the
+/// getters stay synchronous.
 class LocalStorage {
-  LocalStorage._(this._prefs);
+  LocalStorage._(this._prefs, this._secure);
 
   final SharedPreferences _prefs;
+  final FlutterSecureStorage? _secure;
 
-  /// Initializes [SharedPreferences] and returns a ready [LocalStorage].
-  static Future<LocalStorage> init() async {
+  String? _authToken;
+  String? _refreshToken;
+
+  /// Initializes storage, migrates legacy plaintext tokens and returns a
+  /// ready [LocalStorage].
+  ///
+  /// [secureStorage] lets tests inject a fake; ignored on web.
+  static Future<LocalStorage> init({FlutterSecureStorage? secureStorage}) async {
     final prefs = await SharedPreferences.getInstance();
-    return LocalStorage._(prefs);
+    final secure =
+        kIsWeb ? null : (secureStorage ?? const FlutterSecureStorage());
+    final storage = LocalStorage._(prefs, secure);
+    await storage._loadTokens();
+    return storage;
+  }
+
+  Future<void> _loadTokens() async {
+    _authToken = await _readToken(_authTokenKey);
+    _refreshToken = await _readToken(_refreshTokenKey);
+  }
+
+  /// Reads a token; on secure platforms moves a legacy prefs token into
+  /// secure storage and deletes the prefs copy.
+  Future<String?> _readToken(String key) async {
+    final secure = _secure;
+    if (secure == null) return _prefs.getString(key);
+    String? value;
+    try {
+      value = await secure.read(key: key);
+      final legacy = _prefs.getString(key);
+      if (legacy != null) {
+        if (value == null && legacy.isNotEmpty) {
+          await secure.write(key: key, value: legacy);
+          value = legacy;
+        }
+        await _prefs.remove(key);
+      }
+    } catch (e) {
+      // Keystore unavailable: fall back to no token (user logs in again).
+      if (kDebugMode) debugPrint('Secure storage read failed for $key: $e');
+    }
+    return value;
+  }
+
+  Future<bool> _writeToken(String key, String token) async {
+    final secure = _secure;
+    if (secure == null) return _prefs.setString(key, token);
+    try {
+      await secure.write(key: key, value: token);
+      await _prefs.remove(key);
+      return true;
+    } catch (e) {
+      // Keystore failure: keep the token in memory (already set by caller)
+      // so login does not throw; it will not survive an app restart.
+      if (kDebugMode) debugPrint('Secure storage write failed for $key: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _deleteToken(String key) async {
+    final secure = _secure;
+    if (secure == null) return _prefs.remove(key);
+    try {
+      await secure.delete(key: key);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Secure storage delete failed for $key: $e');
+    }
+    return _prefs.remove(key);
   }
 
   static const String _authTokenKey = 'auth_token';
@@ -29,19 +100,26 @@ class LocalStorage {
 
   // ── Auth token ────────────────────────────────────────────────────
 
-  Future<bool> setAuthToken(String token) =>
-      _prefs.setString(_authTokenKey, token);
+  Future<bool> setAuthToken(String token) async {
+    _authToken = token;
+    return _writeToken(_authTokenKey, token);
+  }
 
-  String? getAuthToken() => _prefs.getString(_authTokenKey);
+  String? getAuthToken() => _authToken;
 
-  Future<bool> clearAuthToken() => _prefs.remove(_authTokenKey);
+  Future<bool> clearAuthToken() {
+    _authToken = null;
+    return _deleteToken(_authTokenKey);
+  }
 
   // ── Refresh token ─────────────────────────────────────────────────
 
-  Future<bool> setRefreshToken(String token) =>
-      _prefs.setString(_refreshTokenKey, token);
+  Future<bool> setRefreshToken(String token) async {
+    _refreshToken = token;
+    return _writeToken(_refreshTokenKey, token);
+  }
 
-  String? getRefreshToken() => _prefs.getString(_refreshTokenKey);
+  String? getRefreshToken() => _refreshToken;
 
   // ── User / session ────────────────────────────────────────────────
 
@@ -160,9 +238,11 @@ class LocalStorage {
 
   /// Completely removes the auth token and all session-specific data.
   Future<void> clearSession() async {
+    _authToken = null;
+    _refreshToken = null;
     await Future.wait([
-      _prefs.remove(_authTokenKey),
-      _prefs.remove(_refreshTokenKey),
+      _deleteToken(_authTokenKey),
+      _deleteToken(_refreshTokenKey),
       _prefs.remove(_userIdKey),
       _prefs.remove(_usernameKey),
       _prefs.remove(_fullNameKey),

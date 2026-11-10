@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -416,7 +416,7 @@ class _UpdateStatusStoriesFormViewState
         );
       });
     } catch (error, stackTrace) {
-      log('Status stories file pick failed: $error', stackTrace: stackTrace);
+      appLog('Status stories file pick failed: $error', stackTrace: stackTrace);
       if (!mounted) return;
       AppToast.error(
         'Could not complete the file selection. Please try again.',
@@ -439,7 +439,7 @@ class _UpdateStatusStoriesFormViewState
         );
       }
     }
-    log('Could not read picked file at $path: $lastError');
+    appLog('Could not read picked file at $path: $lastError');
     return null;
   }
 

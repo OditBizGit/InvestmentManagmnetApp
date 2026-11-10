@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import '../model/funding_payment_overview_model.dart';
@@ -16,9 +16,9 @@ class ReportRepository {
     required String toDate,
   }) async {
     try {
-      log('Fetching funding payment overview...');
-      log('From Date: $fromDate');
-      log('To Date: $toDate');
+      appLog('Fetching funding payment overview...');
+      appLog('From Date: $fromDate');
+      appLog('To Date: $toDate');
 
       final response = await dio.post(
         ApiEndpoints.fundingPaymentOverview,
@@ -28,7 +28,6 @@ class ReportRepository {
         },
       );
 
-      log('Funding Payment Overview Response: ${response.data}');
 
       final body = response.data;
       if (response.statusCode != 200 || body is! Map) {
@@ -66,24 +65,22 @@ class ReportRepository {
 
       return FundingPaymentOverviewModel.fromJson(map);
     } on DioException catch (e) {
-      log('Funding Payment Overview Dio Error: ${e.message}');
-      log('Funding Payment Overview Response: ${e.response?.data}');
+      appLog('Funding Payment Overview Dio Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Funding Payment Overview Error: $e');
+      appLog('Funding Payment Overview Error: $e');
       rethrow;
     }
   }
 
   Future<InvestorTypeCountModel> getInvestorTypeCount() async {
     try {
-      log('Fetching investor type count...');
+      appLog('Fetching investor type count...');
 
       final response = await dio.get(
         ApiEndpoints.investorTypeCount,
       );
 
-      log('Investor Type Count Response: ${response.data}');
 
       final body = response.data;
       if (response.statusCode != 200 || body is! Map) {
@@ -130,14 +127,10 @@ class ReportRepository {
             : 'Failed to load investor summary',
       );
     } on DioException catch (e) {
-      log('Investor Type Count Dio Error: ${e.message}');
-      log(
-        'Investor Type Count Response: '
-            '${e.response?.data}',
-      );
+      appLog('Investor Type Count Dio Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Investor Type Count Error: $e');
+      appLog('Investor Type Count Error: $e');
       rethrow;
     }
   }

@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -17,10 +17,10 @@ class AddWorkStatusRepository {
     required MultipartFile file,
   }) async {
     try {
-      log('Adding work status...');
-      log('Title: $title');
-      log('Description: $description');
-      log('File: ${file.filename}');
+      appLog('Adding work status...');
+      appLog('Title: $title');
+      appLog('Description: $description');
+      appLog('File: ${file.filename}');
 
       final formData = FormData.fromMap({
         'Title': title,
@@ -36,7 +36,6 @@ class AddWorkStatusRepository {
         ),
       );
 
-      log('Add Work Status Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> json;
@@ -48,7 +47,7 @@ class AddWorkStatusRepository {
             response.data as Map,
           );
         } else {
-          log(
+          appLog(
             'Add Work Status failed: unexpected response type',
           );
 
@@ -63,7 +62,7 @@ class AddWorkStatusRepository {
         return AddWorkStatusResponseModel.fromJson(json);
       }
 
-      log(
+      appLog(
         'Add Work Status failed: '
         '${response.statusCode}',
       );
@@ -77,13 +76,10 @@ class AddWorkStatusRepository {
         code: response.statusCode ?? 0,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Add Work Status Dio Error: ${e.message}',
       );
 
-      log(
-        'Add Work Status Response: ${e.response?.data}',
-      );
 
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
@@ -123,7 +119,7 @@ class AddWorkStatusRepository {
         code: statusCode ?? 0,
       );
     } catch (e) {
-      log(
+      appLog(
         'Add Work Status Error: $e',
       );
 
@@ -140,13 +136,12 @@ class AddWorkStatusRepository {
 
   Future<GetWorkStatusResponseModel?> getWorkStatus() async {
     try {
-      log('Fetching work statuses...');
+      appLog('Fetching work statuses...');
 
       final response = await dio.get(
         ApiEndpoints.getWorkStatus,
       );
 
-      log('Get Work Status Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> json;
@@ -174,8 +169,7 @@ class AddWorkStatusRepository {
         code: response.statusCode ?? 0,
       );
     } on DioException catch (e) {
-      log('Get Work Status Dio Error: ${e.message}');
-      log('Get Work Status Response: ${e.response?.data}');
+      appLog('Get Work Status Dio Error: ${e.message}');
 
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
@@ -209,7 +203,7 @@ class AddWorkStatusRepository {
         code: statusCode ?? 0,
       );
     } catch (e) {
-      log('Get Work Status Error: $e');
+      appLog('Get Work Status Error: $e');
 
       return GetWorkStatusResponseModel(
         status: false,
@@ -224,14 +218,13 @@ class AddWorkStatusRepository {
     required int id,
   }) async {
     try {
-      log('Deleting work status...');
-      log('Work Status ID: $id');
+      appLog('Deleting work status...');
+      appLog('Work Status ID: $id');
 
       final response = await dio.delete(
         '${ApiEndpoints.deleteWorkStatus}$id',
       );
 
-      log('Delete Work Status Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> json;
@@ -243,7 +236,7 @@ class AddWorkStatusRepository {
             response.data as Map,
           );
         } else {
-          log(
+          appLog(
             'Delete Work Status failed: unexpected response type',
           );
           return null;
@@ -252,7 +245,7 @@ class AddWorkStatusRepository {
         return DeleteWorkStatusModel.fromJson(json);
       }
 
-      log(
+      appLog(
         'Delete Work Status failed: ${response.statusCode}',
       );
 
@@ -265,8 +258,7 @@ class AddWorkStatusRepository {
         code: response.statusCode ?? 0,
       );
     } on DioException catch (e) {
-      log('Delete Work Status Dio Error: ${e.message}');
-      log('Delete Work Status Response: ${e.response?.data}');
+      appLog('Delete Work Status Dio Error: ${e.message}');
 
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
@@ -300,7 +292,7 @@ class AddWorkStatusRepository {
         code: statusCode ?? 0,
       );
     } catch (e) {
-      log('Delete Work Status Error: $e');
+      appLog('Delete Work Status Error: $e');
       return DeleteWorkStatusModel(
         status: false,
         message: 'Something went wrong while deleting. Please try again.',

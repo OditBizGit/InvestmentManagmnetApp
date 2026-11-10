@@ -69,7 +69,10 @@ class ApiEndpoints {
   static const String topInvestorButton = "/api/Settings/UpdateTopInvestorsInvestorVisibility";
   static const String getStaffReport = "/api/Staff/GetStaffReport";
   static const String getStaffReportByID = "/api/Staff/GetStaffReportDetails/{staffId}";
-  static const String monthlyPaymentList = "/api/Investor/MonthlyPaymentList";
+  static const String monthlyPaymentList = "/api/Investor/PaymentVerificationList";
+  static const String paymentVerificationHistory =
+      '/api/Investor/PaymentVerificationHistory';
+  static const String acceptOrRejectPaymentStatus = "/api/Investor/ReviewPaymentVerification";
 
 
 

@@ -1754,12 +1754,6 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
       image = DecorationImage(
         image: NetworkImage(existingImageUrl!),
         fit: BoxFit.cover,
-        onError: (exception, stackTrace) {
-          debugPrint(
-            'Edit investor existing image failed: $existingImageUrl\n'
-            '$exception',
-          );
-        },
       );
     }
 

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/auth/model/login_response_model.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
+import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_permissions.dart';
 import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -23,8 +24,9 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> login({
     required String username,
     required String password,
+    required String? userRole,
     String? requiredRole,
-    String? userRole,
+    List<String>? allowedRoles,
   }) async {
     AuthNavigationGuard.suppressAuthenticatedNavigation = false;
     AuthNavigationGuard.holdBlockedOverlay.value = false;
@@ -46,7 +48,36 @@ class LoginCubit extends Cubit<LoginState> {
       }
 
       final data = response.data!;
-      if (requiredRole != null &&
+      final selectedRole = userRole?.trim();
+      if (selectedRole != null &&
+          selectedRole.isNotEmpty &&
+          AdminNavPermissions.normalizeRole(selectedRole) !=
+              AdminNavPermissions.normalizeRole(data.userRole)) {
+        emit(
+          LoginFailure(
+            'This account is not registered as the selected role. '
+            'Please choose the correct role and try again.',
+          ),
+        );
+        return;
+      }
+
+      if (allowedRoles != null && allowedRoles.isNotEmpty) {
+        final roleAllowed = allowedRoles.any(
+          (role) =>
+              AdminNavPermissions.normalizeRole(role) ==
+              AdminNavPermissions.normalizeRole(data.userRole),
+        );
+        if (!roleAllowed) {
+          emit(
+            LoginFailure(
+              'Access denied. Only Admin, Super Admin, Financial Manager, and '
+              'Marketing Manager accounts can log in here.',
+            ),
+          );
+          return;
+        }
+      } else if (requiredRole != null &&
           data.userRole.toLowerCase() != requiredRole.toLowerCase()) {
         emit(
           LoginFailure(

@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,7 +24,37 @@ class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit({
     required this.phaseRepository,
     required this.dashboardRepository,
-  }) : super(const DashboardState());
+  }) : super(_initialState());
+
+  static DashboardState _initialState() {
+    final now = DateTime.now();
+    return DashboardState(
+      fromDate: DateTime(now.year, now.month, 1),
+      toDate: DateTime(now.year, now.month, now.day),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
+
+  /// Updates the summary range and refetches dashboard stats only.
+  Future<void> applyDateRange({
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    final from = _dateOnly(fromDate);
+    final to = _dateOnly(toDate);
+    if (to.isBefore(from)) return;
+
+    emit(state.copyWith(fromDate: from, toDate: to));
+    await getDashboardSummary();
+  }
 
   Future<void> loadDashboard() async {
     await getDashboardSummary();
@@ -67,11 +97,14 @@ class DashboardCubit extends Cubit<DashboardState> {
     );
 
     try {
-      log('DashboardCubit: Fetching dashboard summary...');
+      appLog('DashboardCubit: Fetching dashboard summary...');
 
-      final dashboard = await dashboardRepository.getDashboard();
+      final dashboard = await dashboardRepository.getDashboard(
+        fromDate: _formatDate(state.fromDate),
+        toDate: _formatDate(state.toDate),
+      );
 
-      log('DashboardCubit: Dashboard summary fetched');
+      appLog('DashboardCubit: Dashboard summary fetched');
 
       emit(
         state.copyWith(
@@ -82,7 +115,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Dashboard summary Dio error: $e',
         stackTrace: stackTrace,
       );
@@ -98,7 +131,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Dashboard summary error: $e',
         stackTrace: stackTrace,
       );
@@ -125,11 +158,11 @@ class DashboardCubit extends Cubit<DashboardState> {
     );
 
     try {
-      log('DashboardCubit: Fetching work phase list...');
+      appLog('DashboardCubit: Fetching work phase list...');
 
       final workPhases = await phaseRepository.workPhaseList();
 
-      log(
+      appLog(
         'DashboardCubit: Work phase list fetched '
         '(${workPhases.length} items)',
       );
@@ -143,7 +176,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Work phase list Dio error: $e',
         stackTrace: stackTrace,
       );
@@ -159,7 +192,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Work phase list error: $e',
         stackTrace: stackTrace,
       );
@@ -186,11 +219,11 @@ class DashboardCubit extends Cubit<DashboardState> {
     );
 
     try {
-      log('DashboardCubit: Fetching top investors...');
+      appLog('DashboardCubit: Fetching top investors...');
 
       final investors = await dashboardRepository.getTopInvestors();
 
-      log(
+      appLog(
         'DashboardCubit: Top investors fetched '
         '(${investors.length} items)',
       );
@@ -204,7 +237,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Top investors Dio error: $e',
         stackTrace: stackTrace,
       );
@@ -220,7 +253,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Top investors error: $e',
         stackTrace: stackTrace,
       );
@@ -247,11 +280,11 @@ class DashboardCubit extends Cubit<DashboardState> {
     );
 
     try {
-      log('DashboardCubit: Fetching recent payments...');
+      appLog('DashboardCubit: Fetching recent payments...');
 
       final payments = await dashboardRepository.getPaymentHistory();
 
-      log(
+      appLog(
         'DashboardCubit: Recent payments fetched '
         '(${payments.length} items)',
       );
@@ -265,7 +298,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Recent payments Dio error: $e',
         stackTrace: stackTrace,
       );
@@ -281,7 +314,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Recent payments error: $e',
         stackTrace: stackTrace,
       );
@@ -308,11 +341,11 @@ class DashboardCubit extends Cubit<DashboardState> {
     );
 
     try {
-      log('DashboardCubit: Fetching recent updates...');
+      appLog('DashboardCubit: Fetching recent updates...');
 
       final updates = await dashboardRepository.recentWorkUpdates();
 
-      log(
+      appLog(
         'DashboardCubit: Recent updates fetched '
         '(${updates.length} items)',
       );
@@ -326,7 +359,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Recent updates Dio error: $e',
         stackTrace: stackTrace,
       );
@@ -342,7 +375,7 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'DashboardCubit: Recent updates error: $e',
         stackTrace: stackTrace,
       );

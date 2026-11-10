@@ -48,7 +48,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     super.initState();
     _selectedItem = AdminNavPermissions.defaultDrawerItem(_userRole);
     if (!AdminNavPermissions.canOpen(_selectedItem, _userRole)) {
-      _selectedItem = AdminDrawerItem.dashboard;
+      final allowed = AdminNavPermissions.allowedDrawerItems(_userRole);
+      _selectedItem =
+          allowed.isNotEmpty ? allowed.first : AdminDrawerItem.dashboard;
     }
   }
 
@@ -129,7 +131,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           isActive: _selectedItem == AdminDrawerItem.pendingRequests,
         );
       case AdminDrawerItem.monthlyList:
-        return const MonthlyPaymentListScreen();
+        return MonthlyPaymentListScreen(
+          isActive: _selectedItem == AdminDrawerItem.monthlyList,
+        );
       case AdminDrawerItem.settings:
         return const AdminSettingsScreen();
     }

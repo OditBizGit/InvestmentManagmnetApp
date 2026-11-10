@@ -1,5 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -86,7 +86,7 @@ class WorkUpdateMediaCache {
       if (await file.exists()) await file.delete();
       if (await part.exists()) await part.delete();
     } catch (e) {
-      log('WorkUpdateMediaCache invalidate failed: $e');
+      appLog('WorkUpdateMediaCache invalidate failed: $e');
     }
   }
 
@@ -287,7 +287,7 @@ class WorkUpdateMediaCache {
         await getFile(url);
       }
     } catch (e) {
-      log('WorkUpdateMediaCache precache failed: $e');
+      appLog('WorkUpdateMediaCache precache failed: $e');
     }
   }
 

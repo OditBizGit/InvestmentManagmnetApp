@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -19,15 +19,14 @@ class AddPhaseRepository {
       AddPhaseRequestModel request,
       ) async {
     try {
-      log('Adding project phase...');
-      log('Stage Name: ${request.stageName}');
+      appLog('Adding project phase...');
+      appLog('Stage Name: ${request.stageName}');
 
       final response = await dio.post(
         ApiEndpoints.addStage,
         data: request.toJson(),
       );
 
-      log('Add Phase Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data;
@@ -48,7 +47,7 @@ class AddPhaseRepository {
           );
         }
 
-        log(
+        appLog(
           'Add Phase API Error: '
           '${map['message'] ?? map['Message'] ?? 'Something went wrong'}',
         );
@@ -56,19 +55,18 @@ class AddPhaseRepository {
         return null;
       }
 
-      log(
+      appLog(
         'Add Phase API failed with status code: '
             '${response.statusCode}',
       );
 
       return null;
     } on DioException catch (e) {
-      log('Add Phase Dio Error: ${e.message}');
-      log('Add Phase Dio Response: ${e.response?.data}');
+      appLog('Add Phase Dio Error: ${e.message}');
 
       return null;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Add Phase Error: $e',
         stackTrace: stackTrace,
       );
@@ -79,19 +77,18 @@ class AddPhaseRepository {
 
   Future<List<AddPhaseModel>> getStageList() async {
     try {
-      log('Fetching project stage list...');
+      appLog('Fetching project stage list...');
 
       final response = await dio.get(
         ApiEndpoints.stageList,
       );
 
-      log('Stage List Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data;
 
         if (responseData is! Map) {
-          log('Stage List Error: Response is not a Map');
+          appLog('Stage List Error: Response is not a Map');
           return [];
         }
 
@@ -105,7 +102,7 @@ class AddPhaseRepository {
             status?.toString().toLowerCase() == 'success';
 
         if (!isSuccess) {
-          log(
+          appLog(
             'Stage List API Error: '
                 '${map['message'] ?? map['Message'] ?? 'Something went wrong'}',
           );
@@ -116,7 +113,7 @@ class AddPhaseRepository {
         final data = map['data'] ?? map['Data'];
 
         if (data is! List) {
-          log('Stage List Error: Data is not a List');
+          appLog('Stage List Error: Data is not a List');
           return [];
         }
 
@@ -130,19 +127,18 @@ class AddPhaseRepository {
             .toList();
       }
 
-      log(
+      appLog(
         'Stage List API failed with status code: '
             '${response.statusCode}',
       );
 
       return [];
     } on DioException catch (e) {
-      log('Stage List Dio Error: ${e.message}');
-      log('Stage List Dio Response: ${e.response?.data}');
+      appLog('Stage List Dio Error: ${e.message}');
 
       return [];
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Stage List Error: $e',
         stackTrace: stackTrace,
       );
@@ -156,19 +152,18 @@ class AddPhaseRepository {
       AddOrUpdatePhaseRequestModel request,
       ) async {
     try {
-      log('Adding/Updating project phase...');
-      log('Stage ID: ${request.stageId}');
-      log('Construction Team: ${request.constructionTeam}');
-      log('Progress: ${request.progress}');
-      log("due date: ${request.dueDate}");
-      log('Status: ${request.status}');
+      appLog('Adding/Updating project phase...');
+      appLog('Stage ID: ${request.stageId}');
+      appLog('Construction Team: ${request.constructionTeam}');
+      appLog('Progress: ${request.progress}');
+      appLog("due date: ${request.dueDate}");
+      appLog('Status: ${request.status}');
 
       final response = await dio.post(
         ApiEndpoints.addOrUpdatePhase,
         data: request.toJson(),
       );
 
-      log('Add/Update Phase Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data;
@@ -198,7 +193,7 @@ class AddPhaseRepository {
           );
         }
 
-        log(
+        appLog(
           'Add/Update Phase API Error: '
               '${map['message'] ?? map['Message'] ?? 'Something went wrong'}',
         );
@@ -206,19 +201,18 @@ class AddPhaseRepository {
         return null;
       }
 
-      log(
+      appLog(
         'Add/Update Phase API failed with status code: '
             '${response.statusCode}',
       );
 
       return null;
     } on DioException catch (e) {
-      log('Add/Update Phase Dio Error: ${e.message}');
-      log('Add/Update Phase Dio Response: ${e.response?.data}');
+      appLog('Add/Update Phase Dio Error: ${e.message}');
 
       return null;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Add/Update Phase Error: $e',
         stackTrace: stackTrace,
       );
@@ -229,13 +223,12 @@ class AddPhaseRepository {
   
   Future<List<WorkPhaseListModel>> workPhaseList() async {
     try {
-      log('Fetching work phase list...');
+      appLog('Fetching work phase list...');
 
       final response = await dio.get(
         ApiEndpoints.workPhaseList,
       );
 
-      log('Work Phase List Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data;
@@ -282,11 +275,10 @@ class AddPhaseRepository {
         'Failed to load work progress (status ${response.statusCode})',
       );
     } on DioException catch (e) {
-      log('Work Phase List Dio Error: ${e.message}');
-      log('Work Phase List Dio Response: ${e.response?.data}');
+      appLog('Work Phase List Dio Error: ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Work Phase List Error: $e',
         stackTrace: stackTrace,
       );

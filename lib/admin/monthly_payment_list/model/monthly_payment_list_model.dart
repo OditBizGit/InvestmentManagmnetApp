@@ -70,6 +70,9 @@ class MonthlyPaymentTransactionModel {
   final int entryNo;
   final int receiptNumber;
   final String paymentStatus;
+  final String? verificationRemarks;
+  final String? verifiedByName;
+  final DateTime? verifiedDate;
 
   MonthlyPaymentTransactionModel({
     required this.transactionId,
@@ -85,6 +88,9 @@ class MonthlyPaymentTransactionModel {
     required this.entryNo,
     required this.receiptNumber,
     required this.paymentStatus,
+    this.verificationRemarks,
+    this.verifiedByName,
+    this.verifiedDate,
   });
 
   factory MonthlyPaymentTransactionModel.fromJson(
@@ -103,9 +109,29 @@ class MonthlyPaymentTransactionModel {
       paymentDate: _parseDate(json['paymentDate']),
       entryNo: _parseInt(json['entryNo']) ?? 0,
       receiptNumber: _parseInt(json['receiptNumber']) ?? 0,
-      paymentStatus: json['paymentStatus']?.toString() ?? '',
+      paymentStatus: json['paymentStatus']?.toString() ??
+          json['VerificationStatus']?.toString() ??
+          json['verificationStatus']?.toString() ??
+          '',
+      verificationRemarks: _parseOptionalString(
+        json['verificationRemarks'] ??
+            json['rejectReason'] ??
+            json['RejectReason'] ??
+            json['remarks'] ??
+            json['Remarks'],
+      ),
+      verifiedByName: _parseOptionalString(
+        json['verifiedByName'] ?? json['VerifiedByName'],
+      ),
+      verifiedDate: _parseDate(json['verifiedDate'] ?? json['VerifiedDate']),
     );
   }
+}
+
+String? _parseOptionalString(dynamic value) {
+  if (value == null) return null;
+  final text = value.toString().trim();
+  return text.isEmpty ? null : text;
 }
 
 int? _parseInt(dynamic value) {

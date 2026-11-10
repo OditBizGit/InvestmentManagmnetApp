@@ -11,7 +11,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/screen
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_stat_cards.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 class ManageUsersScreen extends StatelessWidget {
@@ -154,21 +154,14 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
             builder: (context, state) {
               final showOverview =
                   state is ManageUsersSuccess || state is ManageUsersEmpty;
+              final showRefetchProgress =
+                  (state is ManageUsersSuccess && state.isTableLoading) ||
+                  (state is ManageUsersEmpty && state.isTableLoading);
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      20,
-                      horizontalPadding,
-                      16,
-                    ),
-                    child: const AdminTopBar(),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
+              return AdminMainScreenLayout(
+                horizontalPadding: horizontalPadding,
+                showRefetchProgress: showRefetchProgress,
+                body: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
                         horizontalPadding,
                         0,
@@ -208,8 +201,6 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
                         ],
                       ),
                     ),
-                  ),
-                ],
               );
             },
           );

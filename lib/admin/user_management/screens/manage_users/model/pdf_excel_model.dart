@@ -64,6 +64,8 @@ class PdfExcelPaymentDetailModel {
     required this.paidAmount,
     required this.receivedAmount,
     required this.pendingAmount,
+    this.paymentDate,
+    this.paymentMethod = '',
   });
 
   final int transactionId;
@@ -74,6 +76,8 @@ class PdfExcelPaymentDetailModel {
   final double paidAmount;
   final double receivedAmount;
   final double pendingAmount;
+  final DateTime? paymentDate;
+  final String paymentMethod;
 
   factory PdfExcelPaymentDetailModel.fromJson(Map<String, dynamic> json) {
     return PdfExcelPaymentDetailModel(
@@ -101,6 +105,21 @@ class PdfExcelPaymentDetailModel {
       pendingAmount: PdfExcelInvestorModel.readDouble(
         json['pendingAmount'] ?? json['PendingAmount'],
       ),
+      paymentDate: PdfExcelInvestorModel.readFirstExistingDate(json, const [
+        'date',
+        'Date',
+        'paymentDate',
+        'PaymentDate',
+        'transactionDate',
+        'TransactionDate',
+        'paidDate',
+        'PaidDate',
+        'receivedDate',
+        'ReceivedDate',
+      ]),
+      paymentMethod: PdfExcelInvestorModel.readString(
+        json['paymentMethod'] ?? json['PaymentMethod'],
+      ),
     );
   }
 
@@ -114,6 +133,10 @@ class PdfExcelPaymentDetailModel {
       dueAmount: investmentAmount > 0 ? investmentAmount : parent.dueAmount,
       paidAmount: paid,
       pendingAmount: pendingAmount > 0 ? pendingAmount : parent.pendingAmount,
+      paymentDate: paymentDate ?? parent.paymentDate,
+      paymentMethod: paymentMethod.isNotEmpty
+          ? paymentMethod
+          : parent.paymentMethod,
     );
   }
 }
@@ -125,6 +148,8 @@ class PdfExcelInvestorModel {
   final double dueAmount;
   final double paidAmount;
   final double pendingAmount;
+  final DateTime? paymentDate;
+  final String paymentMethod;
   final List<PdfExcelPaymentDetailModel> paymentDetails;
 
   PdfExcelInvestorModel({
@@ -134,6 +159,8 @@ class PdfExcelInvestorModel {
     required this.dueAmount,
     required this.paidAmount,
     required this.pendingAmount,
+    this.paymentDate,
+    this.paymentMethod = '',
     this.paymentDetails = const [],
   });
 
@@ -176,6 +203,21 @@ class PdfExcelInvestorModel {
       dueAmount: dueAmount,
       paidAmount: paidAmount,
       pendingAmount: pendingAmount,
+      paymentDate: readFirstExistingDate(json, const [
+        'date',
+        'Date',
+        'paymentDate',
+        'PaymentDate',
+        'lastPaymentDate',
+        'LastPaymentDate',
+        'transactionDate',
+        'TransactionDate',
+        'createdDate',
+        'CreatedDate',
+      ]),
+      paymentMethod: readString(
+        json['paymentMethod'] ?? json['PaymentMethod'],
+      ),
       paymentDetails: paymentDetails,
     );
   }
@@ -279,5 +321,25 @@ class PdfExcelInvestorModel {
   static String readString(dynamic value) {
     if (value == null) return '';
     return value.toString().trim();
+  }
+
+  static DateTime? readDate(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    return DateTime.tryParse(text);
+  }
+
+  static DateTime? readFirstExistingDate(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      if (json.containsKey(key)) {
+        final parsed = readDate(json[key]);
+        if (parsed != null) return parsed;
+      }
+    }
+    return null;
   }
 }

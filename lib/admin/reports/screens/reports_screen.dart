@@ -10,7 +10,7 @@ import 'package:maribel_wellness_centre_application/admin/reports/screens/widget
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/repository/update_phase_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 class AdminReportsScreen extends StatelessWidget {
@@ -125,22 +125,31 @@ class _AdminReportsViewState extends State<_AdminReportsView> {
             final horizontalPadding =
                 constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    20,
-                    horizontalPadding,
-                    16,
-                  ),
-                  child: const AdminTopBar(),
-                ),
-                Expanded(
-                  child: RefreshIndicator(
+            return BlocBuilder<ReportCubit, ReportState>(
+              buildWhen: (previous, current) =>
+                  previous.workProgressLoading != current.workProgressLoading ||
+                  previous.transactionsLoading != current.transactionsLoading ||
+                  previous.fundingOverviewLoading !=
+                      current.fundingOverviewLoading ||
+                  previous.investorTypeCountLoading !=
+                      current.investorTypeCountLoading,
+              builder: (context, state) {
+                final showRefetchProgress =
+                    (state.workProgressLoading &&
+                        state.hasWorkProgressData) ||
+                    (state.transactionsLoading && state.hasTransactionsData) ||
+                    (state.fundingOverviewLoading &&
+                        state.hasFundingOverviewData) ||
+                    (state.investorTypeCountLoading &&
+                        state.hasInvestorTypeCountData);
+
+                return AdminMainScreenLayout(
+                  horizontalPadding: horizontalPadding,
+                  showRefetchProgress: showRefetchProgress,
+                  body: RefreshIndicator(
                     color: AppColors.accent,
-                    onRefresh: () => context.read<ReportCubit>().loadReports(),
+                    onRefresh: () =>
+                        context.read<ReportCubit>().loadReports(),
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
@@ -161,8 +170,8 @@ class _AdminReportsViewState extends State<_AdminReportsView> {
                       ),
                     ),
                   ),
-                ),
-              ],
+                );
+              },
             );
           },
         ),

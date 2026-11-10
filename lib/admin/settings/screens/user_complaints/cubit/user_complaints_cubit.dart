@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
@@ -82,7 +82,7 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
     try {
       _viewingComplaintId = complaintId;
       emit(ViewComplaintLoading(complaintId: complaintId));
-      log('UserComplaintsCubit: Marking complaint $complaintId as read...');
+      appLog('UserComplaintsCubit: Marking complaint $complaintId as read...');
 
       final result = await userComplaintsRepository.viewComplaint(
         complaintId: complaintId,
@@ -101,7 +101,7 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
             ? result.message!.trim()
             : 'Complaint marked as read';
 
-        log('UserComplaintsCubit: Complaint $complaintId marked as read.');
+        appLog('UserComplaintsCubit: Complaint $complaintId marked as read.');
         emit(
           ViewComplaintSuccess(
             complaintId: complaintId,
@@ -117,11 +117,11 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
         final message = (result?.message?.trim().isNotEmpty ?? false)
             ? result!.message!.trim()
             : 'Failed to mark complaint as read. Please try again.';
-        log('UserComplaintsCubit: Mark as read failed.');
+        appLog('UserComplaintsCubit: Mark as read failed.');
         emit(ViewComplaintFailure(message: message));
       }
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'UserComplaintsCubit Mark As Read Error: $e',
         stackTrace: stackTrace,
       );
@@ -158,7 +158,7 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
     try {
       _solvingComplaintId = complaintId;
       emit(SolveComplaintLoading(complaintId: complaintId));
-      log('UserComplaintsCubit: Solving complaint $complaintId...');
+      appLog('UserComplaintsCubit: Solving complaint $complaintId...');
 
       final result = await userComplaintsRepository.solveComplaint(
         complaintId: complaintId,
@@ -179,7 +179,7 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
             ? result.message!.trim()
             : 'Complaint marked as solved';
 
-        log('UserComplaintsCubit: Complaint $complaintId solved.');
+        appLog('UserComplaintsCubit: Complaint $complaintId solved.');
         emit(
           SolveComplaintSuccess(
             complaintId: complaintId,
@@ -195,11 +195,11 @@ class UserComplaintsCubit extends Cubit<UserComplaintsState> {
         final message = (result?.message?.trim().isNotEmpty ?? false)
             ? result!.message!.trim()
             : 'Failed to mark complaint as solved. Please try again.';
-        log('UserComplaintsCubit: Solve complaint failed.');
+        appLog('UserComplaintsCubit: Solve complaint failed.');
         emit(SolveComplaintFailure(message: message));
       }
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'UserComplaintsCubit Solve Complaint Error: $e',
         stackTrace: stackTrace,
       );

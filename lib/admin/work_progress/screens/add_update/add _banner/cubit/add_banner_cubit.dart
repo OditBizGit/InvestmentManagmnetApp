@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,17 +32,17 @@ class AddBannerCubit extends Cubit<AddBannerState> {
   Future<void> fetchBanners() async {
     try {
       emit(const GetBannersLoading());
-      log('AddBannerCubit: Fetching banners...');
+      appLog('AddBannerCubit: Fetching banners...');
 
       final result = await addBannerRepository.getBanners();
 
       if (result != null) {
         _banners = List<BannerModel>.from(result);
         _bannersFetched = true;
-        log('AddBannerCubit: Loaded ${_banners.length} banners.');
+        appLog('AddBannerCubit: Loaded ${_banners.length} banners.');
         emit(GetBannersSuccess(List.unmodifiable(_banners)));
       } else {
-        log('AddBannerCubit: Failed to fetch banners.');
+        appLog('AddBannerCubit: Failed to fetch banners.');
         emit(
           const GetBannersFailure(
             'Failed to load banners. Please try again.',
@@ -50,7 +50,7 @@ class AddBannerCubit extends Cubit<AddBannerState> {
         );
       }
     } catch (e, stackTrace) {
-      log('AddBannerCubit Fetch Banners Error: $e', stackTrace: stackTrace);
+      appLog('AddBannerCubit Fetch Banners Error: $e', stackTrace: stackTrace);
       emit(
         GetBannersFailure(
           e.toString().replaceFirst('Exception: ', ''),
@@ -65,14 +65,14 @@ class AddBannerCubit extends Cubit<AddBannerState> {
     try {
       emit(const AddBannerLoading());
 
-      log('AddBannerCubit: Uploading banner...');
+      appLog('AddBannerCubit: Uploading banner...');
       final result = await addBannerRepository.addBanner(image: image);
 
       if (result != null && result.status != false) {
         final message = (result.message?.trim().isNotEmpty ?? false)
             ? result.message!.trim()
             : 'Banner uploaded successfully.';
-        log('AddBannerCubit: Banner uploaded. id=${result.bannerId}');
+        appLog('AddBannerCubit: Banner uploaded. id=${result.bannerId}');
         emit(
           AddBannerSuccess(
             banner: result,
@@ -85,11 +85,11 @@ class AddBannerCubit extends Cubit<AddBannerState> {
         final message = (result?.message?.trim().isNotEmpty ?? false)
             ? result!.message!.trim()
             : 'Failed to upload banner. Please try again.';
-        log('AddBannerCubit: Banner upload failed.');
+        appLog('AddBannerCubit: Banner upload failed.');
         emit(AddBannerFailure(message: message));
       }
     } catch (e, stackTrace) {
-      log('AddBannerCubit Add Banner Error: $e', stackTrace: stackTrace);
+      appLog('AddBannerCubit Add Banner Error: $e', stackTrace: stackTrace);
       emit(
         AddBannerFailure(
           message: e.toString().replaceFirst('Exception: ', ''),
@@ -119,7 +119,7 @@ class AddBannerCubit extends Cubit<AddBannerState> {
     try {
       emit(const AddBannerLoading());
 
-      log('AddBannerCubit: Uploading ${images.length} banners...');
+      appLog('AddBannerCubit: Uploading ${images.length} banners...');
       var successCount = 0;
       AddBannerModel? lastSuccess;
       String? lastError;
@@ -133,7 +133,7 @@ class AddBannerCubit extends Cubit<AddBannerState> {
           lastError = (result?.message?.trim().isNotEmpty ?? false)
               ? result!.message!.trim()
               : 'Failed to upload banner ${i + 1}.';
-          log('AddBannerCubit: Banner ${i + 1} failed: $lastError');
+          appLog('AddBannerCubit: Banner ${i + 1} failed: $lastError');
         }
       }
 
@@ -165,7 +165,7 @@ class AddBannerCubit extends Cubit<AddBannerState> {
         );
       }
     } catch (e, stackTrace) {
-      log('AddBannerCubit Add Banners Error: $e', stackTrace: stackTrace);
+      appLog('AddBannerCubit Add Banners Error: $e', stackTrace: stackTrace);
       emit(
         AddBannerFailure(
           message: e.toString().replaceFirst('Exception: ', ''),
@@ -186,7 +186,7 @@ class AddBannerCubit extends Cubit<AddBannerState> {
 
     try {
       emit(DeleteBannerLoading(bannerId: bannerId));
-      log('AddBannerCubit: Deleting banner id=$bannerId...');
+      appLog('AddBannerCubit: Deleting banner id=$bannerId...');
 
       final result = await addBannerRepository.deleteBanner(
         bannerId: bannerId,
@@ -202,7 +202,7 @@ class AddBannerCubit extends Cubit<AddBannerState> {
             ? result.message!.trim()
             : 'Banner deleted successfully.';
 
-        log('AddBannerCubit: Banner deleted. id=$bannerId');
+        appLog('AddBannerCubit: Banner deleted. id=$bannerId');
         emit(
           DeleteBannerSuccess(
             bannerId: bannerId,
@@ -213,11 +213,11 @@ class AddBannerCubit extends Cubit<AddBannerState> {
         final message = (result?.message?.trim().isNotEmpty ?? false)
             ? result!.message!.trim()
             : 'Failed to delete banner. Please try again.';
-        log('AddBannerCubit: Banner delete failed.');
+        appLog('AddBannerCubit: Banner delete failed.');
         emit(DeleteBannerFailure(message: message));
       }
     } catch (e, stackTrace) {
-      log('AddBannerCubit Delete Banner Error: $e', stackTrace: stackTrace);
+      appLog('AddBannerCubit Delete Banner Error: $e', stackTrace: stackTrace);
       emit(
         DeleteBannerFailure(
           message: e.toString().replaceFirst('Exception: ', ''),

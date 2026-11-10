@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 
 import 'package:dio/dio.dart';
 
@@ -18,7 +18,7 @@ class StaffReportRepository {
     String? search,
   }) async {
     try {
-      log(
+      appLog(
         'Fetching staff report: period=$period, fromDate=$fromDate, '
             'toDate=$toDate, search=$search',
         name: 'GetStaffReportAPI',
@@ -37,25 +37,21 @@ class StaffReportRepository {
         },
       );
 
-      log(
-        'Staff report response: ${response.data}',
-        name: 'GetStaffReportAPI',
-      );
 
       return StaffReportResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'Dio error fetching staff report: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
         name: 'GetStaffReportAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Unexpected error fetching staff report: $e',
         name: 'GetStaffReportAPI',
         error: e,
@@ -74,7 +70,7 @@ class StaffReportRepository {
     String? search,
   }) async {
     try {
-      log(
+      appLog(
         'Fetching staff report details: staffId=$staffId, '
             'period=$period, fromDate=$fromDate, '
             'toDate=$toDate, search=$search',
@@ -97,25 +93,21 @@ class StaffReportRepository {
         },
       );
 
-      log(
-        'Staff report details response: ${response.data}',
-        name: 'GetStaffReportDetailsAPI',
-      );
 
       return StaffReportDetailsResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'Dio error fetching staff report details: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
         name: 'GetStaffReportDetailsAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Unexpected error fetching staff report details: $e',
         name: 'GetStaffReportDetailsAPI',
         error: e,

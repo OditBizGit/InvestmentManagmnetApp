@@ -11,7 +11,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/repository/i
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/repository/create_project_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 import '../add_fund/add_new_fund.dart';
@@ -293,6 +293,10 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
                   (state is TransactionHistoryEmpty ||
                       (!cubit.hasFundingInvestors && transactions.isEmpty));
 
+              final showRefetchProgress =
+                  state is TransactionHistoryLoading &&
+                      cubit.hasFundingInvestors;
+
               return ColoredBox(
                 color: AppColors.screenBg,
                 child: LayoutBuilder(
@@ -300,53 +304,41 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
                     final horizontalPadding =
                         constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            horizontalPadding,
-                            20,
-                            horizontalPadding,
-                            16,
-                          ),
-                          child: const AdminTopBar(),
+                    return AdminMainScreenLayout(
+                      horizontalPadding: horizontalPadding,
+                      showRefetchProgress: showRefetchProgress,
+                      body: SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          0,
+                          horizontalPadding,
+                          24,
                         ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.fromLTRB(
-                              horizontalPadding,
-                              0,
-                              horizontalPadding,
-                              24,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FundingOverviewSection(
+                              transactions:
+                                  isLoading || errorMessage != null
+                                      ? const []
+                                      : source,
+                              projectAmount: projectAmount,
+                              onAddFunding: _openAddFund,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                FundingOverviewSection(
-                                  transactions:
-                                      isLoading || errorMessage != null
-                                          ? const []
-                                          : source,
-                                  projectAmount: projectAmount,
-                                  onAddFunding: _openAddFund,
-                                ),
-                                const SizedBox(height: 20),
-                                FundingTransactionsTable(
-                                  transactions: transactions,
-                                  isLoading: isLoading,
-                                  isEmpty: isEmpty,
-                                  errorMessage: errorMessage,
-                                  onRetry: () => context
-                                      .read<FundingPaymentsCubit>()
-                                      .fetchFundingInvestors(),
-                                  onTransactionTap: _openTransaction,
-                                ),
-                              ],
+                            const SizedBox(height: 20),
+                            FundingTransactionsTable(
+                              transactions: transactions,
+                              isLoading: isLoading,
+                              isEmpty: isEmpty,
+                              errorMessage: errorMessage,
+                              onRetry: () => context
+                                  .read<FundingPaymentsCubit>()
+                                  .fetchFundingInvestors(),
+                              onTransactionTap: _openTransaction,
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     );
                   },
                 ),

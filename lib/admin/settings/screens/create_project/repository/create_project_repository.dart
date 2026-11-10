@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
@@ -18,9 +18,9 @@ class ProjectRepository {
       ProjectRequestModel request,
       ) async {
     try {
-      log('Creating project...');
-      log('Project Name: ${request.name}');
-      log('Total Fund: ${request.totalFund}');
+      appLog('Creating project...');
+      appLog('Project Name: ${request.name}');
+      appLog('Total Fund: ${request.totalFund}');
 
       final formData = await request.toFormData();
 
@@ -32,20 +32,19 @@ class ProjectRepository {
         ),
       );
 
-      log('Create Project Response: ${response.data}');
 
       return ProjectResponseModel.fromJson(
         response.data,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Create Project DioException: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
       );
 
       return null;
     } catch (e) {
-      log('Create Project Error: $e');
+      appLog('Create Project Error: $e');
 
       return null;
     }
@@ -60,14 +59,14 @@ class ProjectRepository {
       ) async {
     try {
       if (request.projectId == 0) {
-        log('Update Project Error: ProjectId is required.');
+        appLog('Update Project Error: ProjectId is required.');
         return null;
       }
 
-      log('Updating project...');
-      log('Project ID: ${request.projectId}');
-      log('Project Name: ${request.name}');
-      log('Total Fund: ${request.totalFund}');
+      appLog('Updating project...');
+      appLog('Project ID: ${request.projectId}');
+      appLog('Project Name: ${request.name}');
+      appLog('Total Fund: ${request.totalFund}');
 
       final formData = await request.toFormData();
 
@@ -79,20 +78,19 @@ class ProjectRepository {
         ),
       );
 
-      log('Update Project Response: ${response.data}');
 
       return ProjectResponseModel.fromJson(
         response.data,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Update Project DioException: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
       );
 
       return null;
     } catch (e) {
-      log('Update Project Error: $e');
+      appLog('Update Project Error: $e');
 
       return null;
     }
@@ -100,26 +98,25 @@ class ProjectRepository {
 
   Future<ProjectListResponseModel?> getProjects() async {
     try {
-      log('Fetching projects...');
+      appLog('Fetching projects...');
 
       final response = await dio.get(
         ApiEndpoints.getProject,
       );
 
-      log('Get Projects Response: ${response.data}');
 
       return ProjectListResponseModel.fromJson(
         response.data,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get Projects DioException: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
       );
 
       return null;
     } catch (e) {
-      log('Get Projects Error: $e');
+      appLog('Get Projects Error: $e');
 
       return null;
     }

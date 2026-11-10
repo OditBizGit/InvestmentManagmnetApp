@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -26,13 +26,13 @@ class InvestorsRepository {
         response.data,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get Investors Error: ${e.message}',
       );
 
       rethrow;
     } catch (e) {
-      log(
+      appLog(
         'Get Investors Error: $e',
       );
 
@@ -52,13 +52,13 @@ class InvestorsRepository {
             : Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get Staff List Error: ${e.message}',
       );
 
       rethrow;
     } catch (e) {
-      log(
+      appLog(
         'Get Staff List Error: $e',
       );
 
@@ -76,13 +76,13 @@ class InvestorsRepository {
         response.data,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get Investor Types Error: ${e.message}',
       );
 
       rethrow;
     } catch (e) {
-      log(
+      appLog(
         'Get Investor Types Error: $e',
       );
 
@@ -108,17 +108,17 @@ class InvestorsRepository {
           ? response.data as Map<String, dynamic>
           : Map<String, dynamic>.from(response.data as Map);
 
-      log('Register Investor completed with status code ${response.statusCode}');
+      appLog('Register Investor completed with status code ${response.statusCode}');
 
       return RegisterInvestorResponseModel.fromJson(payload);
     } on DioException catch (e) {
-      log(
+      appLog(
         'Register Investor Error: ${e.message} (status ${e.response?.statusCode})',
       );
 
       rethrow;
     } catch (e) {
-      log(
+      appLog(
         'Register Investor Error: $e',
       );
 
@@ -140,7 +140,7 @@ class InvestorsRepository {
       );
 
       if (response.statusCode == 200) {
-        log(
+        appLog(
           'Update Investor request body:\n${_formDataForLog(formData)}',
           name: 'InvestorsRepository',
         );
@@ -150,17 +150,14 @@ class InvestorsRepository {
         response.data,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Update Investor Error: ${e.message}',
       );
 
-      log(
-        'Update Investor Response: ${e.response?.data}',
-      );
 
       rethrow;
     } catch (e) {
-      log(
+      appLog(
         'Update Investor Error: $e',
       );
 

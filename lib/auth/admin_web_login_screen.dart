@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_permissions.dart';
 import 'package:maribel_wellness_centre_application/auth/cubit/login_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
@@ -27,7 +28,9 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  
   bool _obscurePassword = true;
+  String _selectedRoleLabel = AdminNavPermissions.adminWebLoginRoleLabels.first;
 
   @override
   void dispose() {
@@ -42,6 +45,10 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
     context.read<LoginCubit>().login(
           username: _usernameController.text.trim(),
           password: _passwordController.text,
+          userRole: AdminNavPermissions.apiRoleForWebLoginLabel(
+            _selectedRoleLabel,
+          ),
+          allowedRoles: AdminNavPermissions.adminWebLoginRoles,
         );
   }
 
@@ -120,7 +127,8 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                             ),
                             const SizedBox(height: 36),
                             Text(
-                              'Welcome Back',                               style: TextStyle(
+                              'Welcome Back',
+                              style: TextStyle(
                                 fontSize: 17.sp,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
@@ -138,6 +146,15 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 32),
+                            _WebLoginRoleDropdown(
+                              value: _selectedRoleLabel,
+                              enabled: !isLoading,
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setState(() => _selectedRoleLabel = value);
+                              },
+                            ),
+                            const SizedBox(height: 20),
                             _WebLoginField(
                               label: 'Username',
                               hint: 'Enter username',
@@ -235,6 +252,89 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _WebLoginRoleDropdown extends StatelessWidget {
+  const _WebLoginRoleDropdown({
+    required this.value,
+    required this.onChanged,
+    this.enabled = true,
+  });
+
+  final String value;
+  final ValueChanged<String?> onChanged;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Login as',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          key: ValueKey(value),
+          initialValue: value,
+          items: [
+            for (final label in AdminNavPermissions.adminWebLoginRoleLabels)
+              DropdownMenuItem<String>(
+                value: label,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+          ],
+          onChanged: enabled ? onChanged : null,
+          decoration: InputDecoration(
+            hintText: 'Select your role',
+            hintStyle: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.hint,
+            ),
+            prefixIcon: const Icon(
+              Icons.badge_outlined,
+              color: AppColors.hint,
+              size: 22,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.accent, width: 1.2),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            filled: true,
+            fillColor: AppColors.white,
+          ),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          borderRadius: BorderRadius.circular(12),
+          isExpanded: true,
+        ),
+      ],
     );
   }
 }

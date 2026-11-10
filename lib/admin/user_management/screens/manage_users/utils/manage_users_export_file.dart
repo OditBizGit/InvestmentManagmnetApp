@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/pdf_excel_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/utils/export_file_saver.dart';
+import 'package:maribel_wellness_centre_application/core/utils/csv_escape.dart';
 import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -32,7 +34,12 @@ class ManageUsersExportFile {
             toDate: toDate,
             investors: investors,
           )
-        : _buildCsvBytes(investors);
+        : _buildCsvBytes(
+            fromDate: fromDate,
+            toDate: toDate,
+            section: section,
+            investors: investors,
+          );
 
     return saveExportFile(
       bytes: bytes,
@@ -41,18 +48,31 @@ class ManageUsersExportFile {
     );
   }
 
-  static Uint8List _buildCsvBytes(List<PdfExcelInvestorModel> investors) {
+  static Uint8List _buildCsvBytes({
+    required DateTime fromDate,
+    required DateTime toDate,
+    required String section,
+    required List<PdfExcelInvestorModel> investors,
+  }) {
+    final sectionLabel = section.toLowerCase() == 'due'
+        ? 'Dues'
+        : 'All transactions';
+
     const header = [
       'User ID',
       'Investor Code',
       'Full Name',
+      'Date',
+      'Payment Method',
       'Due Amount',
       'Paid Amount',
       'Pending Amount',
     ];
 
     final buffer = StringBuffer()
-      ..writeln('\uFEFF${header.map(_escapeCsv).join(',')}');
+      ..writeln('\uFEFFReport period,${_escapeCsv(_formatReportDate(fromDate))} – ${_escapeCsv(_formatReportDate(toDate))}')
+      ..writeln('Section,${_escapeCsv(sectionLabel)}')
+      ..writeln(header.map(_escapeCsv).join(','));
 
     for (final row in investors) {
       buffer.writeln(
@@ -60,6 +80,8 @@ class ManageUsersExportFile {
           row.userId,
           row.investorCode,
           row.fullName,
+          _formatPaymentDate(row.paymentDate),
+          _displayOrNA(row.paymentMethod),
           CurrencyFormatter.format(row.dueAmount),
           CurrencyFormatter.format(row.paidAmount),
           CurrencyFormatter.format(row.pendingAmount),
@@ -80,11 +102,18 @@ class ManageUsersExportFile {
         ? 'Dues'
         : 'All transactions';
 
+    final fontData =
+        await rootBundle.load('assets/font/Montserrat-Bold.ttf');
+    final baseFont = pw.Font.ttf(fontData);
     final doc = pw.Document();
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
         margin: const pw.EdgeInsets.all(28),
+        theme: pw.ThemeData.withFont(
+          base: baseFont,
+          bold: baseFont,
+        ),
         build: (context) {
           return [
             pw.Text(
@@ -112,6 +141,8 @@ class ManageUsersExportFile {
                   'User ID',
                   'Investor Code',
                   'Full Name',
+                  'Date',
+                  'Payment Method',
                   'Due Amount',
                   'Paid Amount',
                   'Pending Amount',
@@ -122,6 +153,8 @@ class ManageUsersExportFile {
                         '${item.userId}',
                         item.investorCode,
                         item.fullName,
+                        _formatPaymentDate(item.paymentDate),
+                        _displayOrNA(item.paymentMethod),
                         CurrencyFormatter.format(item.dueAmount),
                         CurrencyFormatter.format(item.paidAmount),
                         CurrencyFormatter.format(item.pendingAmount),
@@ -139,9 +172,9 @@ class ManageUsersExportFile {
                 cellAlignment: pw.Alignment.centerLeft,
                 cellAlignments: {
                   0: pw.Alignment.centerLeft,
-                  3: pw.Alignment.centerRight,
-                  4: pw.Alignment.centerRight,
                   5: pw.Alignment.centerRight,
+                  6: pw.Alignment.centerRight,
+                  7: pw.Alignment.centerRight,
                 },
               ),
           ];
@@ -152,12 +185,36 @@ class ManageUsersExportFile {
     return doc.save();
   }
 
-  static String _escapeCsv(Object value) {
-    final text = value.toString();
-    if (text.contains(',') || text.contains('"') || text.contains('\n')) {
-      return '"${text.replaceAll('"', '""')}"';
-    }
-    return text;
+  static String _escapeCsv(Object value) => escapeCsvField(value);
+
+  static String _displayOrNA(String value) {
+    final text = value.trim();
+    return text.isEmpty ? 'N/A' : text;
+  }
+
+  static String _formatPaymentDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    final local = date.toLocal();
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final amPm = local.hour >= 12 ? 'PM' : 'AM';
+    return '${local.day.toString().padLeft(2, '0')} '
+        '${months[local.month - 1]}, ${local.year} '
+        '${hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')} $amPm';
   }
 
   static String _formatReportDate(DateTime date) {

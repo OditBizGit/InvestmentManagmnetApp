@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_details_response_model.dart';
@@ -25,10 +25,10 @@ class ProfileRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Get Investor Details Error: ${e.message}');
+      appLog('Get Investor Details Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Investor Details Error: $e');
+      appLog('Get Investor Details Error: $e');
       rethrow;
     }
   }
@@ -47,11 +47,10 @@ class ProfileRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Register Complaint Error: ${e.message}');
-      log('Register Complaint Response: ${e.response?.data}');
+      appLog('Register Complaint Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Register Complaint Error: $e');
+      appLog('Register Complaint Error: $e');
       rethrow;
     }
   }
@@ -64,11 +63,10 @@ class ProfileRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Get My Complaints Error: ${e.message}');
-      log('Get My Complaints Response: ${e.response?.data}');
+      appLog('Get My Complaints Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get My Complaints Error: $e');
+      appLog('Get My Complaints Error: $e');
       rethrow;
     }
   }
@@ -86,11 +84,10 @@ class ProfileRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Get Investor MOU Error: ${e.message}');
-      log('Get Investor MOU Response: ${e.response?.data}');
+      appLog('Get Investor MOU Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Investor MOU Error: $e');
+      appLog('Get Investor MOU Error: $e');
       rethrow;
     }
   }
@@ -108,11 +105,10 @@ class ProfileRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Get Investor LLP Error: ${e.message}');
-      log('Get Investor LLP Response: ${e.response?.data}');
+      appLog('Get Investor LLP Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Investor LLP Error: $e');
+      appLog('Get Investor LLP Error: $e');
       rethrow;
     }
   }

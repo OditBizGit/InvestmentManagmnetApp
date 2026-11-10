@@ -192,12 +192,6 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     _existingProfileImageUrl = investor.profileImageUrl;
     _existingAadhaarCardImageUrl = investor.aadhaarCardImageUrl;
     _existingPanCardImageUrl = investor.panCardImageUrl;
-    debugPrint(
-      'Edit investor images ${investor.fullName}: '
-      'profile=$_existingProfileImageUrl '
-      'aadhaar=$_existingAadhaarCardImageUrl '
-      'pan=$_existingPanCardImageUrl',
-    );
     _dateOfBirth = investor.dateOfBirth;
 
     // KYC / bank — only prefill values that pass form validators so Update

@@ -3,6 +3,8 @@ part of 'dashboard_cubit.dart';
 @immutable
 class DashboardState {
   const DashboardState({
+    required this.fromDate,
+    required this.toDate,
     this.dashboard,
     this.dashboardLoading = false,
     this.dashboardError,
@@ -24,6 +26,9 @@ class DashboardState {
     this.recentUpdatesError,
     this.recentUpdatesLoaded = false,
   });
+
+  final DateTime fromDate;
+  final DateTime toDate;
 
   final DashboardModel? dashboard;
   final bool dashboardLoading;
@@ -51,6 +56,8 @@ class DashboardState {
   final bool recentUpdatesLoaded;
 
   DashboardState copyWith({
+    DateTime? fromDate,
+    DateTime? toDate,
     DashboardModel? dashboard,
     bool clearDashboard = false,
     bool? dashboardLoading,
@@ -79,6 +86,8 @@ class DashboardState {
     bool? recentUpdatesLoaded,
   }) {
     return DashboardState(
+      fromDate: fromDate ?? this.fromDate,
+      toDate: toDate ?? this.toDate,
       dashboard: clearDashboard ? null : (dashboard ?? this.dashboard),
       dashboardLoading: dashboardLoading ?? this.dashboardLoading,
       dashboardError: clearDashboardError

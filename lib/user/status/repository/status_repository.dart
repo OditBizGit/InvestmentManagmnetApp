@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/user/status/model/work_status_model.dart';
@@ -44,13 +44,13 @@ class StatusRepository {
       _precacheMedia(parsed.data);
       return List.unmodifiable(parsed.data);
     } on DioException catch (e) {
-      log('Get Work Status Error: ${e.message}');
+      appLog('Get Work Status Error: ${e.message}');
       if (_cachedStatuses != null) {
         return List.unmodifiable(_cachedStatuses!);
       }
       rethrow;
     } catch (e) {
-      log('Get Work Status Error: $e');
+      appLog('Get Work Status Error: $e');
       if (_cachedStatuses != null) {
         return List.unmodifiable(_cachedStatuses!);
       }

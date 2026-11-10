@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -28,14 +28,14 @@ class StaffRepository {
 
       return result;
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'Create staff API failed: ${e.message}',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Error while creating staff: $e',
         error: e,
         stackTrace: stackTrace,
@@ -56,14 +56,14 @@ class StaffRepository {
         Map<String, dynamic>.from(response.data),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'Get staff API failed: ${e.message}',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Error while retrieving staff: $e',
         error: e,
         stackTrace: stackTrace,
@@ -87,14 +87,14 @@ class StaffRepository {
         Map<String, dynamic>.from(response.data),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'Get investors by staff API failed: ${e.message}',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Error retrieving investors by staff: $e',
         error: e,
         stackTrace: stackTrace,

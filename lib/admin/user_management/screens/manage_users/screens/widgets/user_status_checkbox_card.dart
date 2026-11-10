@@ -7,6 +7,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/widget
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
+import 'package:maribel_wellness_centre_application/core/utils/url_scheme_guard.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -257,7 +258,7 @@ class _UserStatusCheckboxCardState extends State<UserStatusCheckboxCard> {
     }
 
     final uri = Uri.tryParse(remoteUrl);
-    if (uri == null) {
+    if (uri == null || !isHttpOrHttpsUrl(uri)) {
       if (!mounted) return;
       AppToast.error(
         'Invalid document URL.',

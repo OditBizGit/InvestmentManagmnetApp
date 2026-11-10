@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/admin/work_progress/screens/add_update/update_phase/model/work_phase_list_model.dart';
@@ -22,13 +22,13 @@ class WorkProgressCubit extends Cubit<WorkProgressState> {
     emit(const WorkProgressLoading());
 
     try {
-      log('WorkProgressCubit: Fetching work phase list...');
+      appLog('WorkProgressCubit: Fetching work phase list...');
       final result = await repository.workPhaseList();
       _phases = List<WorkPhaseListModel>.from(result);
-      log('WorkProgressCubit: Loaded ${_phases.length} phases.');
+      appLog('WorkProgressCubit: Loaded ${_phases.length} phases.');
       emit(WorkProgressSuccess(List.unmodifiable(_phases)));
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'WorkProgressCubit Work Phase List Error: $e',
         stackTrace: stackTrace,
       );

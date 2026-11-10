@@ -1,5 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
@@ -23,7 +23,7 @@ class AddBannerRepository {
         'Image': image,
       });
 
-      log('Add Banner FormData fields: ${formData.fields}');
+      appLog('Add Banner FormData field names: ${formData.fields.map((f) => f.key)}');
 
 
       final response = await dio.post(
@@ -33,8 +33,8 @@ class AddBannerRepository {
 
 
       if (response.data == null) {
-        log('Add Banner failed: response data is null');
-        log('========== ADD BANNER END (NULL DATA) ==========');
+        appLog('Add Banner failed: response data is null');
+        appLog('========== ADD BANNER END (NULL DATA) ==========');
         return null;
       }
 
@@ -44,20 +44,20 @@ class AddBannerRepository {
       } else if (response.data is Map) {
         json = Map<String, dynamic>.from(response.data as Map);
       } else if (response.data is String) {
-        log('Add Banner: response is String, decoding JSON...');
+        appLog('Add Banner: response is String, decoding JSON...');
         final decoded = jsonDecode(response.data as String);
         if (decoded is! Map) {
-          log('Add Banner failed: decoded string is not a Map');
-          log('========== ADD BANNER END (BAD STRING JSON) ==========');
+          appLog('Add Banner failed: decoded string is not a Map');
+          appLog('========== ADD BANNER END (BAD STRING JSON) ==========');
           return null;
         }
         json = Map<String, dynamic>.from(decoded);
       } else {
-        log(
+        appLog(
           'Add Banner failed: unexpected response type '
           '${response.data.runtimeType}',
         );
-        log('========== ADD BANNER END (BAD TYPE) ==========');
+        appLog('========== ADD BANNER END (BAD TYPE) ==========');
         return null;
       }
 
@@ -81,13 +81,12 @@ class AddBannerRepository {
 
   Future<List<BannerModel>?> getBanners() async {
     try {
-      log('Fetching banners...');
+      appLog('Fetching banners...');
 
       final response = await dio.get(
         ApiEndpoints.getBanner,
       );
 
-      log('Get Banners Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> data = response.data['data'] ?? [];
@@ -97,14 +96,13 @@ class AddBannerRepository {
             .toList();
       }
 
-      log('Get Banners failed: ${response.statusCode}');
+      appLog('Get Banners failed: ${response.statusCode}');
       return null;
     } on DioException catch (e) {
-      log('Get Banners Dio Error: ${e.message}');
-      log('Get Banners Response: ${e.response?.data}');
+      appLog('Get Banners Dio Error: ${e.message}');
       return null;
     } catch (e) {
-      log('Get Banners Error: $e');
+      appLog('Get Banners Error: $e');
       return null;
     }
   }
@@ -114,8 +112,8 @@ class AddBannerRepository {
     required int bannerId,
   }) async {
     try {
-      log('Deleting banner...');
-      log('Banner ID: $bannerId');
+      appLog('Deleting banner...');
+      appLog('Banner ID: $bannerId');
 
       final response = await dio.delete(
         ApiEndpoints.deleteBanner,
@@ -124,7 +122,6 @@ class AddBannerRepository {
         },
       );
 
-      log('Delete Banner Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> json;
@@ -133,7 +130,7 @@ class AddBannerRepository {
         } else if (response.data is Map) {
           json = Map<String, dynamic>.from(response.data as Map);
         } else {
-          log('Delete Banner failed: unexpected response type');
+          appLog('Delete Banner failed: unexpected response type');
           return null;
         }
 
@@ -149,14 +146,13 @@ class AddBannerRepository {
         return model;
       }
 
-      log('Delete Banner failed: ${response.statusCode}');
+      appLog('Delete Banner failed: ${response.statusCode}');
       return null;
     } on DioException catch (e) {
-      log('Delete Banner Dio Error: ${e.message}');
-      log('Delete Banner Response: ${e.response?.data}');
+      appLog('Delete Banner Dio Error: ${e.message}');
       return null;
     } catch (e) {
-      log('Delete Banner Error: $e');
+      appLog('Delete Banner Error: $e');
       return null;
     }
   }

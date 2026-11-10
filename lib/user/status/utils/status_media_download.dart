@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -83,7 +83,7 @@ class StatusMediaDownload {
         } on GalleryPermissionDeniedException {
           rethrow;
         } catch (error, stack) {
-          log(
+          appLog(
             'Gallery save failed, falling back to files: $error',
             name: 'StatusMediaDownload',
             stackTrace: stack,

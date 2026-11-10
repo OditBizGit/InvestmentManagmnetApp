@@ -1,3 +1,4 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart';
@@ -385,7 +386,7 @@ class _UserStatusViewState extends State<_UserStatusView> {
         );
         return;
       }
-      debugPrint('Status download failed: $error');
+      appLog('Status download failed: $error');
       AppSnackBar.show(
         context,
         message: 'Could not download media. Please try again.',
@@ -399,7 +400,7 @@ class _UserStatusViewState extends State<_UserStatusView> {
         icon: Icons.error_outline_rounded,
       );
     } catch (error, stack) {
-      debugPrint('Status download failed: $error\n$stack');
+      appLog('Status download failed: $error\n$stack');
       if (!context.mounted) return;
       AppSnackBar.show(
         context,

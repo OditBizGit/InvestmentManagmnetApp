@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -120,7 +120,7 @@ class _AddBannerFormState extends State<AddBannerForm> {
       );
     }).toList();
 
-    log(
+    appLog(
       'AddBannerForm: uploading ${images.length} file(s) '
       '→ ${_selectedBanners.map((e) => '${e.name} (${e.sizeInBytes} bytes)').join(', ')}',
     );

@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 
 import 'package:dio/dio.dart';
 
@@ -18,7 +18,7 @@ class InvestorRatingRepository {
 
   Future<InvestorRatingDetailsResponse> getInvestorRatingDetails() async {
     try {
-      log(
+      appLog(
         'Fetching investor rating details',
         name: 'InvestorRatingDetailsAPI',
       );
@@ -27,25 +27,21 @@ class InvestorRatingRepository {
         ApiEndpoints.investorRatingDetails,
       );
 
-      log(
-        'Investor rating details response: ${response.data}',
-        name: 'InvestorRatingDetailsAPI',
-      );
 
       return InvestorRatingDetailsResponse.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'Dio error fetching investor rating details: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
         name: 'InvestorRatingDetailsAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Error fetching investor rating details: $e',
         name: 'InvestorRatingDetailsAPI',
         error: e,
@@ -60,7 +56,7 @@ class InvestorRatingRepository {
     required int rating,
   }) async {
     try {
-      log(
+      appLog(
         'Updating investor rating: investorId=$investorId, rating=$rating',
         name: 'InvestorRatingAPI',
       );
@@ -75,16 +71,12 @@ class InvestorRatingRepository {
         data: request.toJson(),
       );
 
-      log(
-        'Investor rating response: ${response.data}',
-        name: 'InvestorRatingAPI',
-      );
 
       return InvestorRatingUpdateResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Failed to update investor rating: $e',
         name: 'InvestorRatingAPI',
         error: e,
@@ -98,7 +90,7 @@ class InvestorRatingRepository {
     required List<int> investorIds,
   }) async {
     try {
-      log(
+      appLog(
         'AddTopInvestor request: investorIds=$investorIds',
         name: 'AddTopInvestorAPI',
       );
@@ -112,16 +104,12 @@ class InvestorRatingRepository {
         data: request.toJson(),
       );
 
-      log(
-        'AddTopInvestor response: ${response.data}',
-        name: 'AddTopInvestorAPI',
-      );
 
       return AddTopInvestorResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'AddTopInvestor API error: $e',
         name: 'AddTopInvestorAPI',
         error: e,
@@ -133,28 +121,24 @@ class InvestorRatingRepository {
 
   Future<TopInvestorsResponse> getTopInvestors() async {
     try {
-      log('Fetching top investors', name: 'TopInvestorsAPI');
+      appLog('Fetching top investors', name: 'TopInvestorsAPI');
 
       final response = await dio.get(ApiEndpoints.topInvestors);
 
-      log(
-        'Top investors response: ${response.data}',
-        name: 'TopInvestorsAPI',
-      );
 
       return TopInvestorsResponse.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
-        'Dio error fetching top investors: ${e.response?.data ?? e.message}',
+      appLog(
+        'Dio error fetching top investors: ${e.message}',
         name: 'TopInvestorsAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Error fetching top investors: $e',
         name: 'TopInvestorsAPI',
         error: e,
@@ -168,7 +152,7 @@ class InvestorRatingRepository {
     required List<int> investorIds,
   }) async {
     try {
-      log(
+      appLog(
         'RemoveTopInvestor request: investorIds=$investorIds',
         name: 'RemoveTopInvestorAPI',
       );
@@ -182,24 +166,20 @@ class InvestorRatingRepository {
         data: request.toJson(),
       );
 
-      log(
-        'RemoveTopInvestor response: ${response.data}',
-        name: 'RemoveTopInvestorAPI',
-      );
 
       return RemoveTopInvestorResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
-        'RemoveTopInvestor API error: ${e.response?.data ?? e.message}',
+      appLog(
+        'RemoveTopInvestor API error: ${e.message}',
         name: 'RemoveTopInvestorAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Unexpected RemoveTopInvestor error: $e',
         name: 'RemoveTopInvestorAPI',
         error: e,
@@ -213,7 +193,7 @@ class InvestorRatingRepository {
     required bool isEnabled,
   }) async {
     try {
-      log(
+      appLog(
         'TopInvestorButton request: isEnabled=$isEnabled',
         name: 'TopInvestorButtonAPI',
       );
@@ -227,25 +207,21 @@ class InvestorRatingRepository {
         data: request.toJson(),
       );
 
-      log(
-        'TopInvestorButton response: ${response.data}',
-        name: 'TopInvestorButtonAPI',
-      );
 
       return TopInvestorButtonResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         'TopInvestorButton API error: '
-            '${e.response?.data ?? e.message}',
+            '${e.message}',
         name: 'TopInvestorButtonAPI',
         error: e,
         stackTrace: stackTrace,
       );
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Unexpected TopInvestorButton error: $e',
         name: 'TopInvestorButtonAPI',
         error: e,

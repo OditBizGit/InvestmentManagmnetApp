@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -15,7 +15,7 @@ class PaymentRequestRepository {
     String status = 'All',
   }) async {
     try {
-      log(
+      appLog(
         '[PaymentRequestRepository] Fetching payment requests. '
         'Status: $status',
       );
@@ -27,14 +27,13 @@ class PaymentRequestRepository {
         queryParameters: request.toQueryParameters(),
       );
 
-      log('[PaymentRequestRepository] Response: ${response.data}');
 
       final result = PaymentRequestResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
 
       if (result.status) {
-        log(
+        appLog(
           '[PaymentRequestRepository] Successfully fetched '
           '${result.data.length} payment requests.',
         );
@@ -42,11 +41,11 @@ class PaymentRequestRepository {
         return result;
       }
 
-      log('[PaymentRequestRepository] API Error: ${result.message}');
+      appLog('[PaymentRequestRepository] API Error: ${result.message}');
 
       throw Exception(result.message);
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         '[PaymentRequestRepository] Dio Error: ${e.message}',
         error: e,
         stackTrace: stackTrace,
@@ -54,7 +53,7 @@ class PaymentRequestRepository {
 
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         '[PaymentRequestRepository] Error: $e',
         error: e,
         stackTrace: stackTrace,
@@ -72,7 +71,7 @@ class PaymentRequestRepository {
     String remarks = '',
   }) async {
     try {
-      log(
+      appLog(
         '[PaymentRequestRepository] Accept/Reject request started. '
             'RequestId: $requestId, Status: $status',
       );
@@ -83,25 +82,19 @@ class PaymentRequestRepository {
         remarks: remarks,
       );
 
-      log(
-        '[PaymentRequestRepository] Request Payload: ${request.toJson()}',
-      );
 
       final response = await dio.post(
         ApiEndpoints.acceptOrRejectPaymentRequest,
         data: request.toJson(),
       );
 
-      log(
-        '[PaymentRequestRepository] Response: ${response.data}',
-      );
 
       final result = AcceptOrRejectPaymentResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
 
       if (result.status) {
-        log(
+        appLog(
           '[PaymentRequestRepository] Request processed successfully: '
               '${result.message}',
         );
@@ -111,7 +104,7 @@ class PaymentRequestRepository {
 
       throw Exception(result.message);
     } on DioException catch (e, stackTrace) {
-      log(
+      appLog(
         '[PaymentRequestRepository] Dio Error: ${e.message}',
         error: e,
         stackTrace: stackTrace,
@@ -119,7 +112,7 @@ class PaymentRequestRepository {
 
       rethrow;
     } catch (e, stackTrace) {
-      log(
+      appLog(
         '[PaymentRequestRepository] Error: $e',
         error: e,
         stackTrace: stackTrace,

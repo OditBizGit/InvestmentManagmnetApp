@@ -7,7 +7,7 @@ import 'package:maribel_wellness_centre_application/admin/settings/screens/creat
 import 'package:maribel_wellness_centre_application/admin/settings/screens/staff_allocation/staff_and_allocation_screen.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/settings/widgets/settings_option_cards.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/user_complaints/user_complaints_screen.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -192,47 +192,34 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           final horizontalPadding =
               constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  20,
-                  horizontalPadding,
-                  16,
-                ),
-                child: const AdminTopBar(),
+          return AdminMainScreenLayout(
+            horizontalPadding: horizontalPadding,
+            body: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                0,
+                horizontalPadding,
+                24,
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    0,
-                    horizontalPadding,
-                    24,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Account & Access',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMuted,
+                      letterSpacing: 0.2,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Account & Access',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SettingsOptionCards(
-                        onOptionSelected: _onOptionSelected,
-                      ),
-                    ],
+                  const SizedBox(height: 12),
+                  SettingsOptionCards(
+                    onOptionSelected: _onOptionSelected,
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),

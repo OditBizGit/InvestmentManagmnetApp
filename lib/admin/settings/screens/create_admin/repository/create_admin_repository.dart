@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -25,15 +25,13 @@ class CreateAdminRepository {
 
   Future<CreateAdminResult> createAdmin(CreateAdminModel request) async {
     try {
-      log('Creating admin...');
-      log('Request: ${request.toJson()}');
+      appLog('Creating admin...');
 
       final response = await dio.post(
         ApiEndpoints.createAdmin,
         data: request.toJson(),
       );
 
-      log('Create Admin Response: ${response.data}');
 
       final body = response.data;
       if (body is! Map) {
@@ -66,11 +64,10 @@ class CreateAdminRepository {
         data: data,
       );
     } on DioException catch (e) {
-      log('Create Admin Dio Error: ${e.message}');
-      log('Create Admin Response: ${e.response?.data}');
+      appLog('Create Admin Dio Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Create Admin Error: $e');
+      appLog('Create Admin Error: $e');
       rethrow;
     }
   }
@@ -79,13 +76,12 @@ class CreateAdminRepository {
 
   Future<AdminsResponseModel> getAdmins() async {
     try {
-      log('Fetching admins...');
+      appLog('Fetching admins...');
 
       final response = await dio.get(
         ApiEndpoints.getAdmins,
       );
 
-      log('Get Admins Response: ${response.data}');
 
       final body = response.data;
       if (body is! Map) {
@@ -106,11 +102,10 @@ class CreateAdminRepository {
 
       return result;
     } on DioException catch (e) {
-      log('Get Admins Dio Error: ${e.message}');
-      log('Get Admins Response: ${e.response?.data}');
+      appLog('Get Admins Dio Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Admins Error: $e');
+      appLog('Get Admins Error: $e');
       rethrow;
     }
   }

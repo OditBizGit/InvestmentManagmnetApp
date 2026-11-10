@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import '../model/complaint_ui_model.dart';
@@ -17,9 +17,9 @@ class UserComplaintsRepository {
     required String toDate,
   }) async {
     try {
-      log('Fetching user complaints...');
-      log('From Date: $fromDate');
-      log('To Date: $toDate');
+      appLog('Fetching user complaints...');
+      appLog('From Date: $fromDate');
+      appLog('To Date: $toDate');
 
       final response = await dio.get(
         ApiEndpoints.userComplaints,
@@ -29,7 +29,6 @@ class UserComplaintsRepository {
         },
       );
 
-      log('User Complaints Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> data = response.data['data'] ?? [];
@@ -43,14 +42,13 @@ class UserComplaintsRepository {
             .toList();
       }
 
-      log('Get User Complaints failed: ${response.statusCode}');
+      appLog('Get User Complaints failed: ${response.statusCode}');
       return null;
     } on DioException catch (e) {
-      log('Get User Complaints Dio Error: ${e.message}');
-      log('Get User Complaints Response: ${e.response?.data}');
+      appLog('Get User Complaints Dio Error: ${e.message}');
       return null;
     } catch (e) {
-      log('Get User Complaints Error: $e');
+      appLog('Get User Complaints Error: $e');
       return null;
     }
   }
@@ -59,8 +57,8 @@ class UserComplaintsRepository {
     required int complaintId,
   }) async {
     try {
-      log('Viewing complaint...');
-      log('Complaint ID: $complaintId');
+      appLog('Viewing complaint...');
+      appLog('Complaint ID: $complaintId');
 
       final response = await dio.post(
         ApiEndpoints.viewComplaint,
@@ -69,20 +67,18 @@ class UserComplaintsRepository {
         },
       );
 
-      log('View Complaint Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         return ViewComplaintModel.fromJson(response.data);
       }
 
-      log('View Complaint failed: ${response.statusCode}');
+      appLog('View Complaint failed: ${response.statusCode}');
       return null;
     } on DioException catch (e) {
-      log('View Complaint Dio Error: ${e.message}');
-      log('View Complaint Response: ${e.response?.data}');
+      appLog('View Complaint Dio Error: ${e.message}');
       return null;
     } catch (e) {
-      log('View Complaint Error: $e');
+      appLog('View Complaint Error: $e');
       return null;
     }
   }
@@ -91,8 +87,8 @@ class UserComplaintsRepository {
     required int complaintId,
   }) async {
     try {
-      log('Solving complaint...');
-      log('Complaint ID: $complaintId');
+      appLog('Solving complaint...');
+      appLog('Complaint ID: $complaintId');
 
       final response = await dio.post(
         ApiEndpoints.solveComplaint,
@@ -101,20 +97,18 @@ class UserComplaintsRepository {
         },
       );
 
-      log('Solve Complaint Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         return SolveComplaintModel.fromJson(response.data);
       }
 
-      log('Solve Complaint failed: ${response.statusCode}');
+      appLog('Solve Complaint failed: ${response.statusCode}');
       return null;
     } on DioException catch (e) {
-      log('Solve Complaint Dio Error: ${e.message}');
-      log('Solve Complaint Response: ${e.response?.data}');
+      appLog('Solve Complaint Dio Error: ${e.message}');
       return null;
     } catch (e) {
-      log('Solve Complaint Error: $e');
+      appLog('Solve Complaint Error: $e');
       return null;
     }
   }

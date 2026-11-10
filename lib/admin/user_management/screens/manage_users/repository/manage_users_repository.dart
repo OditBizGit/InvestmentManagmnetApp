@@ -1,5 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -25,20 +25,20 @@ class ManageUsersRepository {
       final payload = _decodePayload(response.data);
       return ManageUsersResponse.fromJson(payload);
     } on DioException catch (error) {
-      log(
+      appLog(
         'Get manage users failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Get manage users invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Get manage users failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -81,20 +81,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Get block requests failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Get block requests invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Get block requests failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -139,20 +139,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Review block request failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Review block request invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Review block request failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -197,20 +197,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Block user failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Block user invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Block user failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -257,20 +257,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Refund investor failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Refund investor invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Refund investor failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -335,14 +335,14 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Save investor MOU failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Save investor MOU failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -384,20 +384,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Get investor MOU failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Get investor MOU invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Get investor MOU failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -461,20 +461,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Save investor LLP failed: ${error.message} '
         '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Save investor LLP invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Save investor LLP failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -519,20 +519,20 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (error) {
-      log(
+      appLog(
         'Get investor LLP failed: ${error.message} '
             '(status ${error.response?.statusCode})',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } on FormatException catch (error) {
-      log(
+      appLog(
         'Get investor LLP invalid response: $error',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Get investor LLP failed: $error',
         name: 'ManageUsersRepository',
       );
@@ -566,13 +566,13 @@ class ManageUsersRepository {
 
       return result;
     } on DioException catch (e) {
-      log(
+      appLog(
         'Get PDF/Excel API error: ${e.message}',
         name: 'PdfExcelRepository',
       );
       rethrow;
     } catch (e) {
-      log(
+      appLog(
         'Get PDF/Excel error: $e',
         name: 'PdfExcelRepository',
       );
@@ -591,13 +591,13 @@ class ManageUsersRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (error) {
-      log(
+      appLog(
         'Get Investor Transaction History Error: ${error.message}',
         name: 'ManageUsersRepository',
       );
       rethrow;
     } catch (error) {
-      log(
+      appLog(
         'Get Investor Transaction History Error: $error',
         name: 'ManageUsersRepository',
       );

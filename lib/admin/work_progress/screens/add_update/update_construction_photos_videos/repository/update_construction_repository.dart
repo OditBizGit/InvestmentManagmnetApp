@@ -1,5 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
@@ -27,21 +27,20 @@ class WorkUpdateRepository {
         'File': file,
       });
 
-      log('========== ADD WORK UPDATE START ==========');
-      log('Endpoint: $endpoint');
-      log('Title: $title');
-      log('Description: $description');
-      log('File: ${file.filename}');
-      log('File FormData fields: ${formData.fields}');
+      appLog('========== ADD WORK UPDATE START ==========');
+      appLog('Endpoint: $endpoint');
+      appLog('Title: $title');
+      appLog('Description: $description');
+      appLog('File: ${file.filename}');
+      appLog('File FormData field names: ${formData.fields.map((f) => f.key)}');
 
       final response = await dio.post(endpoint, data: formData);
 
-      log('Add Work Update Status Code: ${response.statusCode}');
-      log('Add Work Update Response: ${response.data}');
+      appLog('Add Work Update Status Code: ${response.statusCode}');
 
       if (response.data == null) {
-        log('Add Work Update failed: response data is null');
-        log('========== ADD WORK UPDATE END (NULL DATA) ==========');
+        appLog('Add Work Update failed: response data is null');
+        appLog('========== ADD WORK UPDATE END (NULL DATA) ==========');
         return null;
       }
 
@@ -52,16 +51,16 @@ class WorkUpdateRepository {
       } else if (response.data is Map) {
         json = Map<String, dynamic>.from(response.data as Map);
       } else if (response.data is String) {
-        log('Add Work Update: response is String, decoding JSON...');
+        appLog('Add Work Update: response is String, decoding JSON...');
 
         final decoded = jsonDecode(response.data as String);
 
         if (decoded is! Map) {
-          log(
+          appLog(
             'Add Work Update failed: '
             'decoded string is not a Map',
           );
-          log(
+          appLog(
             '========== ADD WORK UPDATE END '
             '(BAD STRING JSON) ==========',
           );
@@ -70,11 +69,11 @@ class WorkUpdateRepository {
 
         json = Map<String, dynamic>.from(decoded);
       } else {
-        log(
+        appLog(
           'Add Work Update failed: unexpected response type '
           '${response.data.runtimeType}',
         );
-        log(
+        appLog(
           '========== ADD WORK UPDATE END '
           '(BAD TYPE) ==========',
         );
@@ -86,62 +85,57 @@ class WorkUpdateRepository {
       final statusOk = response.statusCode == 200 || response.statusCode == 201;
 
       if (!statusOk) {
-        log(
+        appLog(
           'Add Work Update failed with status code: '
           '${response.statusCode}',
         );
         return null;
       }
 
-      log(
+      appLog(
         'Add Work Update Success: '
         '${model.message}',
       );
 
       if (model.data != null) {
-        log(
+        appLog(
           'Work Update ID: '
           '${model.data!.workUpdateId}',
         );
-        log(
+        appLog(
           'Google Drive File ID: '
           '${model.data!.googleDriveFileId}',
         );
-        log(
+        appLog(
           'File Type: '
           '${model.data!.fileType}',
         );
       }
 
-      log('========== ADD WORK UPDATE END ==========');
+      appLog('========== ADD WORK UPDATE END ==========');
 
       return model;
     } on DioException catch (e) {
-      log(
+      appLog(
         'Add Work Update Dio Error: '
         '${e.message}',
-      );
-      log(
-        'Add Work Update Response: '
-        '${e.response?.data}',
       );
 
       return null;
     } catch (e) {
-      log('Add Work Update Error: $e');
+      appLog('Add Work Update Error: $e');
       return null;
     }
   }
 
   Future<GetWorkUpdatesModel?> getWorkUpdates() async {
     try {
-      log('Fetching work updates...');
+      appLog('Fetching work updates...');
 
       final response = await dio.get(
         ApiEndpoints.getWorkUpdates,
       );
 
-      log('Get Work Updates Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         return GetWorkUpdatesModel.fromJson(
@@ -149,17 +143,16 @@ class WorkUpdateRepository {
         );
       }
 
-      log(
+      appLog(
         'Get Work Updates failed: ${response.statusCode}',
       );
 
       return null;
     } on DioException catch (e) {
-      log('Get Work Updates Dio Error: ${e.message}');
-      log('Get Work Updates Response: ${e.response?.data}');
+      appLog('Get Work Updates Dio Error: ${e.message}');
       return null;
     } catch (e) {
-      log('Get Work Updates Error: $e');
+      appLog('Get Work Updates Error: $e');
       return null;
     }
   }
@@ -168,14 +161,13 @@ class WorkUpdateRepository {
     required int id,
   }) async {
     try {
-      log('Deleting work update...');
-      log('Work Update ID: $id');
+      appLog('Deleting work update...');
+      appLog('Work Update ID: $id');
 
       final response = await dio.delete(
         '${ApiEndpoints.deleteWorkUpdate}$id',
       );
 
-      log('Delete Work Update Response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> json;
@@ -187,7 +179,7 @@ class WorkUpdateRepository {
             response.data as Map,
           );
         } else {
-          log(
+          appLog(
             'Delete Work Update failed: '
                 'unexpected response type',
           );
@@ -199,7 +191,7 @@ class WorkUpdateRepository {
         return model;
       }
 
-      log(
+      appLog(
         'Delete Work Update failed: '
             '${response.statusCode}',
       );
@@ -213,15 +205,11 @@ class WorkUpdateRepository {
         code: response.statusCode ?? 0,
       );
     } on DioException catch (e) {
-      log(
+      appLog(
         'Delete Work Update Dio Error: '
             '${e.message}',
       );
 
-      log(
-        'Delete Work Update Response: '
-            '${e.response?.data}',
-      );
 
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
@@ -257,7 +245,7 @@ class WorkUpdateRepository {
         code: statusCode ?? 0,
       );
     } catch (e) {
-      log('Delete Work Update Error: $e');
+      appLog('Delete Work Update Error: $e');
       return DeleteWorkUpdateModel(
         status: false,
         message: 'Something went wrong while deleting. Please try again.',

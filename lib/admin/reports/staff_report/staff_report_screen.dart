@@ -10,7 +10,7 @@ import 'package:maribel_wellness_centre_application/admin/reports/staff_report/s
 import 'package:maribel_wellness_centre_application/admin/reports/staff_report/widgets/staff_report_table_section.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_stat_cards.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 
 import '../../../core/network/service_locator.dart';
 import 'cubit/staff_report_cubit.dart';
@@ -157,20 +157,19 @@ class _StaffReportContent extends StatelessWidget {
           final horizontalPadding =
               constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  20,
-                  horizontalPadding,
-                  16,
-                ),
-                child: const AdminTopBar(),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
+          return BlocBuilder<StaffReportCubit, StaffReportState>(
+            buildWhen: (previous, current) =>
+                previous.listStatus != current.listStatus ||
+                previous.staffList.length != current.staffList.length,
+            builder: (context, state) {
+              final showRefetchProgress =
+                  state.listStatus == StaffReportListStatus.loading &&
+                      state.staffList.isNotEmpty;
+
+              return AdminMainScreenLayout(
+                horizontalPadding: horizontalPadding,
+                showRefetchProgress: showRefetchProgress,
+                body: SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     horizontalPadding,
@@ -192,8 +191,8 @@ class _StaffReportContent extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           );
         },
       ),

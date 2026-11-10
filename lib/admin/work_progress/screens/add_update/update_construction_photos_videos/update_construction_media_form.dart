@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -207,7 +207,7 @@ class _UpdateConstructionMediaFormState
         );
       });
     } catch (error, stackTrace) {
-      log('Construction media file pick failed: $error', stackTrace: stackTrace);
+      appLog('Construction media file pick failed: $error', stackTrace: stackTrace);
       if (!mounted) return;
       AppToast.error(
         'Could not complete the file selection. Please try again.',
@@ -230,7 +230,7 @@ class _UpdateConstructionMediaFormState
         );
       }
     }
-    log('Could not read picked file at $path: $lastError');
+    appLog('Could not read picked file at $path: $lastError');
     return null;
   }
 

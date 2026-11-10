@@ -1,144 +1,117 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/cubit/payment_list_cubit.dart';
+import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/model/monthly_payment_list_model.dart';
+import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/repository/monthly_payment_list_repository.dart';
 import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/screen/widgets/montly_payment_overview.dart';
 import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/screen/widgets/montly_payment_table.dart';
+import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/screen/payment_verification_history_screen.dart';
+import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/screen/widgets/reject_payment_verification_dialog.dart';
+import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_permissions.dart';
+import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_table_widgets.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
+import 'package:sizer/sizer.dart';
 
-class MonthlyPaymentListScreen extends StatefulWidget {
-  const MonthlyPaymentListScreen({super.key});
+class MonthlyPaymentListScreen extends StatelessWidget {
+  const MonthlyPaymentListScreen({
+    super.key,
+    this.isActive = false,
+  });
+
+  /// When true, this tab is visible in the admin [IndexedStack].
+  final bool isActive;
 
   @override
-  State<MonthlyPaymentListScreen> createState() =>
-      _MonthlyPaymentListScreenState();
+  Widget build(BuildContext context) {
+    final role = getIt<LocalStorage>().getUserRole();
+    if (!AdminNavPermissions.canAccessMonthlyList(role)) {
+      return const _MonthlyPaymentListAccessDenied();
+    }
+
+    return RepositoryProvider(
+      create: (_) => MonthlyPaymentListRepository(dio: getIt<Dio>()),
+      child: BlocProvider(
+        create: (context) => PaymentListCubit(
+          repository: context.read<MonthlyPaymentListRepository>(),
+        ),
+        child: _MonthlyPaymentListView(isActive: isActive),
+      ),
+    );
+  }
 }
 
-class _MonthlyPaymentListScreenState extends State<MonthlyPaymentListScreen> {
+class _MonthlyPaymentListView extends StatefulWidget {
+  const _MonthlyPaymentListView({required this.isActive});
+
+  final bool isActive;
+
+  @override
+  State<_MonthlyPaymentListView> createState() =>
+      _MonthlyPaymentListViewState();
+}
+
+class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
   final TextEditingController _searchController = TextEditingController();
 
   late DateTime _fromDate;
   late DateTime _toDate;
 
-  final Set<int> _selectedPaymentIds = {};
+  final Map<int, PaymentReviewIntent> _reviewIntents = {};
 
-  List<MonthlyPayment> _payments = [
-    MonthlyPayment(
-      id: 1,
-      investorName: 'Anil Raj',
-      investorCode: 'INV-0147',
-      contact: '+91 98765 43210',
-      staff: 'Sreejith K',
-      method: 'UPI',
-      amount: 50000,
-      paidOn: DateTime(2026, 10, 28),
-    ),
-    MonthlyPayment(
-      id: 2,
-      investorName: 'Megha Nair',
-      investorCode: 'INV-0152',
-      contact: '+91 98470 22334',
-      staff: 'Renjith P',
-      method: 'NEFT',
-      amount: 100000,
-      paidOn: DateTime(2026, 10, 28),
-    ),
-    MonthlyPayment(
-      id: 3,
-      investorName: 'Vijay Kumar',
-      investorCode: 'INV-0098',
-      contact: '+91 99612 34567',
-      staff: 'Sreejith K',
-      method: 'Bank Transfer',
-      amount: 75000,
-      paidOn: DateTime(2026, 10, 27),
-      status: PaymentStatus.approved,
-    ),
-    MonthlyPayment(
-      id: 4,
-      investorName: 'Ravi Prakash',
-      investorCode: 'INV-0105',
-      contact: '+91 98950 66778',
-      staff: 'Aneesh M',
-      method: 'RTGS',
-      amount: 200000,
-      paidOn: DateTime(2026, 10, 26),
-    ),
-    MonthlyPayment(
-      id: 5,
-      investorName: 'Latha Suresh',
-      investorCode: 'INV-0119',
-      contact: '+91 97455 88990',
-      staff: 'Renjith P',
-      method: 'Cash',
-      amount: 25000,
-      paidOn: DateTime(2026, 10, 25),
-      status: PaymentStatus.approved,
-    ),
-    MonthlyPayment(
-      id: 6,
-      investorName: 'Harish J',
-      investorCode: 'INV-0127',
-      contact: '+91 90721 44556',
-      staff: 'Aneesh M',
-      method: 'IMPS',
-      amount: 50000,
-      paidOn: DateTime(2026, 10, 24),
-    ),
-    MonthlyPayment(
-      id: 7,
-      investorName: 'Sridevi Menon',
-      investorCode: 'INV-0134',
-      contact: '+91 99618 77441',
-      staff: 'Sreejith K',
-      method: 'Cheque',
-      amount: 150000,
-      paidOn: DateTime(2026, 10, 23),
-      status: PaymentStatus.rejected,
-    ),
-    MonthlyPayment(
-      id: 8,
-      investorName: 'Pradeep T',
-      investorCode: 'INV-0141',
-      contact: '+91 98461 22011',
-      staff: 'Renjith P',
-      method: 'NEFT',
-      amount: 75000,
-      paidOn: DateTime(2026, 10, 22),
-    ),
-    MonthlyPayment(
-      id: 9,
-      investorName: 'Dileep Kumar',
-      investorCode: 'INV-0103',
-      contact: '+91 98956 33441',
-      staff: 'Aneesh M',
-      method: 'UPI',
-      amount: 50000,
-      paidOn: DateTime(2026, 10, 21),
-      status: PaymentStatus.approved,
-    ),
-    MonthlyPayment(
-      id: 10,
-      investorName: 'Nisha S',
-      investorCode: 'INV-0150',
-      contact: '+91 90376 99887',
-      staff: 'Sreejith K',
-      method: 'Bank Transfer',
-      amount: 100000,
-      paidOn: DateTime(2026, 10, 20),
-    ),
-  ];
+  MonthlyPaymentListDataModel? _lastLoadedData;
+  bool _showVerificationHistory = false;
 
   @override
   void initState() {
     super.initState();
-    _setDefaultMonthRange();
+    _setDefaultDateRange();
+    _refreshIfActive();
   }
 
-  void _setDefaultMonthRange() {
-    final anchor = _payments
-        .map((payment) => payment.paidOn)
-        .reduce((a, b) => a.isAfter(b) ? a : b);
-    _fromDate = DateTime(anchor.year, anchor.month, 1);
-    _toDate = DateTime(anchor.year, anchor.month + 1, 0);
+  @override
+  void didUpdateWidget(covariant _MonthlyPaymentListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refreshIfActive();
+    }
+  }
+
+  void _refreshIfActive() {
+    if (!widget.isActive) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.isActive) return;
+      _fetchPayments();
+    });
+  }
+
+  void _setDefaultDateRange() {
+    final now = DateTime.now();
+    _fromDate = DateTime(now.year, now.month, 1);
+    _toDate = DateTime(now.year, now.month, now.day);
+  }
+
+  DateTime get _fetchFromDate => DateTime(
+        _fromDate.year,
+        _fromDate.month,
+        _fromDate.day,
+      );
+
+  DateTime get _fetchToDate => DateTime(
+        _toDate.year,
+        _toDate.month,
+        _toDate.day,
+      );
+
+  void _fetchPayments() {
+    context.read<PaymentListCubit>().fetchMonthlyPaymentList(
+          fromDate: _fetchFromDate,
+          toDate: _fetchToDate,
+        );
   }
 
   @override
@@ -147,70 +120,210 @@ class _MonthlyPaymentListScreenState extends State<MonthlyPaymentListScreen> {
     super.dispose();
   }
 
-  bool _isOnOrAfter(DateTime day, DateTime bound) {
-    return !day.isBefore(DateTime(bound.year, bound.month, bound.day));
+  PaymentStatus _parsePaymentStatus(String raw) {
+    final normalized = raw.trim().toLowerCase();
+    if (normalized.contains('reject')) {
+      return PaymentStatus.rejected;
+    }
+    if (normalized.contains('approv')) {
+      return PaymentStatus.approved;
+    }
+    return PaymentStatus.pending;
   }
 
-  bool _isOnOrBefore(DateTime day, DateTime bound) {
-    return !day.isAfter(DateTime(bound.year, bound.month, bound.day));
-  }
+  List<MonthlyPayment> _mapTransactions(
+    List<MonthlyPaymentTransactionModel> transactions,
+  ) {
+    return transactions.map((transaction) {
+      final paidOn = transaction.paymentDate ??
+          DateTime(
+            _fetchFromDate.year,
+            _fetchFromDate.month,
+            _fetchFromDate.day,
+          );
 
-  List<MonthlyPayment> get _filteredPayments {
-    final query = _searchController.text.trim().toLowerCase();
-
-    return _payments.where((payment) {
-      final matchesSearch = query.isEmpty ||
-          payment.investorName.toLowerCase().contains(query) ||
-          payment.investorCode.toLowerCase().contains(query) ||
-          payment.contact.toLowerCase().contains(query);
-
-      final matchesFrom = _isOnOrAfter(payment.paidOn, _fromDate);
-      final matchesTo = _isOnOrBefore(payment.paidOn, _toDate);
-
-      return matchesSearch && matchesFrom && matchesTo;
+      return MonthlyPayment(
+        id: transaction.transactionId,
+        investorName: transaction.investorName,
+        investorCode: transaction.investorCode,
+        contact: transaction.mobileNumber,
+        staff: transaction.staffName,
+        method: transaction.paymentMethod,
+        amount: transaction.paidAmount,
+        paidOn: paidOn,
+        status: _parsePaymentStatus(transaction.paymentStatus),
+      );
     }).toList();
   }
 
-  void _updateStatus(
-    Iterable<int> ids,
-    PaymentStatus status,
-  ) {
-    final idSet = ids.toSet();
+  List<MonthlyPayment> _filterBySearch(List<MonthlyPayment> payments) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return payments;
 
+    return payments.where((payment) {
+      return payment.investorName.toLowerCase().contains(query) ||
+          payment.investorCode.toLowerCase().contains(query) ||
+          payment.contact.toLowerCase().contains(query) ||
+          payment.staff.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  void _onFromDateChanged(DateTime? value) {
     setState(() {
-      _payments = _payments.map((payment) {
-        if (idSet.contains(payment.id) &&
-            payment.status == PaymentStatus.pending) {
-          return payment.copyWith(status: status);
-        }
-        return payment;
-      }).toList();
+      if (value == null) {
+        _setDefaultDateRange();
+      } else {
+        _fromDate = DateTime(value.year, value.month, value.day);
+      }
+      _reviewIntents.clear();
+    });
+    _fetchPayments();
+  }
 
-      _selectedPaymentIds.removeAll(idSet);
+  void _onToDateChanged(DateTime? value) {
+    setState(() {
+      if (value == null) {
+        _setDefaultDateRange();
+      } else {
+        _toDate = DateTime(value.year, value.month, value.day);
+      }
+      _reviewIntents.clear();
+    });
+    _fetchPayments();
+  }
+
+  void _setApproveIntent(int id, bool selected) {
+    setState(() {
+      if (selected) {
+        _reviewIntents[id] = PaymentReviewIntent.approve;
+      } else {
+        _reviewIntents.remove(id);
+      }
     });
   }
 
-  void _approveAll() {
-    final pendingIds = _filteredPayments
-        .where((payment) => payment.status == PaymentStatus.pending)
-        .map((payment) => payment.id);
+  void _setRejectIntent(int id, bool selected) {
+    setState(() {
+      if (selected) {
+        _reviewIntents[id] = PaymentReviewIntent.reject;
+      } else {
+        _reviewIntents.remove(id);
+      }
+    });
+  }
 
-    _updateStatus(pendingIds, PaymentStatus.approved);
+  Future<void> _onSaveRow(
+    int id, {
+    required List<MonthlyPayment> payments,
+  }) async {
+    final intent = _reviewIntents[id];
+    if (intent == null) return;
+
+    final cubit = context.read<PaymentListCubit>();
+
+    if (intent == PaymentReviewIntent.reject) {
+      MonthlyPayment? payment;
+      for (final item in payments) {
+        if (item.id == id) {
+          payment = item;
+          break;
+        }
+      }
+
+      final remarks = await showRejectPaymentVerificationDialog(
+        context: context,
+        investorName: payment?.investorName,
+        transactionId: id,
+      );
+      if (!mounted || remarks == null) return;
+
+      await cubit.reviewPaymentVerification(
+        transactionId: id,
+        status: 'Rejected',
+        remarks: remarks,
+      );
+      return;
+    }
+
+    await cubit.reviewPaymentVerification(
+      transactionId: id,
+      status: 'Approved',
+      remarks: '',
+    );
+  }
+
+  void _selectAllApprove(
+    List<MonthlyPayment> pendingPayments,
+    bool selected,
+  ) {
+    setState(() {
+      if (selected) {
+        for (final payment in pendingPayments) {
+          _reviewIntents[payment.id] = PaymentReviewIntent.approve;
+        }
+      } else {
+        for (final payment in pendingPayments) {
+          _reviewIntents.remove(payment.id);
+        }
+      }
+    });
+  }
+
+  Future<void> _onApproveAll(List<MonthlyPayment> filteredPayments) async {
+    final pending = filteredPayments
+        .where((payment) => payment.status == PaymentStatus.pending)
+        .toList();
+
+    if (pending.isEmpty) {
+      AppToast.error(
+        'No pending payments to approve.',
+        title: 'Approve All',
+        context: context,
+      );
+      return;
+    }
+
+    final hasRejectSelection = pending.any(
+      (payment) =>
+          _reviewIntents[payment.id] == PaymentReviewIntent.reject,
+    );
+
+    if (hasRejectSelection) {
+      AppToast.error(
+        'Clear reject selections before using Approve All.',
+        title: 'Cannot approve all',
+        context: context,
+      );
+      return;
+    }
+
+    setState(() {
+      for (final payment in pending) {
+        _reviewIntents[payment.id] = PaymentReviewIntent.approve;
+      }
+    });
+
+    final transactionIds = pending.map((payment) => payment.id).toList();
+    await context.read<PaymentListCubit>().approvePaymentsBatch(
+          transactionIds: transactionIds,
+        );
+  }
+
+  void _openVerificationHistory() {
+    setState(() => _showVerificationHistory = true);
+  }
+
+  void _backFromVerificationHistory() {
+    setState(() => _showVerificationHistory = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final pending =
-        _payments.where((p) => p.status == PaymentStatus.pending);
-    final approved =
-        _payments.where((p) => p.status == PaymentStatus.approved);
-    final rejected =
-        _payments.where((p) => p.status == PaymentStatus.rejected);
-
-    final totalAmount = _payments.fold<double>(
-      0,
-      (sum, payment) => sum + payment.amount,
-    );
+    if (_showVerificationHistory) {
+      return PaymentVerificationHistoryScreen(
+        onBack: _backFromVerificationHistory,
+      );
+    }
 
     return ColoredBox(
       color: AppColors.screenBg,
@@ -219,109 +332,250 @@ class _MonthlyPaymentListScreenState extends State<MonthlyPaymentListScreen> {
           final horizontalPadding =
               constraints.maxWidth < 600 ? 16.0 : 24.0;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  20,
-                  horizontalPadding,
-                  16,
+          return BlocConsumer<PaymentListCubit, PaymentListState>(
+            listenWhen: (previous, current) {
+              if (current is! PaymentListLoaded) return false;
+              if (previous is! PaymentListLoaded) return true;
+              return previous.data != current.data ||
+                  previous.actionMessage != current.actionMessage;
+            },
+            listener: (context, state) {
+              if (state is! PaymentListLoaded) return;
+
+              _lastLoadedData = state.data;
+
+              final message = state.actionMessage;
+              if (message == null || message.isEmpty) return;
+
+              if (state.actionIsSuccess) {
+                AppToast.success(message, context: context);
+                setState(() => _reviewIntents.clear());
+              } else {
+                AppToast.error(message, context: context);
+              }
+              context.read<PaymentListCubit>().clearActionFeedback();
+            },
+            builder: (context, state) {
+              final isLoading = state is PaymentListLoading;
+              final isError = state is PaymentListError;
+              final loaded =
+                  state is PaymentListLoaded ? state : null;
+
+              MonthlyPaymentListDataModel? data;
+              String? errorMessage;
+
+              if (loaded != null) {
+                data = loaded.data;
+              } else if (state is PaymentListError) {
+                errorMessage = state.message;
+                data = _lastLoadedData;
+              } else if (isLoading) {
+                data = _lastLoadedData;
+              }
+
+              final showTopProgress = data != null &&
+                  (isLoading ||
+                      (loaded?.isListRefreshing ?? false) ||
+                      (loaded?.isReviewSubmitting ?? false));
+
+              return AdminMainScreenLayout(
+                horizontalPadding: horizontalPadding,
+                showRefetchProgress: showTopProgress,
+                body: _buildBody(
+                  horizontalPadding: horizontalPadding,
+                  isLoading: isLoading,
+                  isError: isError,
+                  errorMessage: errorMessage,
+                  data: data,
+                  isReviewSubmitting: loaded?.isReviewSubmitting ?? false,
                 ),
-                child: const AdminTopBar(),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody({
+    required double horizontalPadding,
+    required bool isLoading,
+    required bool isError,
+    required String? errorMessage,
+    required MonthlyPaymentListDataModel? data,
+    required bool isReviewSubmitting,
+  }) {
+    final allPayments = data != null
+        ? _mapTransactions(data.transactions)
+        : <MonthlyPayment>[];
+
+    final filteredPayments = _filterBySearch(allPayments);
+
+    final pendingCount =
+        allPayments.where((p) => p.status == PaymentStatus.pending).length;
+    final approvedCount =
+        allPayments.where((p) => p.status == PaymentStatus.approved).length;
+    final rejectedCount =
+        allPayments.where((p) => p.status == PaymentStatus.rejected).length;
+
+    final totalPayments = data?.totalPayments ?? 0;
+    final totalAmount = data?.totalAmount ?? 0.0;
+
+    if (isLoading && data == null && !isError) {
+      return const AdminInitialLoadingBody();
+    }
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        0,
+        horizontalPadding,
+        24,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          MonthlyPaymentOverview(
+            totalPayments: totalPayments,
+            totalAmount: totalAmount,
+            pendingCount: pendingCount,
+            approvedCount: approvedCount,
+            rejectedCount: rejectedCount,
+          ),
+          const SizedBox(height: 20),
+          if (isError && errorMessage != null)
+            _MonthlyPaymentListError(
+              message: errorMessage,
+              onRetry: _fetchPayments,
+            )
+          else
+            MonthlyPaymentTable(
+              payments: filteredPayments,
+              reviewIntents: _reviewIntents,
+              searchController: _searchController,
+              fromDate: _fromDate,
+              toDate: _toDate,
+              onSearchChanged: (_) => setState(() {}),
+              onClearSearch: () {
+                _searchController.clear();
+                setState(() {});
+              },
+              onFromDateChanged: _onFromDateChanged,
+              onToDateChanged: _onToDateChanged,
+              onApproveIntentChanged: _setApproveIntent,
+              onRejectIntentChanged: _setRejectIntent,
+              onSaveRow: (id) => _onSaveRow(
+                    id,
+                    payments: filteredPayments,
+                  ),
+              onSelectAllApproveChanged: (selected) {
+                final pending = filteredPayments
+                    .where((p) => p.status == PaymentStatus.pending)
+                    .toList();
+                _selectAllApprove(pending, selected);
+              },
+              onApproveAll: () => _onApproveAll(filteredPayments),
+              onViewHistory: _openVerificationHistory,
+              isReviewSubmitting: isReviewSubmitting,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthlyPaymentListError extends StatelessWidget {
+  const _MonthlyPaymentListError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return UserManagementTableCard(
+      child: SizedBox(
+        height: 220,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.error,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: onRetry,
+                  child: Text(
+                    'Retry',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthlyPaymentListAccessDenied extends StatelessWidget {
+  const _MonthlyPaymentListAccessDenied();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.screenBg,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.lock_outline_rounded,
+                size: 48,
+                color: AppColors.textMuted,
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    0,
-                    horizontalPadding,
-                    24,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      MonthlyPaymentOverview(
-                        totalPayments: _payments.length,
-                        totalAmount: totalAmount,
-                        pendingCount: pending.length,
-                        approvedCount: approved.length,
-                        rejectedCount: rejected.length,
-                      ),
-                      const SizedBox(height: 20),
-                      MonthlyPaymentTable(
-                          payments: _filteredPayments,
-                          selectedIds: _selectedPaymentIds,
-                          searchController: _searchController,
-                          fromDate: _fromDate,
-                          toDate: _toDate,
-                          onSearchChanged: (_) => setState(() {}),
-                          onClearSearch: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                          onFromDateChanged: (value) {
-                            setState(() {
-                              if (value == null) {
-                                _setDefaultMonthRange();
-                              } else {
-                                _fromDate = value;
-                              }
-                            });
-                          },
-                          onToDateChanged: (value) {
-                            setState(() {
-                              if (value == null) {
-                                _setDefaultMonthRange();
-                              } else {
-                                _toDate = value;
-                              }
-                            });
-                          },
-                          onSelectionChanged: (id, selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedPaymentIds.add(id);
-                              } else {
-                                _selectedPaymentIds.remove(id);
-                              }
-                            });
-                          },
-                          onSelectAllChanged: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedPaymentIds.addAll(
-                                  _filteredPayments
-                                      .where(
-                                        (p) =>
-                                            p.status == PaymentStatus.pending,
-                                      )
-                                      .map((p) => p.id),
-                                );
-                              } else {
-                                _selectedPaymentIds.removeAll(
-                                  _filteredPayments.map((p) => p.id),
-                                );
-                              }
-                            });
-                          },
-                          onApprove: (id) {
-                            _updateStatus([id], PaymentStatus.approved);
-                          },
-                          onReject: (id) {
-                            _updateStatus([id], PaymentStatus.rejected);
-                          },
-                          onApproveAll: _approveAll,
-                        ),
-                    ],
-                  ),
+              const SizedBox(height: 16),
+              Text(
+                'Access restricted',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Monthly List is not available for your account role.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10.5.sp,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textMuted,
                 ),
               ),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }

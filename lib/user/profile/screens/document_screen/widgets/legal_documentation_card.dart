@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
+import 'package:maribel_wellness_centre_application/core/utils/app_snack_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/url_scheme_guard.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_llp_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/model/investor_mou_response_model.dart';
 import 'package:maribel_wellness_centre_application/user/profile/repository/profile_repository.dart';
@@ -355,9 +357,16 @@ class _DocumentStatusBlock extends StatelessWidget {
   final DocumentProcessStep status;
   final String? documentUrl;
 
-  Future<void> _openExternalDocument(String url) async {
+  Future<void> _openExternalDocument(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
-    if (uri == null) return;
+    if (uri == null || !isHttpOrHttpsUrl(uri)) {
+      AppSnackBar.show(
+        context,
+        message: 'Unable to open this document',
+        icon: Icons.error_outline_rounded,
+      );
+      return;
+    }
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
@@ -405,7 +414,7 @@ class _DocumentStatusBlock extends StatelessWidget {
                     title: '$label Document',
                   );
                 } else {
-                  _openExternalDocument(url);
+                  _openExternalDocument(context, url);
                 }
               },
             ),

@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
@@ -83,10 +83,10 @@ class HomeRepository {
 
       return parsed.data;
     } on DioException catch (e) {
-      log('Get Top Investors Error: ${e.message}');
+      appLog('Get Top Investors Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Top Investors Error: $e');
+      appLog('Get Top Investors Error: $e');
       rethrow;
     }
   }
@@ -112,10 +112,10 @@ class HomeRepository {
 
       return parsed.data;
     } on DioException catch (e) {
-      log('Get Work Progress Details Error: ${e.message}');
+      appLog('Get Work Progress Details Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Work Progress Details Error: $e');
+      appLog('Get Work Progress Details Error: $e');
       rethrow;
     }
   }
@@ -141,10 +141,10 @@ class HomeRepository {
 
       return parsed.data;
     } on DioException catch (e) {
-      log('Get Banners Error: ${e.message}');
+      appLog('Get Banners Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Banners Error: $e');
+      appLog('Get Banners Error: $e');
       rethrow;
     }
   }

@@ -584,7 +584,6 @@ class _InvestorProfileImage extends StatelessWidget {
         width: 32,
         height: 32,
         errorBuilder: (context, error, stackTrace) {
-          debugPrint('GetInvestors table image failed: $url\n$error');
           return _placeholder;
         },
         loadingBuilder: (context, child, progress) {
@@ -617,7 +616,6 @@ class _InvestorProfileImage extends StatelessWidget {
         ),
       ),
       errorWidget: (context, failedUrl, error) {
-        debugPrint('GetInvestors table image failed: $failedUrl\n$error');
         return _placeholder;
       },
     );

@@ -1,5 +1,5 @@
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -74,7 +74,7 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
             forceRedownload: forceRedownload,
           ));
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'Video init failed: $e',
         name: _logTag,
         stackTrace: stackTrace,
@@ -93,7 +93,7 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
           );
           return;
         } catch (retryError, retryStack) {
-          log(
+          appLog(
             'Video retry failed: $retryError',
             name: _logTag,
             stackTrace: retryStack,
@@ -148,7 +148,7 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
       final controller = VideoPlayerController.file(file);
       await _attachStandardController(controller);
     } catch (fileError, fileStack) {
-      log(
+      appLog(
         'File player failed, trying network stream: $fileError',
         name: _logTag,
         stackTrace: fileStack,
@@ -487,9 +487,9 @@ class WorkUpdateInlineVideoState extends State<WorkUpdateInlineVideo> {
         color: Colors.black,
         child: WinLocalVideoPlayer(
           filePath: path,
-          onLog: (message) => log(message, name: _logTag),
+          onLog: (message) => appLog(message, name: _logTag),
           onFailed: (error, stackTrace) {
-            log(
+            appLog(
               'Win player failed: $error',
               name: _logTag,
               stackTrace: stackTrace,

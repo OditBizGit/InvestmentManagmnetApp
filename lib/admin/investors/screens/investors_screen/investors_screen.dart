@@ -10,7 +10,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/screens/inve
 import 'package:maribel_wellness_centre_application/admin/investors/screens/investors_screen/widgets/investors_table_section.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/repository/create_project_repository.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
-import 'package:maribel_wellness_centre_application/core/utils/admin_top_bar.dart';
+import 'package:maribel_wellness_centre_application/core/utils/admin_main_screen_layout.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
@@ -199,21 +199,13 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
               final totalCount = investors.length;
               final activeCount =
                   investors.where((investor) => investor.isActive).length;
+              final showRefetchProgress =
+                  state is InvestorsLoading && investors.isNotEmpty;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      20,
-                      horizontalPadding,
-                      16,
-                    ),
-                    child: const AdminTopBar(),
-                  ),
-                  Expanded(
-                    child: RefreshIndicator(
+              return AdminMainScreenLayout(
+                horizontalPadding: horizontalPadding,
+                showRefetchProgress: showRefetchProgress,
+                body: RefreshIndicator(
                       color: AppColors.accent,
                       onRefresh: () async {
                         _limitDialogShownForVisit = false;
@@ -251,8 +243,6 @@ class _AdminInvestorsViewState extends State<_AdminInvestorsView> {
                         ),
                       ),
                     ),
-                  ),
-                ],
               );
             },
           );

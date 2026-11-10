@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:dio/dio.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 import 'package:maribel_wellness_centre_application/user/home/model/app_notification_model.dart';
@@ -28,11 +28,10 @@ class NotificationsRepository {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      log('Register Device Error: ${e.message}');
-      log('Register Device Response: ${e.response?.data}');
+      appLog('Register Device Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Register Device Error: $e');
+      appLog('Register Device Error: $e');
       rethrow;
     }
   }
@@ -58,11 +57,10 @@ class NotificationsRepository {
 
       return parsed.data;
     } on DioException catch (e) {
-      log('Get My Notifications Error: ${e.message}');
-      log('Get My Notifications Response: ${e.response?.data}');
+      appLog('Get My Notifications Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get My Notifications Error: $e');
+      appLog('Get My Notifications Error: $e');
       rethrow;
     }
   }
@@ -88,11 +86,10 @@ class NotificationsRepository {
 
       return parsed.data < 0 ? 0 : parsed.data;
     } on DioException catch (e) {
-      log('Get Unread Count Error: ${e.message}');
-      log('Get Unread Count Response: ${e.response?.data}');
+      appLog('Get Unread Count Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Get Unread Count Error: $e');
+      appLog('Get Unread Count Error: $e');
       rethrow;
     }
   }
@@ -121,11 +118,10 @@ class NotificationsRepository {
 
       return true;
     } on DioException catch (e) {
-      log('Mark As Read Error: ${e.message}');
-      log('Mark As Read Response: ${e.response?.data}');
+      appLog('Mark As Read Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Mark As Read Error: $e');
+      appLog('Mark As Read Error: $e');
       rethrow;
     }
   }
@@ -152,11 +148,10 @@ class NotificationsRepository {
 
       return true;
     } on DioException catch (e) {
-      log('Mark All As Read Error: ${e.message}');
-      log('Mark All As Read Response: ${e.response?.data}');
+      appLog('Mark All As Read Error: ${e.message}');
       rethrow;
     } catch (e) {
-      log('Mark All As Read Error: $e');
+      appLog('Mark All As Read Error: $e');
       rethrow;
     }
   }

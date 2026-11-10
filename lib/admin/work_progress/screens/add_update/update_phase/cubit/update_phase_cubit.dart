@@ -1,5 +1,5 @@
-import 'dart:developer';
 
+import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/core/utils/api_error_message.dart';
@@ -39,14 +39,14 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
     emit(const StageListLoading());
 
     try {
-      log('UpdatePhaseCubit: Fetching stage list...');
+      appLog('UpdatePhaseCubit: Fetching stage list...');
       final result = await addPhaseRepository.getStageList();
       _stages = List<AddPhaseModel>.from(result);
       _stageListFetched = true;
-      log('UpdatePhaseCubit: Loaded ${_stages.length} stages.');
+      appLog('UpdatePhaseCubit: Loaded ${_stages.length} stages.');
       emit(StageListSuccess(List.unmodifiable(_stages)));
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'UpdatePhaseCubit Stage List Error: $e',
         stackTrace: stackTrace,
       );
@@ -73,8 +73,8 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
     try {
       emit(const UpdatePhaseLoading());
 
-      log('UpdatePhaseCubit: Adding phase...');
-      log('Stage Name: ${stageName.trim()}');
+      appLog('UpdatePhaseCubit: Adding phase...');
+      appLog('Stage Name: ${stageName.trim()}');
 
       final request = AddPhaseRequestModel(
         stageName: stageName.trim(),
@@ -83,9 +83,9 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
       final result = await addPhaseRepository.addPhase(request);
 
       if (result != null) {
-        log('UpdatePhaseCubit: Phase added successfully.');
-        log('Stage ID: ${result.stageId}');
-        log('Stage Name: ${result.stageName}');
+        appLog('UpdatePhaseCubit: Phase added successfully.');
+        appLog('Stage ID: ${result.stageId}');
+        appLog('Stage Name: ${result.stageName}');
 
         final exists = _stages.any(
           (stage) =>
@@ -104,7 +104,7 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
           ),
         );
       } else {
-        log('UpdatePhaseCubit: Failed to add phase.');
+        appLog('UpdatePhaseCubit: Failed to add phase.');
 
         emit(
           const UpdatePhaseError(
@@ -113,7 +113,7 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
         );
       }
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'UpdatePhaseCubit Add Phase Error: $e',
         stackTrace: stackTrace,
       );
@@ -142,14 +142,14 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
     emit(const WorkPhaseListLoading());
 
     try {
-      log('UpdatePhaseCubit: Fetching work phase list...');
+      appLog('UpdatePhaseCubit: Fetching work phase list...');
       final result = await addPhaseRepository.workPhaseList();
       _workPhases = List<WorkPhaseListModel>.from(result);
       _workPhaseListFetched = true;
-      log('UpdatePhaseCubit: Loaded ${_workPhases.length} work phases.');
+      appLog('UpdatePhaseCubit: Loaded ${_workPhases.length} work phases.');
       emit(WorkPhaseListSuccess(List.unmodifiable(_workPhases)));
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'UpdatePhaseCubit Work Phase List Error: $e',
         stackTrace: stackTrace,
       );
@@ -168,14 +168,14 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
     try {
       emit(const SaveWorkPhaseLoading());
 
-      log('UpdatePhaseCubit: Saving work phase...');
-      log('Stage ID: ${request.stageId}');
-      log('Is Update: $isUpdate');
+      appLog('UpdatePhaseCubit: Saving work phase...');
+      appLog('Stage ID: ${request.stageId}');
+      appLog('Is Update: $isUpdate');
 
       final result = await addPhaseRepository.addOrUpdatePhase(request);
 
       if (result != null) {
-        log('UpdatePhaseCubit: Work phase saved successfully.');
+        appLog('UpdatePhaseCubit: Work phase saved successfully.');
         emit(
           SaveWorkPhaseSuccess(
             phase: result,
@@ -196,7 +196,7 @@ class UpdatePhaseCubit extends Cubit<UpdatePhaseState> {
         );
       }
     } catch (e, stackTrace) {
-      log(
+      appLog(
         'UpdatePhaseCubit Save Work Phase Error: $e',
         stackTrace: stackTrace,
       );
