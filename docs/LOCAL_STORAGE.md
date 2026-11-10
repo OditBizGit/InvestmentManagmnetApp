@@ -8,7 +8,7 @@ Notes: on mobile/desktop the auth and refresh tokens are stored in `flutter_secu
 | Key | Accessors | Meaning |
 |---|---|---|
 | `auth_token` | `set/get/clearAuthToken` | Bearer token used by the Dio interceptor. Secure storage on non-web, prefs on web |
-| `refresh_token` | `set/getRefreshToken` | Secure storage on non-web. Never written by login; no refresh flow (D6) |
+| `refresh_token` | `set/getRefreshToken` | Secure storage on non-web. Written by login (`saveSession`) and replaced on each refresh via `saveTokens` (D7) |
 | `user_id` | `set/getUserId` | Used e.g. by `AccountStatusMonitor.refresh` |
 | `username`, `full_name`, `user_email` | set/get | Profile display |
 | `user_role` | `set/getUserRole` | Drives `AdminNavPermissions`, investor checks |
@@ -20,6 +20,7 @@ Notes: on mobile/desktop the auth and refresh tokens are stored in `flutter_secu
 
 ## Methods of note
 - `saveSession({authToken, refreshToken?, userId?, username?, fullName?, userRole?, userEmail?, investorCode?, profileImage?, isActive?})`: calls `clearSession()` first, writes values, sets `is_logged_in = true`.
+- `saveTokens({authToken, refreshToken})`: replaces only the two tokens after a refresh, keeping the rest of the session (unlike `saveSession`, which clears first).
 - `clearSession()`: clears in-memory tokens, deletes tokens from secure storage and prefs, and removes auth_token, refresh_token, user_id, username, full_name, user_role, user_email, investor_code, profile_image, is_logged_in, is_active, funding_transaction_history.
 - `hasValidSession()`: token non-empty and `is_logged_in`.
 

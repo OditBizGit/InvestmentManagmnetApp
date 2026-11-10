@@ -27,7 +27,7 @@ Request vs response legend below: **Req** = built by the app and sent; **Resp** 
 |---|---|---|
 | `LoginRequestModel` | Req (`toJson`) | `username`, `password`, `userRole?` (omitted when null) |
 | `LoginResponseModel` | Resp | `status`, `message`, `data: LoginDataModel?`, `code` |
-| `LoginDataModel` | Resp | `userId`, `username`, `fullName`, `email`, `phoneNumber?`, `investorCode?`, `profileImage?`, `userRole`, `token`, `isActive`. No refresh token field. `phoneNumber` is parsed but not saved to storage (Unclear - needs human clarification). |
+| `LoginDataModel` | Resp | `userId`, `username`, `fullName`, `email`, `phoneNumber?`, `investorCode?`, `profileImage?`, `userRole`, `token`, `refreshToken?`, `isActive`. `phoneNumber` is parsed but not saved to storage (Unclear - needs human clarification). |
 
 ## 3. Admin
 

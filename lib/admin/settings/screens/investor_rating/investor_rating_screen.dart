@@ -25,7 +25,9 @@ class InvestorRatingScreen extends StatelessWidget {
       child: BlocProvider(
         create: (context) => InvestorRatingCubit(
           repository: context.read<InvestorRatingRepository>(),
-        )..fetchInvestorRatingDetails(),
+        )
+          ..fetchInvestorRatingDetails()
+          ..fetchTopInvestorButtonSetting(),
         child: _InvestorRatingView(onBack: onBack),
       ),
     );
@@ -112,9 +114,14 @@ class _InvestorRatingView extends StatelessWidget {
                     child: _InvestorAddingFeatureToggle(
                       value: state.topInvestorAddingEnabled,
                       isUpdating: state.isUpdatingTopInvestorButton,
-                      onChanged: state.isUpdatingTopInvestorButton
+                      isLoading: state.isLoadingTopInvestorButton,
+                      onChanged: state.isUpdatingTopInvestorButton ||
+                              state.isLoadingTopInvestorButton
                           ? null
-                          : cubit.updateTopInvestorAddingFeature,
+                          : state.topInvestorAddingEnabled == null
+                              // Setting not loaded yet: tapping retries.
+                              ? (_) => cubit.fetchTopInvestorButtonSetting()
+                              : cubit.updateTopInvestorAddingFeature,
                     ),
                   ),
                   Expanded(
@@ -151,11 +158,14 @@ class _InvestorAddingFeatureToggle extends StatelessWidget {
   const _InvestorAddingFeatureToggle({
     required this.value,
     required this.isUpdating,
+    required this.isLoading,
     required this.onChanged,
   });
 
-  final bool value;
+  /// `null` until the saved setting has been loaded from the backend.
+  final bool? value;
   final bool isUpdating;
+  final bool isLoading;
   final ValueChanged<bool>? onChanged;
 
   @override
@@ -164,14 +174,14 @@ class _InvestorAddingFeatureToggle extends StatelessWidget {
       color: AppColors.white,
       borderRadius: BorderRadius.circular(8),
       child: SwitchListTile(
-        value: value,
+        value: value ?? false,
         onChanged: onChanged,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         activeThumbColor: AppColors.white,
         activeTrackColor: AppColors.accent,
         inactiveThumbColor: AppColors.white,
         inactiveTrackColor: AppColors.border,
-        secondary: isUpdating
+        secondary: (isUpdating || isLoading)
             ? const SizedBox(
                 width: 22,
                 height: 22,
@@ -190,7 +200,13 @@ class _InvestorAddingFeatureToggle extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          isUpdating ? 'Updating…' : (value ? 'On' : 'Off'),
+          isUpdating
+              ? 'Updating…'
+              : isLoading
+                  ? 'Loading…'
+                  : value == null
+                      ? 'Could not load. Tap to retry'
+                      : (value! ? 'On' : 'Off'),
           style: TextStyle(
             fontSize: 10.sp,
             fontWeight: FontWeight.w400,

@@ -15,7 +15,8 @@ import 'package:maribel_wellness_centre_application/main.dart' show isAdmin;
 import 'package:maribel_wellness_centre_application/user/navigation/user_main_screen.dart';
 
 /// Logs the user out and shows the login screen after an expired / invalid
-/// session (HTTP 401 on an authenticated request). No token refresh.
+/// session. Runs only after the token refresh failed (the refresh token was
+/// rejected) or when a 401 cannot be recovered; see `TokenRefreshService`.
 class SessionExpiryHandler {
   SessionExpiryHandler._();
 
@@ -59,7 +60,8 @@ class SessionExpiryHandler {
       final context = notificationNavigatorKey.currentContext;
       if (context != null) {
         try {
-          await context.read<LoginCubit>().logout();
+          // The token is already rejected, so skip the server logout call.
+          await context.read<LoginCubit>().logout(revokeServerSession: false);
         } catch (_) {
           await _clearManually(storage);
         }

@@ -121,6 +121,17 @@ class LocalStorage {
 
   String? getRefreshToken() => _refreshToken;
 
+  /// Replaces only the access and refresh tokens (after a token refresh).
+  ///
+  /// Unlike [saveSession] this keeps the rest of the session intact.
+  Future<void> saveTokens({
+    required String authToken,
+    required String refreshToken,
+  }) async {
+    await setAuthToken(authToken);
+    await setRefreshToken(refreshToken);
+  }
+
   // ── User / session ────────────────────────────────────────────────
 
   Future<bool> setUserId(String userId) =>

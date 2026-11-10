@@ -91,14 +91,82 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     }
   }
 
+  /// Loads the saved "Investor adding" visibility from
+  /// `GET /api/Settings/GetAllSettings` (setting id 9). The displayed value is
+  /// only ever the backend value; on failure it stays unknown.
+  Future<void> fetchTopInvestorButtonSetting() async {
+    if (state.isLoadingTopInvestorButton) return;
+
+    emit(state.copyWith(isLoadingTopInvestorButton: true));
+
+    try {
+      final response = await repository.getAllSettings();
+      if (isClosed) return;
+
+      if (!response.status) {
+        emit(
+          state.copyWith(
+            isLoadingTopInvestorButton: false,
+            bannerMessage: response.message.isNotEmpty
+                ? response.message
+                : 'Failed to load investor adding setting.',
+            bannerIsError: true,
+          ),
+        );
+        return;
+      }
+
+      final setting = response.topInvestorVisibility;
+      if (setting == null) {
+        emit(
+          state.copyWith(
+            isLoadingTopInvestorButton: false,
+            bannerMessage: 'Investor adding setting was not found.',
+            bannerIsError: true,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          isLoadingTopInvestorButton: false,
+          topInvestorAddingEnabled: setting.status,
+        ),
+      );
+    } on DioException catch (e) {
+      if (isClosed) return;
+      final message = _dioErrorMessage(e);
+      emit(
+        state.copyWith(
+          isLoadingTopInvestorButton: false,
+          bannerMessage: message.isNotEmpty
+              ? message
+              : 'Failed to load investor adding setting.',
+          bannerIsError: true,
+        ),
+      );
+    } catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          isLoadingTopInvestorButton: false,
+          bannerMessage: e.toString().replaceFirst('Exception: ', ''),
+          bannerIsError: true,
+        ),
+      );
+    }
+  }
+
+  /// Saves the visibility through the existing POST endpoint. The shown value
+  /// changes only after the backend confirms; on any failure it is unchanged.
   Future<void> updateTopInvestorAddingFeature(bool isEnabled) async {
     if (state.isUpdatingTopInvestorButton) return;
+    if (state.topInvestorAddingEnabled == null) return;
     if (state.topInvestorAddingEnabled == isEnabled) return;
 
-    final previousEnabled = state.topInvestorAddingEnabled;
     emit(
       state.copyWith(
-        topInvestorAddingEnabled: isEnabled,
         isUpdatingTopInvestorButton: true,
         clearBanner: true,
       ),
@@ -113,7 +181,6 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       if (!response.status) {
         emit(
           state.copyWith(
-            topInvestorAddingEnabled: previousEnabled,
             isUpdatingTopInvestorButton: false,
             bannerMessage: response.message.isNotEmpty
                 ? response.message
@@ -142,7 +209,6 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       final message = _dioErrorMessage(e);
       emit(
         state.copyWith(
-          topInvestorAddingEnabled: previousEnabled,
           isUpdatingTopInvestorButton: false,
           bannerMessage: message.isNotEmpty
               ? message
@@ -154,7 +220,6 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       if (isClosed) return;
       emit(
         state.copyWith(
-          topInvestorAddingEnabled: previousEnabled,
           isUpdatingTopInvestorButton: false,
           bannerMessage: e.toString().replaceFirst('Exception: ', ''),
           bannerIsError: true,

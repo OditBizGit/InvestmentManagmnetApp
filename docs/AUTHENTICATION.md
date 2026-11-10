@@ -18,18 +18,18 @@ Files: `lib/auth/**`, `lib/core/storage/local_storage.dart`, `lib/core/account/*
 - UI: mobile `LoginScreen` (investor), `AdminWebLoginScreen` (width >= 900, role dropdown Admin / Super Admin / Financial Manager / Marketing Manager mapped by `AdminNavPermissions.apiRoleForWebLoginLabel` to API values `Admin`, `SuperAdmin`, `FinancialManager`, `MarketingManager`).
 
 ## Token storage and use
-- Bearer token stored under key `auth_token`: `flutter_secure_storage` on mobile/desktop, SharedPreferences on web (plus a `refresh_token` key that login never writes; no refresh flow). See LOCAL_STORAGE.md and SECURITY.md.
+- Bearer token stored under key `auth_token`: `flutter_secure_storage` on mobile/desktop, SharedPreferences on web (the `refresh_token` key is written by login from `LoginDataModel.refreshToken` and replaced on every token refresh). See LOCAL_STORAGE.md and SECURITY.md.
 - Dio request interceptor reads `LocalStorage.getAuthToken()` on every request and sets `Authorization: Bearer <token>`, except for the login path where the header is removed.
 
 ## Session persistence
 `LocalStorage.hasValidSession()` = non-empty token AND `is_logged_in == true`. `SplashScreen` uses it on every launch to skip login.
 
 ## Logout
-`LoginCubit.logout()`: set `suppressAuthenticatedNavigation = true` before the first await, `LocalStorage.clearSession()`, `AccountBlockCubit.reset()`, emit `LoginInitial`. Callers navigate to login themselves:
+`LoginCubit.logout({revokeServerSession = true})`: set `suppressAuthenticatedNavigation = true` before the first await, fire a best-effort `TokenRefreshService.revokeSession(accessToken)` (`POST /api/User/Logout`, not awaited; skipped for forced session expiry), `LocalStorage.clearSession()`, `AccountBlockCubit.reset()`, emit `LoginInitial`. Callers navigate to login themselves:
 - Admin: `AdminMainScreen._onLogout` (confirm dialog -> logout -> `pushAndRemoveUntil` to `LoginScreen`).
 - User: `UserProfileScreen` (calls `LoginCubit.logout()`; navigation handled there - see feature docs).
 - Forced: `AccountBlockedOverlay` (see below).
-No server-side logout/invalidate call was found.
+The server logout call never blocks or fails the local logout.
 
 ## Roles and permissions (`AdminNavPermissions`)
 Roles: `Admin`, `SuperAdmin`, `FinancialManager`, `MarketingManager`; investors use role string `Investor` (compared lowercase). `normalizeRole` lowercases and strips whitespace.
@@ -41,7 +41,7 @@ Roles: `Admin`, `SuperAdmin`, `FinancialManager`, `MarketingManager`; investors 
 Comment in source: "Local until backend permissions arrive" - permissions are client-side only; backend enforcement is not implemented yet; server-side role checks are planned by the backend team (security finding H2, decision D2 in DECISIONS.md). Logout is always available.
 
 ## Unauthorized (401/403) handling
-A global 401 handler (`SessionExpiryHandler`, called from the Dio `onError`) logs the user out and returns to `LoginScreen` when an authenticated request carrying the current token gets 401 (see API_CLIENT_CORE.md). There is no token refresh. Per-repository 401/403 message mapping (e.g. `monthly_payment_list_repository.dart`, `due_payments_repository.dart`) still exists.
+On a 401 the Dio `onError` first asks `TokenRefreshService.recoverFromUnauthorized` to refresh the token and replay the request once. Only when the refresh token is rejected (401/403/400 from `/api/User/RefreshToken`) does `SessionExpiryHandler` log the user out and return to `LoginScreen`; a temporary refresh failure (offline, 5xx) keeps the session (see API_CLIENT_CORE.md, decision D6 superseded by D7). Per-repository 401/403 message mapping (e.g. `monthly_payment_list_repository.dart`, `due_payments_repository.dart`) still exists.
 
 ## Account block monitoring (investor, user build)
 - `isActive == false` marks the investor blocked. Sources: login response, any Dio response for `ApiEndpoints.login` or `ApiEndpoints.investorDetails` (`AccountStatusMonitor.onResponse`, only when payload has `isActive`/`IsActive` and is an investor account), and polling.

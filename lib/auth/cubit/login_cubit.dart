@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maribel_wellness_centre_application/auth/model/login_response_model.dart';
 import 'package:maribel_wellness_centre_application/auth/repository/login_repository.dart';
@@ -5,6 +7,7 @@ import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_p
 import 'package:maribel_wellness_centre_application/core/account/account_block_cubit.dart';
 import 'package:maribel_wellness_centre_application/core/account/auth_navigation_guard.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
+import 'package:maribel_wellness_centre_application/core/network/token_refresh_service.dart';
 import 'package:maribel_wellness_centre_application/core/notifications/notification_service.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
 
@@ -93,6 +96,7 @@ class LoginCubit extends Cubit<LoginState> {
       // Replace any previous session with the newly returned token/data.
       await _localStorage.saveSession(
         authToken: data.token,
+        refreshToken: data.refreshToken,
         userId: data.userId.toString(),
         username: data.username,
         fullName: data.fullName,
@@ -134,8 +138,19 @@ class LoginCubit extends Cubit<LoginState> {
   ///
   /// Sets [AuthNavigationGuard.suppressAuthenticatedNavigation] before the
   /// first await so in-flight listeners cannot open the home shell.
-  Future<void> logout() async {
+  ///
+  /// When [revokeServerSession] is true the backend session is also revoked,
+  /// best-effort and without waiting (local logout never depends on it). Pass
+  /// `false` when the token is already known to be invalid (expired session).
+  Future<void> logout({bool revokeServerSession = true}) async {
     AuthNavigationGuard.suppressAuthenticatedNavigation = true;
+    final accessToken = _localStorage.getAuthToken();
+    if (revokeServerSession &&
+        accessToken != null &&
+        accessToken.isNotEmpty &&
+        getIt.isRegistered<TokenRefreshService>()) {
+      unawaited(getIt<TokenRefreshService>().revokeSession(accessToken));
+    }
     await _localStorage.clearSession();
     if (getIt.isRegistered<AccountBlockCubit>()) {
       getIt<AccountBlockCubit>().reset();

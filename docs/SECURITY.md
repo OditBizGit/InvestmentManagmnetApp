@@ -9,7 +9,7 @@ Findings, fixes, open risks and review results. Sources: QA Team Head security r
 | H1 | High | Tokens in SharedPreferences (web `localStorage`); Android backup on | `flutter_secure_storage` on mobile/desktop, legacy-token migration, `allowBackup="false"` | Fixed for mobile/desktop. Web deferred to HttpOnly cookies (D3) |
 | H2 | High | Roles enforced only in the client; editable `user_role` unlocks admin UI | Backend authorises each endpoint by the JWT role and rejects mismatched `userRole` at login | Open: backend planned (D2) |
 | M1 | Medium | Android release signed with debug key | Real release keystore via git-ignored `key.properties` | Open: PM chose to leave as is (D7) |
-| M2 | Medium | No global 401 handling; expired token kept | `SessionExpiryHandler`: logout + login screen on 401 with current token | Fixed (D6) |
+| M2 | Medium | No global 401 handling; expired token kept | `TokenRefreshService` refreshes + replays on 401; `SessionExpiryHandler`: logout + login screen only if the refresh token is rejected | Fixed (D6, superseded by D7) |
 | M3 | Medium | CSV formula injection in user export | `escapeCsvField` (`lib/core/utils/csv_escape.dart`) prefixes `= + - @ \t \r` with `'`, numbers excluded | Fixed (D9) |
 | L1 | Low | Debug logs print Authorization header and password | Masked in request logs | Fixed |
 | L2 | Low | Financial response bodies and PII logged (ungated `debugPrint`, ~77 raw `log()` calls) | All logging goes through debug-only `appLog` (`lib/core/utils/app_log.dart`); interceptor lines built by `log_redaction.dart` (method/URI/field names/status only); body/PII logs removed; `no_sensitive_logging_test.dart` scans `lib/` | Fixed (D1 closed 2026-11-10) |
