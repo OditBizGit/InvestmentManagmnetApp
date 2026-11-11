@@ -15,9 +15,6 @@ void Function(
 @visibleForTesting
 bool? appLogEnabledOverride;
 
-/// Debug-only logger. A no-op in profile/release builds.
-///
-/// Never pass response bodies, request payloads, tokens or passwords.
 void appLog(
   String message, {
   String? name,
