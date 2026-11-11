@@ -442,11 +442,11 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       }
 
       final rating = state.effectiveRating(code);
-      if (rating == null || rating < 1 || rating > 5) {
+      if (rating == null || rating < 0.5 || rating > 5) {
         emit(
           state.copyWith(
             bannerMessage:
-                'Assign and save a star rating (1–5) for ${_nameFor(code)} first.',
+                'Assign and save a star rating (0.5–5) for ${_nameFor(code)} first.',
             bannerIsError: true,
           ),
         );
@@ -536,9 +536,10 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     }
   }
 
-  void setDraftRating(String investorCode, int rating) {
-    final clamped = rating.clamp(1, 5);
-    final nextDraft = Map<String, int>.from(state.draftRatings)
+  void setDraftRating(String investorCode, double rating) {
+    final snapped = (rating * 2).round() / 2.0;
+    final clamped = snapped.clamp(0.5, 5.0);
+    final nextDraft = Map<String, double>.from(state.draftRatings)
       ..[investorCode] = clamped;
     emit(
       state.copyWith(
@@ -581,10 +582,10 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     if (investor == null) return;
 
     final rating = state.effectiveRating(investorCode);
-    if (rating == null || rating < 1 || rating > 5) {
+    if (rating == null || rating < 0.5 || rating > 5) {
       emit(
         state.copyWith(
-          bannerMessage: 'Choose a rating between 1 and 5 stars to save.',
+          bannerMessage: 'Choose a rating between 0.5 and 5 stars to save.',
           bannerIsError: true,
         ),
       );
@@ -668,13 +669,13 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     emit(state.copyWith(clearBanner: true));
   }
 
-  void _applySavedRating(String investorCode, int savedRating) {
+  void _applySavedRating(String investorCode, double savedRating) {
     final updatedInvestors = state.investors.map((investor) {
       if (investor.investorCode != investorCode) return investor;
       return investor.copyWith(rating: savedRating);
     }).toList();
 
-    final nextDraft = Map<String, int>.from(state.draftRatings)
+    final nextDraft = Map<String, double>.from(state.draftRatings)
       ..remove(investorCode);
 
     emit(

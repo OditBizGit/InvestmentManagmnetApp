@@ -142,7 +142,7 @@ class _TopRatedChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rating = investor.savedStarRating ?? 0;
+    final rating = investor.savedStarRating ?? 0.0;
     final canTapRemove = removeEnabled && !isRemoving;
 
     return Stack(
@@ -186,7 +186,7 @@ class _TopRatedChip extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    if (rating >= 1)
+                    if (rating >= 0.5)
                       ReadOnlyStarRating(rating: rating, starSize: 14)
                     else
                       Text(

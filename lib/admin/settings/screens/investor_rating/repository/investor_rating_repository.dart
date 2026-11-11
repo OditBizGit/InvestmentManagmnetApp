@@ -1,7 +1,5 @@
 import 'package:maribel_wellness_centre_application/core/utils/app_log.dart';
-
 import 'package:dio/dio.dart';
-
 import '../../../../../core/constants/api_endpoints.dart';
 import '../model/add_top_investor_model.dart';
 import '../model/investor_rating_details_model.dart';
@@ -51,30 +49,61 @@ class InvestorRatingRepository {
     }
   }
 
+
   Future<InvestorRatingUpdateResponseModel> updateInvestorRating({
     required int investorId,
-    required int rating,
+    required double rating,
   }) async {
     try {
-      appLog(
-        'Updating investor rating: investorId=$investorId, rating=$rating',
-        name: 'InvestorRatingAPI',
-      );
-
       final request = InvestorRatingUpdateRequestModel(
         investorId: investorId,
         rating: rating,
       );
 
-      final response = await dio.post(
-        ApiEndpoints.saveInvestorRating,
-        data: request.toJson(),
+      final requestBody = request.toJson();
+
+      appLog(
+        'Request Body: $requestBody',
+        name: 'InvestorRatingAPI',
       );
 
+      final response = await dio.post(
+        ApiEndpoints.saveInvestorRating,
+        data: requestBody,
+      );
+
+      appLog(
+        'Response: ${response.data}',
+        name: 'InvestorRatingAPI',
+      );
 
       return InvestorRatingUpdateResponseModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
+    } on DioException catch (e, stackTrace) {
+      appLog(
+        'Status Code: ${e.response?.statusCode}',
+        name: 'InvestorRatingAPI',
+      );
+
+      appLog(
+        'Error Response: ${e.response?.data}',
+        name: 'InvestorRatingAPI',
+      );
+
+      appLog(
+        'Request Data: ${e.requestOptions.data}',
+        name: 'InvestorRatingAPI',
+      );
+
+      appLog(
+        'Failed to update investor rating: $e',
+        name: 'InvestorRatingAPI',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
     } catch (e, stackTrace) {
       appLog(
         'Failed to update investor rating: $e',

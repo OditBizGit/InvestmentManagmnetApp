@@ -1,6 +1,6 @@
 class InvestorRatingUpdateRequestModel {
   final int investorId;
-  final int rating;
+  final double rating;
 
   InvestorRatingUpdateRequestModel({
     required this.investorId,
@@ -46,7 +46,7 @@ class InvestorRatingUpdateResponseModel {
 
 class InvestorRatingUpdateData {
   final int investorId;
-  final int rating;
+  final double rating;
   final DateTime? updatedDate;
 
   InvestorRatingUpdateData({
@@ -60,7 +60,7 @@ class InvestorRatingUpdateData {
       ) {
     return InvestorRatingUpdateData(
       investorId: (json['investorId'] as num?)?.toInt() ?? 0,
-      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       updatedDate: json['updatedDate'] != null
           ? DateTime.tryParse(json['updatedDate'].toString())
           : null,

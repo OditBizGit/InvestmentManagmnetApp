@@ -37,7 +37,7 @@ class InvestorRatingDetailsModel {
   final int onTimePaymentCount;
   final int delayedPaymentCount;
   final double onTimePaymentPercentage;
-  final int rating;
+  final double rating;
   final int userId;
 
   InvestorRatingDetailsModel({
@@ -67,7 +67,7 @@ class InvestorRatingDetailsModel {
           (json['delayedPaymentCount'] as num?)?.toInt() ?? 0,
       onTimePaymentPercentage:
           (json['onTimePaymentPercentage'] as num?)?.toDouble() ?? 0.0,
-      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       userId: (json['userId'] as num?)?.toInt() ?? 0,
     );
   }
@@ -86,9 +86,9 @@ class InvestorRatingDetailsModel {
     };
   }
 
-  /// Saved star rating from the API (1–5), or null when not rated.
-  int? get savedStarRating =>
-      rating >= 1 && rating <= 5 ? rating : null;
+  /// Saved star rating from the API (0.5–5 in half-star steps), or null when not rated.
+  double? get savedStarRating =>
+      rating >= 0.5 && rating <= 5 ? rating : null;
 
   String get initials {
     final parts = investorName
@@ -102,7 +102,9 @@ class InvestorRatingDetailsModel {
   }
 
   String get ratingLabel {
-    return switch (savedStarRating) {
+    final stars = savedStarRating;
+    if (stars == null) return 'Not rated';
+    return switch (stars.round().clamp(1, 5)) {
       5 => 'Excellent',
       4 => 'Good',
       3 => 'Fair',
@@ -120,7 +122,7 @@ class InvestorRatingDetailsModel {
     int? onTimePaymentCount,
     int? delayedPaymentCount,
     double? onTimePaymentPercentage,
-    int? rating,
+    double? rating,
     int? userId,
   }) {
     return InvestorRatingDetailsModel(

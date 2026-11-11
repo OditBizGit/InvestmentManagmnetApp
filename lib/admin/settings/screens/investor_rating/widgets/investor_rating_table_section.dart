@@ -177,7 +177,7 @@ class _InvestorRatingTableSectionState extends State<InvestorRatingTableSection>
                       UserManagementHeaderCell('Investor', flex: 4),
                       UserManagementHeaderCell('User ID', flex: 2),
                       UserManagementHeaderCell('Committed', flex: 2),
-                      UserManagementHeaderCell('Due', flex: 1),
+                      UserManagementHeaderCell('Installments', flex: 2),
                       UserManagementHeaderCell('On time', flex: 2),
                       UserManagementHeaderCell('Delayed', flex: 2),
                       UserManagementHeaderCell('On-time %', flex: 2),
@@ -292,7 +292,7 @@ class _InvestorRatingRow extends StatelessWidget {
   final int index;
   final InvestorRatingDetailsModel investor;
   final InvestorRatingState state;
-  final ValueChanged<int> onRatingChanged;
+  final ValueChanged<double> onRatingChanged;
   final VoidCallback onToggleSelected;
   final VoidCallback onSaveRating;
 
@@ -390,7 +390,7 @@ class _InvestorRatingRow extends StatelessWidget {
                 CurrencyFormatter.format(investor.totalInvestmentAmount),
                 flex: 2,
               ),
-              UserManagementDataCell('${investor.totalDueCount}', flex: 1),
+              UserManagementDataCell('${investor.totalDueCount}', flex: 2),
               UserManagementDataCell('${investor.onTimePaymentCount}', flex: 2),
               UserManagementDataCell('${investor.delayedPaymentCount}', flex: 2),
               Expanded(

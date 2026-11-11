@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+
 class InteractiveStarRating extends StatelessWidget {
   const InteractiveStarRating({
     super.key,
@@ -8,8 +10,8 @@ class InteractiveStarRating extends StatelessWidget {
     this.enabled = true,
   });
 
-  final int? rating;
-  final ValueChanged<int> onRatingChanged;
+  final double? rating;
+  final ValueChanged<double> onRatingChanged;
   final double starSize;
   final bool enabled;
 
@@ -18,24 +20,76 @@ class InteractiveStarRating extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = rating ?? 0;
+    final selected = (rating ?? 0.0).clamp(0.0, 5.0);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
-        final starIndex = index + 1;
-        final filled = starIndex <= selected;
+        final starValue = index + 1.0;
+
+        final double fill;
+        if (selected >= starValue) {
+          fill = 1.0;
+        } else if (selected >= starValue - 0.5) {
+          fill = 0.5;
+        } else {
+          fill = 0.0;
+        }
+
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: enabled ? () => onRatingChanged(starIndex) : null,
+            onTap: enabled
+                ? () => onRatingChanged(starValue)
+                : null,
             borderRadius: BorderRadius.circular(4),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 1),
-              child: Icon(
-                filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                size: starSize,
-                color: filled ? _filled : _empty,
+              child: SizedBox(
+                width: starSize,
+                height: starSize,
+                child: Stack(
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      size: starSize,
+                      color: _empty,
+                    ),
+                    if (fill > 0)
+                      ClipRect(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: fill,
+                          child: Icon(
+                            Icons.star_rounded,
+                            size: starSize,
+                            color: _filled,
+                          ),
+                        ),
+                      ),
+                    if (enabled)
+                      Positioned.fill(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () =>
+                                    onRatingChanged(index + 0.5),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () =>
+                                    onRatingChanged(index + 1.0),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -52,13 +106,13 @@ class ReadOnlyStarRating extends StatelessWidget {
     this.starSize = 16,
   });
 
-  final int rating;
+  final double rating;
   final double starSize;
 
   @override
   Widget build(BuildContext context) {
     return InteractiveStarRating(
-      rating: rating.clamp(1, 5),
+      rating: rating.clamp(0.0, 5.0),
       onRatingChanged: (_) {},
       starSize: starSize,
       enabled: false,

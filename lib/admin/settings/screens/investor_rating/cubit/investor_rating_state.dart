@@ -22,7 +22,7 @@ class InvestorRatingState {
 
   final List<InvestorRatingDetailsModel> investors;
   final List<TopInvestorModel> topInvestors;
-  final Map<String, int> draftRatings;
+  final Map<String, double> draftRatings;
   final Set<String> selectedInvestorCodes;
   final Set<String> savingInvestorCodes;
   final Set<int> removingTopInvestorUserIds;
@@ -50,7 +50,7 @@ class InvestorRatingState {
   InvestorRatingState copyWith({
     List<InvestorRatingDetailsModel>? investors,
     List<TopInvestorModel>? topInvestors,
-    Map<String, int>? draftRatings,
+    Map<String, double>? draftRatings,
     Set<String>? selectedInvestorCodes,
     Set<String>? savingInvestorCodes,
     Set<int>? removingTopInvestorUserIds,
@@ -99,7 +99,7 @@ class InvestorRatingState {
     return null;
   }
 
-  int? effectiveRating(String investorCode) {
+  double? effectiveRating(String investorCode) {
     if (draftRatings.containsKey(investorCode)) {
       return draftRatings[investorCode];
     }

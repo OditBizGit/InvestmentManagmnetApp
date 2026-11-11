@@ -37,7 +37,7 @@ class TopInvestorModel {
   final double investmentAmount;
   final double totalPaidAmount;
   final double pendingAmount;
-  final int rating;
+  final double rating;
 
   TopInvestorModel({
     required this.userId,
@@ -64,12 +64,12 @@ class TopInvestorModel {
           (json['investmentAmount'] as num?)?.toDouble() ?? 0.0,
       totalPaidAmount: (json['totalPaidAmount'] as num?)?.toDouble() ?? 0.0,
       pendingAmount: (json['pendingAmount'] as num?)?.toDouble() ?? 0.0,
-      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
-  int? get savedStarRating =>
-      rating >= 1 && rating <= 5 ? rating : null;
+  double? get savedStarRating =>
+      rating >= 0.5 && rating <= 5 ? rating : null;
 
   String get initials {
     final parts = fullName
