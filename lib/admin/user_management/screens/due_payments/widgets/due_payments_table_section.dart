@@ -25,7 +25,7 @@ class DuePaymentsTableSection extends StatefulWidget {
 }
 
 class _DuePaymentsTableSectionState extends State<DuePaymentsTableSection> {
-  static const double _minTableWidth = 1180;
+  static const double _minTableWidth = 1280;
   static const _filters = ['All', 'Pending', 'Partially Paid', 'Fully Paid'];
 
   final TextEditingController _searchController = TextEditingController();
@@ -218,6 +218,7 @@ class _DuePaymentsTableSectionState extends State<DuePaymentsTableSection> {
                       UserManagementHeaderCell('Total Payable', flex: 2),
                       UserManagementHeaderCell('Amount Paid', flex: 2),
                       UserManagementHeaderCell('Outstanding', flex: 2),
+                      UserManagementHeaderCell('Discount', flex: 2),
                       UserManagementHeaderCell('Payment Status', flex: 2),
                       UserManagementHeaderCell(
                         'Actions',
@@ -384,6 +385,10 @@ class _DuePaymentRow extends StatelessWidget {
               ),
               UserManagementDataCell(
                 CurrencyFormatter.format(item.outstanding),
+                flex: 2,
+              ),
+              UserManagementDataCell(
+                CurrencyFormatter.format(item.discountAmount),
                 flex: 2,
               ),
               Expanded(

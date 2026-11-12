@@ -22,7 +22,7 @@ Lets a permitted admin (Financial Manager; see Navigation) list payments receive
 ## Screens & widgets
 - `MonthlyPaymentListScreen(isActive)`: reads role from `LocalStorage`; if `!AdminNavPermissions.canAccessMonthlyList(role)` shows `_MonthlyPaymentListAccessDenied`. Otherwise `RepositoryProvider(MonthlyPaymentListRepository(dio: getIt<Dio>()))` + `BlocProvider(PaymentListCubit)` (screen-scoped, not global).
 - View: fetches when `isActive` first true and on each inactive->active transition. Default range: first day of current month to today.
-- Overview: total payments, total amount (from API), pending/approved/rejected counts (computed client side from all returned rows, not search-filtered).
+- Overview: total payments, total amount (from API), pending count (computed client side from all returned rows, not search-filtered). Approved/rejected summary cards removed.
 - Table: search box (investor name, code, contact, staff - case-insensitive contains), From/To date pickers (2020-2035; changing either clears review intents and refetches), per-row Approve / Reject checkboxes for pending rows, per-row "Save", header "Select all approve", "Approve All", "View History" button. Empty state "No payments match your search or date range".
 - Status mapping `_parsePaymentStatus`: contains "reject" -> rejected; contains "approv" -> approved; else pending. `paymentDate` null -> falls back to range-from date.
 - Reject dialog returns trimmed remark; validator requires non-empty and at least 3 characters.
@@ -57,7 +57,7 @@ Error mapping (all three): server `message` if present; timeouts -> "Request tim
 
 ## Business rules
 - Status values sent to API: exactly `Approved` or `Rejected`; remark `''` for approval; rejection remark must be >= 3 chars.
-- Only pending rows can be selected/saved. "Approve All" acts on pending rows of the current search-filtered list; blocked with toast if none pending or if any pending row has a Reject intent selected.
+- Only pending rows can be selected/saved. "Approve All" acts on pending rows of the current search-filtered list; blocked with toast if none pending or if any pending row has a Reject intent selected. Confirms via `showUserManagementConfirmDialog` (green Approve All) before batching.
 - Approve All is a sequential per-transaction loop.
 - Role gate: `AdminNavPermissions.canAccessMonthlyList`. Per the permission table, Admin, SuperAdmin and FinancialManager can access; MarketingManager cannot (access-denied widget).
 

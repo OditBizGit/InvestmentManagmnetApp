@@ -11,6 +11,7 @@ import 'package:maribel_wellness_centre_application/core/constants/app_colors.da
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class AddNewFundScreen extends StatelessWidget {
   const AddNewFundScreen({super.key, this.onBack, this.onSaveSuccess});
@@ -163,8 +164,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     final projectedPaid = _basePaidAmount + deposit;
     final remainingAfterPayment = outstanding - deposit - discount;
 
-    _totalPaidAmountController.text = _formatCurrency(projectedPaid);
-    _remainingAmountController.text = _formatCurrency(
+    _totalPaidAmountController.text = CurrencyFormatter.format(projectedPaid);
+    _remainingAmountController.text = CurrencyFormatter.format(
       remainingAfterPayment < 0 ? 0 : remainingAfterPayment,
     );
   }
@@ -287,7 +288,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
         _totalAmountController.text = '';
       } else {
         _initDueForInvestor(selected);
-        _totalAmountController.text = _formatCurrency(
+        _totalAmountController.text = CurrencyFormatter.format(
           selected.totalInvestmentAmount,
         );
       }
@@ -452,21 +453,6 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
   }
 
-  String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final digits = parts.first;
-    final withCommas = digits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<FundingPaymentsCubit, FundingPaymentsState>(
@@ -511,7 +497,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
               final payingNowAmount = _parseAmount(payingNowText);
               final formattedPayingNow =
                   payingNowAmount != null && payingNowAmount > 0
-                  ? _formatCurrency(payingNowAmount)
+                  ? CurrencyFormatter.format(payingNowAmount)
                   : null;
 
               final formCard = AddFundFormCard(
@@ -525,7 +511,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 remainingAmountController: _remainingAmountController,
                 dueAmountLabel: _selectedInvestor == null
                     ? null
-                    : _formatCurrency(_dueRemainingAmount),
+                    : CurrencyFormatter.format(_dueRemainingAmount),
                 dueDateLabel: _dueDate == null ? null : _formatDate(_dueDate!),
                 dueStatus: _selectedInvestor == null ? null : _dueStatus,
                 payingNowController: _payingNowController,
@@ -563,7 +549,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                     : _remainingAmountController.text,
                 dueAmount: _selectedInvestor == null
                     ? null
-                    : _formatCurrency(_dueRemainingAmount),
+                    : CurrencyFormatter.format(_dueRemainingAmount),
                 dueDate: _dueDate == null ? null : _formatDate(_dueDate!),
                 dueStatus: _selectedInvestor == null ? null : _dueStatus,
                 payingNow:

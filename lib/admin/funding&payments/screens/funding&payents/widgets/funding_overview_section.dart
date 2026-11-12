@@ -4,6 +4,7 @@ import 'package:maribel_wellness_centre_application/admin/funding&payments/model
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 enum _FundingLimitAlertKind { reached, exceeded }
 
@@ -49,21 +50,21 @@ class FundingOverviewSection extends StatelessWidget {
     return [
       _StatCardData(
         label: 'Total Commitment By Investors',
-        value: _formatCurrency(totalFunding),
+        value: CurrencyFormatter.format(totalFunding),
         icon: ImageConstants.totalFunding,
         iconColor: const Color(0xFF9B7EBF),
         iconBg: const Color(0xFFF0EBF6),
       ),
       _StatCardData(
         label: 'Amount Received from Investors',
-        value: _formatCurrency(amountReceived),
+        value: CurrencyFormatter.format(amountReceived),
         icon: ImageConstants.amountReceivable,
         iconColor: const Color(0xFF2CB5A8),
         iconBg: const Color(0xFFE6F7F5),
       ),
       _StatCardData(
         label: 'Amount Pending from Investors',
-        value: _formatCurrency(pending),
+        value: CurrencyFormatter.format(pending),
         icon: ImageConstants.amountRemaining,
         iconColor: const Color(0xFFE06B7A),
         iconBg: const Color(0xFFFDECEE),
@@ -76,21 +77,6 @@ class FundingOverviewSection extends StatelessWidget {
         iconBg: const Color(0xFFEAF1FC),
       ),
     ];
-  }
-
-  static String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
   }
 
   @override
@@ -107,9 +93,9 @@ class FundingOverviewSection extends StatelessWidget {
           const SizedBox(height: 16),
           _FundingLimitAlert(
             kind: alertKind,
-            projectAmountLabel: _formatCurrency(limit),
-            totalInvestmentLabel: _formatCurrency(total),
-            exceededAmountLabel: _formatCurrency(
+            projectAmountLabel: CurrencyFormatter.format(limit),
+            totalInvestmentLabel: CurrencyFormatter.format(total),
+            exceededAmountLabel: CurrencyFormatter.format(
               (total - limit).clamp(0.0, double.infinity).toDouble(),
             ),
           ),

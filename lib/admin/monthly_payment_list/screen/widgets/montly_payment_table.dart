@@ -569,42 +569,52 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
           ],
         );
 
-        final viewHistory = OutlinedButton.icon(
-          onPressed: widget.onViewHistory,
-          icon: const Icon(Icons.visibility_outlined, size: 18),
-          label: Text(
-            'View history',
-            style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w600,
+        const toolbarButtonSize = Size(148, 40);
+
+        final viewHistory = SizedBox(
+          width: toolbarButtonSize.width,
+          height: toolbarButtonSize.height,
+          child: OutlinedButton.icon(
+            onPressed: widget.onViewHistory,
+            icon: const Icon(Icons.visibility_outlined, size: 18),
+            label: Text(
+              'View history',
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.accent,
-            side: const BorderSide(color: AppColors.accent),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.accent,
+              side: const BorderSide(color: AppColors.accent),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         );
 
-        final approveAll = FilledButton.icon(
-          onPressed: widget.isReviewSubmitting ? null : widget.onApproveAll,
-          icon: const Icon(Icons.done_all_rounded, size: 18),
-          label: Text(
-            'Approve All',
-            style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w600,
+        final approveAll = SizedBox(
+          width: toolbarButtonSize.width,
+          height: toolbarButtonSize.height,
+          child: FilledButton.icon(
+            onPressed: widget.isReviewSubmitting ? null : widget.onApproveAll,
+            icon: const Icon(Icons.done_all_rounded, size: 18),
+            label: Text(
+              'Approve All',
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.accent,
-            foregroundColor: AppColors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         );

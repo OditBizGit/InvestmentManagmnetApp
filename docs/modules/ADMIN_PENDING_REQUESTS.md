@@ -51,7 +51,7 @@ Related (other modules): `InvestorPaymentRepository.getInvestorDetails` (see ADM
 ## Models
 - `PaymentRequestResponseModel`: status, message, data[], code.
 - `PaymentRequestDataModel` keys: requestId, userId, investorCode, fullName, email, phoneNumber, paidAmount, narration, paymentMethod, isFullSettlement, discountAmount, remarks, medicalAllowance (parsed via tryParse, default 0.0), status, requestedDate, requestedBy, requestedByName, reviewedBy, reviewedByName, reviewedDate, reviewRemarks, paymentEntryNo. fromJson only; numeric casts `as num?`.
-- `PendingRequestModel.fromPaymentRequest`: id = requestId string; `requestId` field = investorCode or "REQ-<id>"; allocation = narration, else payment method, else "Payment request"; applicantName default "Unknown"; amount = amountPayingNow = paidAmount; submittedAt default now; status via `PendingRequestStatusX.fromApi` (approved/rejected, anything else pending). Computed: `pendingAmount` (amount - amountPayingNow, min 0), `initials`, `statusLabel`.
+- `PendingRequestModel.fromPaymentRequest`: id = requestId string; `requestId` field = investorCode or "REQ-<id>"; allocation = narration, else payment method, else "Payment request"; applicantName default "Unknown"; amount = amountPayingNow = paidAmount; isFullSettlement, discountAmount from API; submittedAt default now; status via `PendingRequestStatusX.fromApi` (approved/rejected, anything else pending). Computed: `pendingAmount` (amount - amountPayingNow, min 0), `initials`, `statusLabel`. Card shows Full Settlement as `true`/`false` and Discount as the amount (including 0).
 - Optional detail fields (dateOfBirth, address, KYC, bank, nominees) exist on `PendingRequestModel` but are not populated by `fromPaymentRequest`; the detail screen uses `InvestorDetailsModel` instead.
 - `AcceptOrRejectPaymentRequestModel.toJson`: requestId, status, remarks. Response data: userId, investorCode, fullName, totalInvestmentAmount, totalPaidAmount, remainingAmount, paidAmount, paymentMethod, requestId, status, entryNo.
 
@@ -91,5 +91,5 @@ funding&payments (`InvestorPaymentRepository`, `InvestorDetailsModel`), user_man
 
 ## Unclear
 - Whether approve on a payment request creates the payment entry server-side (response has `entryNo`) - Unclear - needs human clarification.
-- `isFullSettlement`, `discountAmount`, `medicalAllowance`, `remarks` are parsed but whether they are displayed on the review screen was not confirmed - Unclear.
+- `isFullSettlement` and `discountAmount` are shown on the pending request card; whether they (plus `medicalAllowance`, `remarks`) appear on the review detail screen was not confirmed - Unclear.
 - Terminated-investor approval semantics (what block/terminate does to the investor) live in user_management - Unclear here.

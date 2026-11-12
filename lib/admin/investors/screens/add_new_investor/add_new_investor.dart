@@ -17,6 +17,7 @@ import 'package:maribel_wellness_centre_application/core/network/service_locator
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class AddNewInvestorScreen extends StatelessWidget {
   const AddNewInvestorScreen({
@@ -97,7 +98,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   final _bankNameController = TextEditingController();
   final _ifscController = TextEditingController();
   final _accountNumberController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   List<InvestorNomineeEntry> _nominees = [InvestorNomineeEntry()];
 
   String? _investorType;
@@ -547,23 +548,6 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     });
   }
 
-  String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final digits = parts.first;
-    final withCommas = digits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
-
   void _handleBack() {
     if (widget.onBack != null) {
       widget.onBack!();
@@ -576,12 +560,14 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     if (_isEditing) return;
 
     FocusScope.of(context).unfocus();
-    _formKey.currentState?.reset();
 
     for (final entry in _nominees) {
       entry.dispose();
     }
 
+    // Clear controllers before recreating the Form key. Clearing after
+    // FormState.reset() marks fields as user-interacted and re-shows
+    // AutovalidateMode.onUserInteraction errors on empty values.
     _fullNameController.clear();
     _organizationController.clear();
     _mobileController.clear();
@@ -621,6 +607,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       _selectedPaymentMode = null;
       _nominees = [InvestorNomineeEntry()];
       _paymentSchedule = const [];
+      // Fresh FormState so no prior validate()/interaction errors remain.
+      _formKey = GlobalKey<FormState>();
     });
   }
 
@@ -1149,9 +1137,21 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<InvestorsCubit, InvestorsState>(
+      listenWhen: (previous, current) =>
+          current is RegisterInvestorSuccess ||
+          current is RegisterInvestorFailure ||
+          current is UpdateInvestorSuccess ||
+          current is UpdateInvestorFailure,
       listener: (context, state) {
         if (state is RegisterInvestorSuccess) {
-          AppToast.success(state.message, context: context);
+          final message = state.message.trim().isNotEmpty
+              ? state.message.trim()
+              : 'Investor registered successfully!';
+          AppToast.success(
+            message,
+            title: 'Registration successful',
+            context: context,
+          );
           _resetFormAfterRegister();
         } else if (state is UpdateInvestorSuccess) {
           AppToast.success(state.message, context: context);
@@ -1164,6 +1164,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
             _handleBack();
           });
         } else if (state is RegisterInvestorFailure) {
+          // Keep all entered values; only show the API/error message.
           AppToast.error(state.message, context: context);
         } else if (state is UpdateInvestorFailure) {
           AppToast.error(state.message, context: context);
@@ -1223,7 +1224,7 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 onPaymentModeChanged: (value) =>
                     setState(() => _selectedPaymentMode = value),
                 paymentSchedule: _paymentSchedule,
-                formatCurrency: _formatCurrency,
+                formatCurrency: CurrencyFormatter.format,
                 frequencyOptions: _frequencyOptions,
                 selectedFrequency: _selectedFrequency,
                 onFrequencyChanged: _onFrequencyChanged,

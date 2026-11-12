@@ -11,15 +11,11 @@ class MonthlyPaymentOverview extends StatelessWidget {
     required this.totalPayments,
     required this.totalAmount,
     required this.pendingCount,
-    required this.approvedCount,
-    required this.rejectedCount,
   });
 
   final int totalPayments;
   final double totalAmount;
   final int pendingCount;
-  final int approvedCount;
-  final int rejectedCount;
 
   @override
   Widget build(BuildContext context) {
@@ -110,20 +106,6 @@ class MonthlyPaymentOverview extends StatelessWidget {
               icon: ImageConstants.amountRemaining,
               iconColor: const Color(0xFFE89A3C),
               iconBg: const Color(0xFFFFF3E8),
-            ),
-            UserManagementStatCardData(
-              label: 'Approved',
-              value: '$approvedCount',
-              icon: ImageConstants.tick,
-              iconColor: const Color(0xFF1BA752),
-              iconBg: const Color(0xFFE8F8EE),
-            ),
-            UserManagementStatCardData(
-              label: 'Rejected',
-              value: '$rejectedCount',
-              icon: ImageConstants.documents,
-              iconColor: const Color(0xFFE06B7A),
-              iconBg: const Color(0xFFFDECEE),
             ),
           ],
         ),

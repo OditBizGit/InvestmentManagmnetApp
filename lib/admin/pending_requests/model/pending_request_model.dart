@@ -57,6 +57,8 @@ class PendingRequestModel {
     required this.paymentMethod,
     required this.amount,
     required this.amountPayingNow,
+    required this.isFullSettlement,
+    required this.discountAmount,
     required this.submittedAt,
     required this.status,
     this.dateOfBirth,
@@ -83,6 +85,8 @@ class PendingRequestModel {
   final String paymentMethod;
   final double amount;
   final double amountPayingNow;
+  final bool isFullSettlement;
+  final double discountAmount;
   final DateTime submittedAt;
   final PendingRequestStatus status;
   final DateTime? dateOfBirth;
@@ -123,6 +127,8 @@ class PendingRequestModel {
       paymentMethod: paymentMethod,
       amount: data.paidAmount,
       amountPayingNow: data.paidAmount,
+      isFullSettlement: data.isFullSettlement,
+      discountAmount: data.discountAmount,
       submittedAt: data.requestedDate ?? DateTime.now(),
       status: PendingRequestStatusX.fromApi(data.status),
     );
@@ -175,6 +181,8 @@ class PendingRequestModel {
       paymentMethod: paymentMethod,
       amount: amount,
       amountPayingNow: amountPayingNow,
+      isFullSettlement: isFullSettlement,
+      discountAmount: discountAmount,
       submittedAt: submittedAt,
       status: status ?? this.status,
       dateOfBirth: dateOfBirth,

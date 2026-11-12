@@ -161,7 +161,21 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         return;
       }
 
-      emit(ManageUsersSuccess(users: response.users));
+      final pendingTerminateIds = <int>{
+        if (previous is ManageUsersSuccess)
+          for (final user in previous.users)
+            if (user.hasPendingTerminateRequest && user.isActive) user.id,
+      };
+
+      final users = [
+        for (final user in response.users)
+          if (pendingTerminateIds.contains(user.id) && user.isActive)
+            user.copyWith(hasPendingTerminateRequest: true)
+          else
+            user,
+      ];
+
+      emit(ManageUsersSuccess(users: users));
     } on DioException catch (error) {
       if (isClosed) return;
       emit(
@@ -219,30 +233,54 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       final latest = state;
       if (latest is! ManageUsersSuccess) return;
 
+      // Terminate creates a pending approval request — do not flip local
+      // status to Terminated until the request is approved elsewhere.
+      if (isTerminating) {
+        final message = response.message.trim().isNotEmpty
+            ? response.message.trim()
+            : 'Termination request for $displayName has been sent for approval.';
+
+        emit(
+          latest.copyWith(
+            users: [
+              for (final item in latest.users)
+                if (item.id == user.id)
+                  item.copyWith(
+                    hasPendingTerminateRequest: true,
+                    terminateRemarks:
+                        terminateRemarks?.trim() ?? item.terminateRemarks,
+                  )
+                else
+                  item,
+            ],
+            clearStatusUpdatingUserId: true,
+            statusFeedback: ManageUsersStatusFeedback(
+              isSuccess: true,
+              title: 'Request Sent',
+              message: message,
+            ),
+          ),
+        );
+        return;
+      }
+
       final message = response.message.trim().isNotEmpty
           ? response.message.trim()
-          : targetIsActive
-              ? '$displayName has been unblocked'
-              : '$displayName has been terminated';
+          : '$displayName has been unblocked';
 
       emit(
         latest.copyWith(
           users: [
             for (final item in latest.users)
               if (item.id == user.id)
-                item.copyWith(
-                  isActive: targetIsActive,
-                  terminateRemarks: isTerminating
-                      ? (terminateRemarks?.trim() ?? item.terminateRemarks)
-                      : item.terminateRemarks,
-                )
+                item.copyWith(isActive: targetIsActive)
               else
                 item,
           ],
           clearStatusUpdatingUserId: true,
           statusFeedback: ManageUsersStatusFeedback(
             isSuccess: true,
-            title: targetIsActive ? 'User Unblocked' : 'User Terminated',
+            title: 'User Unblocked',
             message: message,
           ),
         ),
@@ -1034,8 +1072,36 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         reviewRemarks: remarks.trim().isEmpty ? null : remarks.trim(),
       );
 
+      int? reviewedUserId = response.data?.userId;
+      if (reviewedUserId == null || reviewedUserId <= 0) {
+        for (final item
+            in latest.blockRequestsResponse?.requests ??
+                const <InvestorBlockRequestModel>[]) {
+          if (item.requestId == requestId) {
+            reviewedUserId = item.userId;
+            break;
+          }
+        }
+      }
+
+      final updatedUsers = reviewedUserId == null
+          ? latest.users
+          : [
+              for (final item in latest.users)
+                if (item.id == reviewedUserId)
+                  item.copyWith(
+                    isActive: normalizedStatus == 'Approved'
+                        ? (response.data?.isActive ?? false)
+                        : item.isActive,
+                    hasPendingTerminateRequest: false,
+                  )
+                else
+                  item,
+            ];
+
       emit(
         latest.copyWith(
+          users: updatedUsers,
           blockRequestsResponse: updatedList,
           clearBlockRequestReviewingId: true,
           statusFeedback: ManageUsersStatusFeedback(

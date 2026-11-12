@@ -47,7 +47,7 @@ Base `lib/admin/user_management/`
 
 ## 3. Screens and widgets
 - **ManageUsersScreen(isActive)**: lives in the admin shell IndexedStack; refetches users when it becomes active; drops the detail view when the tab becomes inactive. Tapping a row sets `_selectedUserId/_selectedCommittedAmount/_selectedPaidAmount` and shows `UserStatusUpdateScreen`. Navigation swaps are deferred (`scheduleFrameCallback` + `Future.delayed(Duration.zero)`).
-- **ManageUsersTableSection**: search "Search by name, mobile, email...", filter All / Active / Blocked (client-side), export icons. Row action: only "Terminate" for active users (unblock option removed; terminated rows show "Terminated" and no action).
+- **ManageUsersTableSection**: search "Search by name, mobile, email...", filter All / Active / Blocked (client-side), export icons. Row action: "Terminate" for active users; after request submitted shows "Req sent" (still Active); terminated rows show "Terminated".
 - **UserStatusUpdateScreen**: on init fetches MOU and LLP status; shows UserBenefitsSummaryCard, UserRefundCard, two UserStatusCheckboxCards (MOU, LLP), UserReceiptsCard. If the user is not found in cubit state, shows "Investor not found".
 - **DuePaymentsScreen(isActive)**: overview stats + table; row actions: view details dialog, send WhatsApp reminder (only when outstanding dues and not already sending).
 
@@ -59,7 +59,7 @@ States (sealed): `ManageUsersInitial`, `ManageUsersLoading`, `ManageUsersEmpty(i
 
 Methods:
 - `fetchUsers()`: Loading (or table-loading flag if data exists) -> Success / Empty (no rows) / Failure. A response is considered successful if status true OR code 200 OR message contains "success", or rows exist.
-- `toggleBlockStatus(user, {terminateRemarks})`: only valid when state is Success and none in progress. `targetIsActive = user.isBlocked`; if terminating (target inactive) remarks must be non-empty or it silently returns. On success updates the user in-list (`isActive`, `terminateRemarks`) and sets feedback "User Terminated"/"User Unblocked".
+- `toggleBlockStatus(user, {terminateRemarks})`: only valid when state is Success and none in progress. `targetIsActive = user.isBlocked`; if terminating (target inactive) remarks must be non-empty or it silently returns. Terminate success does **not** flip local `isActive`; sets `hasPendingTerminateRequest` so the row shows "Req sent", toast "Request Sent". Flag is preserved across list refresh while still Active. Unblock success still updates `isActive` locally.
 - `refundUser(user, refundAmount, paymentMethod, remarks)` -> bool. On success: `amountPaid` := `data.remainingRefundableAmount` if returned, else `(amountPaid - refundAmount)` floored at 0; feedback "Refund Saved".
 - `fetchInvestorMouStatus(id)`, `saveInvestorMouStatus({investorId,status,documentBytes,documentFileName})`, `uploadInvestorMouDocument`, `clearInvestorMouDocument`; same four for LLP.
   Rule `_canDowngradeDocumentStatus`: Completed can only stay Completed; Pending cannot be re-selected once beyond Pending (next == pending only allowed if current is pending). A save without a document and with unchanged status is a no-op. Status is applied optimistically then synced from `response.latestRecord`.
@@ -93,7 +93,7 @@ States: Initial, Loading, Success(items,statusFilter,search,overview,isTableLoad
 - InvestorBlockRequestModel: requestId, userId, investorCode, fullName, email, phoneNumber, isActive, status (`pending` => isPendingReview), remarks, requestedDate, requestedBy(+Name), reviewedBy(+Name), reviewedDate, reviewRemarks.
 - SaveInvestorMOUDataModel: id, investorId, status, documentPath, createdDateTime, modifiedDateTime. Response helpers: `latestRecord` (furthest status rank then newest), `recordForStatus`, `timestampForStatus`, `latestDocumentRecord`, `effectiveDocumentPath`.
 - PdfExcelInvestorModel: tolerant multi-key reading. due = first of totalInvestmentAmount/dueAmount/totalPayable/investmentAmount/committedAmount/installmentAmount; paid = first of totalPaidTillDate/amountPaidDuringPeriod/paidAmount/amountPaid/totalPaidAmount/receivedAmount; pending = first of pendingAmountAsOfToDate/pendingAmount/outstanding/totalPendingAmount, else computed due - paid when > 0.01; paymentDetails list; `exportRows` expands each paymentDetail into a row (paid = paidAmount if > 0 else receivedAmount). `PdfExcelResponseModel.rowsForSection('due')` returns investors as-is; for 'all' returns expanded transaction rows.
-- PaymentStatusReportModel: userId, investorCode, name, email, phoneNumber, totalPayable, amountPaid, outstanding, dueAmount, dueDate, paymentStatus, latestPaymentAmount, paymentMethod, narration, paymentDate.
+- PaymentStatusReportModel: userId, investorCode, name, email, phoneNumber, totalPayable, amountPaid, outstanding, discountAmount, dueAmount, dueDate, paymentStatus, latestPaymentAmount, paymentMethod, narration, paymentDate.
 - ManagedUserModel: see enums; outstandingBalance = max(totalPayable - amountPaid, 0); paymentStatus fullyPaid when outstanding <= 0.01, partiallyPaid when amountPaid > 0.
 
 ## 7. Business rules
@@ -107,7 +107,7 @@ States: Initial, Loading, Success(items,statusFilter,search,overview,isTableLoad
 - Permissions: nav access to these screens is controlled outside this module (`admin/navigation/admin_nav_permissions.dart`); ids manageUsers and duePayments exist in the settings permission catalogue. Unclear - needs human clarification how roles map.
 
 ## 8. Workflows
-1. Terminate an investor: Manage Users -> row "Terminate" -> remarks dialog -> POST UpdateInvestorStatus(isActive:false, remarks) -> row becomes Terminated, toast.
+1. Terminate an investor: Manage Users -> row "Terminate" -> remarks dialog -> POST UpdateInvestorStatus(isActive:false, remarks) -> toast "Request Sent"; row stays Active until approve.
 2. Refund: row -> detail -> Refund card -> amount/method/remarks -> POST RefundInvestor -> paid amount updated.
 3. MOU/LLP: detail -> pick status (confirm for Completed) and/or choose file -> upload -> status and dates synced.
 4. Export: toolbar export icon -> choose scope -> choose date range -> API -> file generated and saved/opened.
@@ -126,7 +126,7 @@ sequenceDiagram
  T->>C: toggleBlockStatus(user, remarks)
  C->>R: POST UpdateInvestorStatus {userId,isActive:false,remarks}
  R-->>C: status/code 200
- C-->>T: Success(user.isActive=false, feedback)
+ C-->>T: Success(user unchanged, feedback Request Sent)
 ```
 
 ```mermaid

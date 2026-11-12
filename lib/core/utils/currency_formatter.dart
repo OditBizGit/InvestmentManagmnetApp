@@ -1,4 +1,4 @@
-/// Indian currency grouping: last 3 digits, then pairs (e.g. ₹3,00,000).
+/// Indian currency grouping: last 3 digits, then pairs (e.g. ₹1,90,000.01).
 class CurrencyFormatter {
   CurrencyFormatter._();
 
@@ -38,25 +38,33 @@ class CurrencyFormatter {
     'Ninety',
   ];
 
+  /// Formats [amount] as INR with Indian grouping and exactly two decimals.
+  ///
+  /// Examples: `1000` → `₹1,000.00`, `190000.01` → `₹1,90,000.01`.
+  /// NaN and infinite values are treated as `0`.
   static String format(double amount, {String symbol = '₹'}) {
-    final isNegative = amount < 0;
-    final absAmount = amount.abs();
-    final isWhole = absAmount == absAmount.roundToDouble();
-    final raw = isWhole
-        ? absAmount.toStringAsFixed(0)
-        : absAmount.toStringAsFixed(2);
+    final value = _safeAmount(amount);
+    final isNegative = value < 0;
+    final absAmount = value.abs();
+    final raw = absAmount.toStringAsFixed(2);
     final parts = raw.split('.');
     final grouped = indianGrouping(parts.first);
-    final decimals = parts.length > 1 ? '.${parts[1]}' : '';
     final sign = isNegative ? '-' : '';
-    return '$sign$symbol$grouped$decimals';
+    return '$sign$symbol$grouped.${parts[1]}';
+  }
+
+  /// Same as [format], treating `null` as `0`.
+  static String formatNullable(num? amount, {String symbol = '₹'}) {
+    return format((amount ?? 0).toDouble(), symbol: symbol);
   }
 
   /// Groups digits as 3,00,000 (last 3, then pairs).
   static String indianGrouping(String digits) {
-    if (digits.length <= 3) return digits;
-    final lastThree = digits.substring(digits.length - 3);
-    final rest = digits.substring(0, digits.length - 3);
+    final cleaned = digits.replaceAll(RegExp(r'\D'), '');
+    if (cleaned.isEmpty) return '0';
+    if (cleaned.length <= 3) return cleaned;
+    final lastThree = cleaned.substring(cleaned.length - 3);
+    final rest = cleaned.substring(0, cleaned.length - 3);
     final withCommas = rest.replaceAllMapped(
       RegExp(r'(\d)(?=(\d{2})+(?!\d))'),
       (match) => '${match[1]},',
@@ -66,8 +74,9 @@ class CurrencyFormatter {
 
   /// Indian English words, e.g. `300000` → `Three Lakh Rupees Only`.
   static String amountInWords(double amount) {
-    final isNegative = amount < 0;
-    final absAmount = amount.abs();
+    final value = _safeAmount(amount);
+    final isNegative = value < 0;
+    final absAmount = value.abs();
     final rupees = absAmount.floor();
     final paise = ((absAmount - rupees) * 100).round();
 
@@ -92,6 +101,11 @@ class CurrencyFormatter {
 
     buffer.write(' Only');
     return buffer.toString();
+  }
+
+  static double _safeAmount(double amount) {
+    if (amount.isNaN || amount.isInfinite) return 0;
+    return amount;
   }
 
   static String _convertIndian(int number) {

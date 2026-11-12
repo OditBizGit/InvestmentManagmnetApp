@@ -62,6 +62,7 @@ Other repos used by cubit: `InvestorsRepository.getInvestors()` (investors modul
 - `FundingInvestorModel`: userId, username, fullName, email, phoneNumber, profileImage (+ `profileImageUrl` via `resolveMediaUrl`), investorCode, investorType, organization, address, isActive, createdDate, modifiedDate, userRole, totalInvestmentAmount, totalPaidAmount, totalPendingAmount, latestPaymentAmount, status. camel/Pascal keys; toJson present.
 - `InvestorDetailsModel`: identity, contact, KYC (aadhaar/pan numbers and photos), bank (accountNumber, ifscCode, bankName), dateOfBirth, description, investment (investmentAmount, investmentDate, investmentAdvanceAmount, investmentSplitMonths, investmentSplitGap, investmentSplitType), totals (totalPaidAmount, totalPendingAmount, lastPaymentAmount, lastPaymentDate), legacy single nominee fields, `nominees[]` (falls back to legacy fields when list absent), `dueDates[]`, isActive, dates, userRole. `InvestorDueDateModel`: installmentNumber, dueDate, installmentAmount, paidAmount, pendingAmount, status, payments[] (`InvestorPaymentHistoryModel`: amount, paymentMethod, ...).
 - `UpdateDueDatesRequestModel.toJson`: investorId, installmentNumber, dueDate.
+- `InvestorTransactionHistoryModel`: transactionId, userId, investorCode, fullName, date, entryNo, investmentAmount, receivedAmount, paidAmount, pendingAmount, discountAmount, status, narration.
 - `FundingTransaction` (UI only) in funding_transactions_table.dart.
 
 ## Business rules / validation (Add Fund)

@@ -47,7 +47,14 @@ class TopInvestorModel {
       pendingAmount: _readDouble(
         json['pendingAmount'] ?? json['PendingAmount'],
       ),
-      rating: _readDouble(json['rating'] ?? json['Rating']),
+      rating: _readDouble(
+        json['rating'] ??
+            json['Rating'] ??
+            json['starRating'] ??
+            json['StarRating'] ??
+            json['investorRating'] ??
+            json['InvestorRating'],
+      ),
     );
   }
 

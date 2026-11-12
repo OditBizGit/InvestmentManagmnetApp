@@ -15,7 +15,7 @@ Paths relative to `lib/`. Source of truth is code.
 | `SuccessScreen` | `core/utils/success_screen.dart` | Lottie `success.json` |
 | `showCommitmentCompletedOverlay` | `core/utils/commitment_completed_overlay.dart` | `user/home/home_screen.dart` |
 | `AccountBlockedOverlay` | `core/account/account_blocked_overlay.dart` | Injected in `MaterialApp.builder` (user app only) |
-| Helpers | `core/utils/` | `CurrencyFormatter` (rupee, Indian grouping, amount in words), `ApiErrorMessage.from`, `media_url.dart`, `PhotoPickerHelper` (jpg/jpeg/png, 2 MB), `string_extensions.dart` |
+| Helpers | `core/utils/` | `CurrencyFormatter` (INR `₹`, Indian grouping e.g. `₹1,90,000.01`, always 2 decimals, amount in words; use this only — do not add local money formatters), `ApiErrorMessage.from`, `media_url.dart`, `PhotoPickerHelper` (jpg/jpeg/png, 2 MB), `string_extensions.dart` |
 
 ## Navigation
 - Admin: `admin/navigation/admin_side_drawer.dart` (`AdminSideDrawer`, `AdminDrawerItem`, `_ExpandableDrawerGroup`, `_DrawerNavTile`, `_AppVersionLabel`), `admin_main_screen.dart`, `admin_nav_permissions.dart`.

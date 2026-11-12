@@ -117,6 +117,7 @@ class ManageUsersInvestor {
     this.depositDiscountAmount = 0,
     this.medicalAllowanceDescription = '',
     this.terminateRemarks = '',
+    this.hasPendingTerminateRequest = false,
   });
 
   final int id;
@@ -132,6 +133,9 @@ class ManageUsersInvestor {
   final double depositDiscountAmount;
   final String medicalAllowanceDescription;
   final String terminateRemarks;
+
+  /// Local UI flag: terminate request submitted, awaiting approval.
+  final bool hasPendingTerminateRequest;
 
   String get userId => id > 0 ? '$id' : '';
 
@@ -153,6 +157,7 @@ class ManageUsersInvestor {
     double? amountPaid,
     double? totalPendingAmount,
     String? terminateRemarks,
+    bool? hasPendingTerminateRequest,
   }) {
     return ManageUsersInvestor(
       id: id,
@@ -168,6 +173,8 @@ class ManageUsersInvestor {
       depositDiscountAmount: depositDiscountAmount,
       medicalAllowanceDescription: medicalAllowanceDescription,
       terminateRemarks: terminateRemarks ?? this.terminateRemarks,
+      hasPendingTerminateRequest:
+          hasPendingTerminateRequest ?? this.hasPendingTerminateRequest,
     );
   }
 

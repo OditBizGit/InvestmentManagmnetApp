@@ -37,12 +37,17 @@ class _StaffReportScreenState extends State<StaffReportScreen> {
   DateTime? _customFromDate;
   DateTime? _customToDate;
 
+  /// Bumped when the tab becomes active so the list table remounts with
+  /// default period/search in sync with the refresh fetch.
+  int _listResetKey = 0;
+
   @override
   void initState() {
     super.initState();
     _cubit = StaffReportCubit(
       StaffReportRepository(getIt<Dio>()),
-    )..fetchStaffReport(period: 'ThisMonth');
+    );
+    _refreshIfActive();
   }
 
   @override
@@ -55,12 +60,35 @@ class _StaffReportScreenState extends State<StaffReportScreen> {
   void didUpdateWidget(covariant StaffReportScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // Leaving Staff Report (IndexedStack) must drop the detail screen so
+    // returning always lands on the list until a staff is selected again.
     if (!widget.isActive &&
         oldWidget.isActive &&
         _selectedStaff != null) {
       _selectedStaff = null;
       _cubit.resetDetails();
     }
+
+    // IndexedStack keeps this screen alive — refresh whenever Staff Report
+    // is opened again.
+    if (widget.isActive && !oldWidget.isActive) {
+      setState(() {
+        _listResetKey++;
+        _period = StaffReportPeriod.thisMonth;
+        _customFromDate = null;
+        _customToDate = null;
+      });
+      _refreshIfActive();
+    }
+  }
+
+  void _refreshIfActive() {
+    if (!widget.isActive) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.isActive) return;
+      if (_selectedStaff != null) return;
+      _cubit.fetchStaffReport(period: 'ThisMonth');
+    });
   }
 
   void _openStaff(
@@ -133,13 +161,21 @@ class _StaffReportScreenState extends State<StaffReportScreen> {
               onBack: _backToList,
               onPeriodChanged: _onDetailsPeriodChanged,
             )
-          : _StaffReportContent(onViewStaff: _openStaff),
+          : _StaffReportContent(
+              listResetKey: _listResetKey,
+              onViewStaff: _openStaff,
+            ),
     );
   }
 }
 
 class _StaffReportContent extends StatelessWidget {
-  const _StaffReportContent({required this.onViewStaff});
+  const _StaffReportContent({
+    required this.listResetKey,
+    required this.onViewStaff,
+  });
+
+  final int listResetKey;
 
   final void Function(
     StaffReportRowModel staff,
@@ -160,7 +196,7 @@ class _StaffReportContent extends StatelessWidget {
           return BlocBuilder<StaffReportCubit, StaffReportState>(
             buildWhen: (previous, current) =>
                 previous.listStatus != current.listStatus ||
-                previous.staffList.length != current.staffList.length,
+                previous.staffList != current.staffList,
             builder: (context, state) {
               final showRefetchProgress =
                   state.listStatus == StaffReportListStatus.loading &&
@@ -186,6 +222,7 @@ class _StaffReportContent extends StatelessWidget {
                       ),
                       const SizedBox(height: 18),
                       StaffReportTableSection(
+                        key: ValueKey(listResetKey),
                         onViewStaff: onViewStaff,
                       ),
                     ],

@@ -70,7 +70,7 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
 
   Future<void> _confirmTerminate(ManageUsersInvestor user) async {
     // Unblock is disabled — only allow terminate for active users.
-    if (user.isBlocked) return;
+    if (user.isBlocked || user.hasPendingTerminateRequest) return;
 
     final remarks = await showTerminateUserRemarksDialog(
       context: context,
@@ -423,7 +423,7 @@ class _ManageUserRow extends StatelessWidget {
                               color: AppColors.accent,
                             ),
                           )
-                        // Unblock option removed — terminated users have no action.
+                        // Unblock removed. Pending terminate shows Req sent.
                         : user.isBlocked
                             ? Text(
                                 'Terminated',
@@ -433,25 +433,34 @@ class _ManageUserRow extends StatelessWidget {
                                   color: AppColors.textMuted,
                                 ),
                               )
-                            : TextButton(
-                                onPressed: onToggleBlock,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.error,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
+                            : user.hasPendingTerminateRequest
+                                ? Text(
+                                    'Req sent',
+                                    style: TextStyle(
+                                      fontSize: 9.5.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  )
+                                : TextButton(
+                                    onPressed: onToggleBlock,
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.error,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      minimumSize: const Size(0, 34),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      'Terminate',
+                                      style: TextStyle(
+                                        fontSize: 9.5.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                  minimumSize: const Size(0, 34),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'Terminate',
-                                  style: TextStyle(
-                                    fontSize: 9.5.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
                   ),
                 ),
               ],

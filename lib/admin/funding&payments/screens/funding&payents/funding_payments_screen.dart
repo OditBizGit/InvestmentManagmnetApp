@@ -16,6 +16,7 @@ import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 
 import '../add_fund/add_new_fund.dart';
 import '../transaction_details/transaction_detail_screen.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class AdminFundingPaymentsScreen extends StatelessWidget {
   const AdminFundingPaymentsScreen({
@@ -153,21 +154,6 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
   }
 
-  String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
-
   String _displayStatus(String status) {
     final normalized = status.trim();
     if (normalized.isEmpty) return 'Pending';
@@ -199,7 +185,7 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
     FundingInvestorModel item,
   ) {
     final date = item.modifiedDate ?? item.createdDate ?? DateTime.now();
-    final paid = _formatCurrency(item.totalPaidAmount);
+    final paid = CurrencyFormatter.format(item.totalPaidAmount);
     final email = item.email.trim();
 
     return FundingTransaction(
@@ -207,9 +193,9 @@ class _AdminFundingPaymentsViewState extends State<_AdminFundingPaymentsView> {
       date: _formatDate(date),
       type: _displayType(item),
       party: item.fullName.trim().isNotEmpty ? item.fullName.trim() : 'Unknown',
-      totalInvestmentAmount: _formatCurrency(item.totalInvestmentAmount),
+      totalInvestmentAmount: CurrencyFormatter.format(item.totalInvestmentAmount),
       totalPaidAmount: paid,
-      pendingAmount: _formatCurrency(item.totalPendingAmount),
+      pendingAmount: CurrencyFormatter.format(item.totalPendingAmount),
       status: _displayStatus(item.status),
       description: email.isNotEmpty ? email : '-',
       amount: paid,

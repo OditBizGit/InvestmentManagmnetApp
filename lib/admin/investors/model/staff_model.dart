@@ -16,7 +16,12 @@ class StaffListResponseModel {
     final list = rawData is List ? rawData : const <dynamic>[];
 
     return StaffListResponseModel(
-      status: _readStatus(json['status'] ?? json['Status']),
+      status: _readStatus(
+        json['status'] ??
+            json['Status'] ??
+            json['success'] ??
+            json['Success'],
+      ),
       message: (json['message'] ?? json['Message'] ?? '').toString(),
       data: list
           .whereType<Map>()

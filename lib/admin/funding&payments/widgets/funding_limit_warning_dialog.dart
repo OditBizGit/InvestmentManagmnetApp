@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 enum FundingLimitAlertKind { reached, exceeded }
 
@@ -32,21 +33,6 @@ class FundingLimitWarningDialog {
     return null;
   }
 
-  static String formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
-
   /// Shows the dialog when the limit is reached/exceeded.
   ///
   /// Returns `true` to continue (acknowledge / save anyway), `false` to cancel.
@@ -75,7 +61,7 @@ class FundingLimitWarningDialog {
       Text(
         exceeded
             ? 'Investor investments have exceeded the project funding amount.'
-            : 'The total investor investment has reached the project funding amount of ${formatCurrency(limit)}.',
+            : 'The total investor investment has reached the project funding amount of ${CurrencyFormatter.format(limit)}.',
         style: TextStyle(
           fontSize: 11.sp,
           fontWeight: FontWeight.w400,
@@ -87,17 +73,17 @@ class FundingLimitWarningDialog {
         SizedBox(height: 1.2.h),
         _AmountRow(
           label: 'Project Amount',
-          value: formatCurrency(limit),
+          value: CurrencyFormatter.format(limit),
         ),
         SizedBox(height: 0.6.h),
         _AmountRow(
           label: 'Total Investor Investment',
-          value: formatCurrency(totalInvestment),
+          value: CurrencyFormatter.format(totalInvestment),
         ),
         SizedBox(height: 0.6.h),
         _AmountRow(
           label: 'Exceeded Amount',
-          value: formatCurrency(totalInvestment - limit),
+          value: CurrencyFormatter.format(totalInvestment - limit),
           emphasize: true,
           emphasizeColor: accent,
         ),

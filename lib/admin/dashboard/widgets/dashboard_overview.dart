@@ -9,6 +9,7 @@ import 'package:maribel_wellness_centre_application/admin/dashboard/widgets/dash
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class DashboardOverview extends StatelessWidget {
   const DashboardOverview({super.key});
@@ -77,21 +78,21 @@ class DashboardOverview extends StatelessWidget {
     return [
       _StatCardData(
         label: 'Total Funding',
-        value: _formatAmount(dashboard.projectFund),
+        value: CurrencyFormatter.format(dashboard.projectFund),
         icon: ImageConstants.totalFunding,
         iconColor: const Color(0xFF9B7EBF),
         iconBg: const Color(0xFFF0EBF6),
       ),
       _StatCardData(
         label: 'Amount Received',
-        value: _formatAmount(dashboard.totalReceivedAmount),
+        value: CurrencyFormatter.format(dashboard.totalReceivedAmount),
         icon: ImageConstants.amountReceivable,
         iconColor: const Color(0xFF2CB5A8),
         iconBg: const Color(0xFFE6F7F5),
       ),
       _StatCardData(
         label: 'Amount Remaining',
-        value: _formatAmount(dashboard.totalPendingAmount),
+        value: CurrencyFormatter.format(dashboard.totalPendingAmount),
         icon: ImageConstants.amountRemaining,
         iconColor: const Color(0xFFE06B7A),
         iconBg: const Color(0xFFFDECEE),
@@ -118,21 +119,6 @@ class DashboardOverview extends StatelessWidget {
         iconBg: const Color(0xFFE8F1FB),
       ),
     ];
-  }
-
-  String _formatAmount(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
   }
 
   String _formatPercent(double value) {

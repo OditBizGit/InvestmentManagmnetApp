@@ -59,6 +59,7 @@ class InvestorTransactionHistoryModel {
   final double receivedAmount;
   final double paidAmount;
   final double pendingAmount;
+  final double discountAmount;
   final String status;
   final String narration;
 
@@ -73,6 +74,7 @@ class InvestorTransactionHistoryModel {
     required this.receivedAmount,
     required this.paidAmount,
     required this.pendingAmount,
+    required this.discountAmount,
     required this.status,
     required this.narration,
   });
@@ -91,6 +93,7 @@ class InvestorTransactionHistoryModel {
       receivedAmount: _readDouble(json['receivedAmount']),
       paidAmount: _readDouble(json['paidAmount']),
       pendingAmount: _readDouble(json['pendingAmount']),
+      discountAmount: _readDouble(json['discountAmount']),
       status: json['status']?.toString() ?? '',
       narration: json['narration']?.toString() ?? '',
     );
@@ -108,6 +111,7 @@ class InvestorTransactionHistoryModel {
       'receivedAmount': receivedAmount,
       'paidAmount': paidAmount,
       'pendingAmount': pendingAmount,
+      'discountAmount': discountAmount,
       'status': status,
       'narration': narration,
     };

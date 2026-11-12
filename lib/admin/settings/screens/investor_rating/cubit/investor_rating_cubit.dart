@@ -259,13 +259,18 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
         return;
       }
 
+      final enriched = _enrichTopInvestorsWithDetailsRatings(
+        response.data,
+        state.investors,
+      );
+
       emit(
         state.copyWith(
-          topInvestors: response.data,
+          topInvestors: enriched,
           isLoadingTopInvestors: false,
           selectedInvestorCodes: _selectionExcludingTops(
             state.selectedInvestorCodes,
-            response.data,
+            enriched,
           ),
         ),
       );
@@ -730,5 +735,37 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       }
       return true;
     }).toSet();
+  }
+
+  /// GetTopInvestors often returns `rating: 0` until SaveInvestorStarRating
+  /// has been called, even when GetInvestorRatingDetails already has a
+  /// default/computed star rating. Fill that gap from the details list.
+  List<TopInvestorModel> _enrichTopInvestorsWithDetailsRatings(
+    List<TopInvestorModel> topInvestors,
+    List<InvestorRatingDetailsModel> details,
+  ) {
+    if (topInvestors.isEmpty || details.isEmpty) return topInvestors;
+
+    final byUserId = <int, InvestorRatingDetailsModel>{
+      for (final detail in details)
+        if (detail.userId > 0) detail.userId: detail,
+    };
+    final byCode = <String, InvestorRatingDetailsModel>{
+      for (final detail in details)
+        if (detail.investorCode.trim().isNotEmpty)
+          detail.investorCode: detail,
+    };
+
+    return [
+      for (final top in topInvestors)
+        if (top.savedStarRating != null)
+          top
+        else
+          top.copyWith(
+            rating: (byUserId[top.userId] ?? byCode[top.investorCode])
+                    ?.savedStarRating ??
+                top.rating,
+          ),
+    ];
   }
 }

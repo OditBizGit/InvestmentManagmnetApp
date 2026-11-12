@@ -165,7 +165,7 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
   double _totalAmountFromDetails(List<StaffReportDetailsModel> details) {
     return details.fold<double>(
       0,
-      (sum, item) => sum + item.paymentAmount,
+      (sum, item) => sum + item.netAmount,
     );
   }
 
@@ -177,8 +177,10 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
           (item) => StaffInvestorAmountModel(
             investorCode: item.investorCode,
             investorName: item.investorName,
-            amountReceived: item.paymentAmount,
+            amountReceived: item.netAmount,
             amountReceivedDate: item.paymentDate,
+            refundAmount: item.refundAmount,
+
           ),
         )
         .toList(growable: false);

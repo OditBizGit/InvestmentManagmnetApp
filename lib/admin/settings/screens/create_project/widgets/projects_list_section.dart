@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/admin/settings/screens/create_project/model/projcet_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class ProjectsListSection extends StatelessWidget {
   const ProjectsListSection({
@@ -18,21 +19,6 @@ class ProjectsListSection extends StatelessWidget {
   final ValueChanged<ProjectModel> onProjectTap;
   final String? errorMessage;
   final VoidCallback? onRetry;
-
-  String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
 
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
@@ -121,7 +107,7 @@ class ProjectsListSection extends StatelessWidget {
               if (i > 0) const SizedBox(height: 10),
               _ProjectListTile(
                 project: projects[i],
-                fundLabel: _formatCurrency(projects[i].totalFund),
+                fundLabel: CurrencyFormatter.format(projects[i].totalFund),
                 dateLabel: _formatDate(
                   projects[i].modifiedDate ?? projects[i].createdDate,
                 ),

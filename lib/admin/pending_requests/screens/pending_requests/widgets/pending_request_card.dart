@@ -85,6 +85,28 @@ class _WideLayout extends StatelessWidget {
         Expanded(
           flex: 2,
           child: _LabeledValue(
+            label: 'Full Settlement',
+            title: request.isFullSettlement.toString(),
+            value: '',
+            valueColor: AppColors.textPrimary,
+            emphasizeValue: true,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: _LabeledValue(
+            label: 'Discount',
+            title: CurrencyFormatter.format(request.discountAmount),
+            value: '',
+            valueColor: AppColors.textPrimary,
+            emphasizeValue: true,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: _LabeledValue(
             label: 'Submitted',
             title: _formatDate(request.submittedAt),
             value: _formatTime(request.submittedAt),
@@ -131,6 +153,30 @@ class _CompactLayout extends StatelessWidget {
                     ? request.paymentMethod.trim()
                     : '—',
                 value: CurrencyFormatter.format(request.amount),
+                valueColor: AppColors.textPrimary,
+                emphasizeValue: true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _LabeledValue(
+                label: 'Full Settlement',
+                title: request.isFullSettlement.toString(),
+                value: '',
+                valueColor: AppColors.textPrimary,
+                emphasizeValue: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _LabeledValue(
+                label: 'Discount',
+                title: CurrencyFormatter.format(request.discountAmount),
+                value: '',
                 valueColor: AppColors.textPrimary,
                 emphasizeValue: true,
               ),
@@ -310,22 +356,28 @@ class _LabeledValue extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 10.5.sp,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            fontSize: emphasizeValue && value.isEmpty ? 12.sp : 10.5.sp,
+            fontWeight: emphasizeValue && value.isEmpty
+                ? FontWeight.w700
+                : FontWeight.w500,
+            color: emphasizeValue && value.isEmpty
+                ? valueColor
+                : AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: emphasizeValue ? 12.sp : 10.sp,
-            fontWeight: emphasizeValue ? FontWeight.w700 : FontWeight.w500,
-            color: valueColor,
+        if (value.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: emphasizeValue ? 12.sp : 10.sp,
+              fontWeight: emphasizeValue ? FontWeight.w700 : FontWeight.w500,
+              color: valueColor,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

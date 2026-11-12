@@ -42,6 +42,7 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
       party: item.fullName.trim().isNotEmpty ? item.fullName.trim() : 'Unknown',
       description: description,
       amount: CurrencyFormatter.format(paidAmount),
+      discountAmount: CurrencyFormatter.format(item.discountAmount),
       status: item.status.trim().isNotEmpty ? item.status.trim() : 'Completed',
     );
   }
@@ -157,7 +158,7 @@ class ReportsRecentTransactionsTable extends StatelessWidget {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  const minTableWidth = 900.0;
+                  const minTableWidth = 1000.0;
                   final tableWidth = constraints.maxWidth < minTableWidth
                       ? minTableWidth
                       : constraints.maxWidth;
@@ -205,6 +206,7 @@ class _RecentTransaction {
     required this.party,
     required this.description,
     required this.amount,
+    required this.discountAmount,
     required this.status,
   });
 
@@ -212,6 +214,7 @@ class _RecentTransaction {
   final String party;
   final String description;
   final String amount;
+  final String discountAmount;
   final String status;
 }
 
@@ -233,8 +236,8 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('Date', flex: 3),
           _HeaderCell('Investor / Vendor', flex: 3),
           _HeaderCell('Description', flex: 4),
-          // SizedBox(width: 1,),
           _HeaderCell('Amount', flex: 3),
+          _HeaderCell('Discount', flex: 3),
         ],
       ),
     );
@@ -284,6 +287,7 @@ class _TransactionRow extends StatelessWidget {
             _Cell(transaction.party, flex: 3),
             _Cell(transaction.description, flex: 4),
             _Cell(transaction.amount, flex: 3),
+            _Cell(transaction.discountAmount, flex: 3),
           ],
         ),
       ),

@@ -406,6 +406,7 @@ class _BasicInformationCard extends StatelessWidget {
                     const SizedBox(height: 14),
                     AddInvestorLabeledField(
                       label: 'Investor Type',
+                      isRequired: true,
                       child: _InvestorTypeDropdown(
                         value: investorType,
                         onChanged: onTypeChanged,
@@ -520,6 +521,7 @@ class _BasicInformationCard extends StatelessWidget {
                       Expanded(
                         child: AddInvestorLabeledField(
                           label: 'Investor Type',
+                          isRequired: true,
                           child: _InvestorTypeDropdown(
                             value: investorType,
                             onChanged: onTypeChanged,
@@ -682,13 +684,45 @@ class _InvestorTypeDropdown extends StatelessWidget {
           );
         }
 
-        return AddInvestorDropdownInput(
-          value: value,
-          hint: types.isEmpty
-              ? 'No investor types available'
-              : 'Select investor type',
-          items: types,
-          onChanged: onChanged,
+        return FormField<String>(
+          key: ValueKey(value),
+          initialValue: value,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (selected) {
+            if (selected == null || selected.trim().isEmpty) {
+              return 'Please select investor type';
+            }
+            return null;
+          },
+          builder: (field) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AddInvestorDropdownInput(
+                  value: value,
+                  hint: types.isEmpty
+                      ? 'No investor types available'
+                      : 'Select investor type',
+                  items: types,
+                  onChanged: (selected) {
+                    field.didChange(selected);
+                    onChanged(selected);
+                  },
+                ),
+                if (field.hasError) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    field.errorText!,
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         );
       },
     );
@@ -1028,6 +1062,7 @@ class _StaffDropdown extends StatelessWidget {
         }
 
         return FormField<int>(
+          key: ValueKey('staff-$selectedStaffId-$isRequired'),
           initialValue: selectedStaffId,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (value) {
@@ -1038,36 +1073,49 @@ class _StaffDropdown extends StatelessWidget {
             return null;
           },
           builder: (field) {
+            final isEmptyList = staffMembers.isEmpty;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AddInvestorDropdownInput(
                   value: selectedLabel,
-                  hint: labels.isEmpty
-                      ? 'No staff available'
+                  hint: isEmptyList
+                      ? 'No staff members are available.'
                       : 'Select staff member',
                   items: labels,
-                  onChanged: (label) {
-                    if (label == null) {
-                      field.didChange(null);
-                      onChanged(null);
-                      return;
-                    }
-                    InvestorStaffModel? match;
-                    for (final member in staffMembers) {
-                      if (member.dropdownLabel == label ||
-                          member.fullName == label) {
-                        match = member;
-                        break;
-                      }
-                    }
-                    final staffId = match?.staffId ??
-                        (label == fallbackName ? selectedStaffId : null);
-                    field.didChange(staffId);
-                    onChanged(staffId);
-                  },
+                  onChanged: isEmptyList
+                      ? (_) {}
+                      : (label) {
+                          if (label == null) {
+                            field.didChange(null);
+                            onChanged(null);
+                            return;
+                          }
+                          InvestorStaffModel? match;
+                          for (final member in staffMembers) {
+                            if (member.dropdownLabel == label ||
+                                member.fullName == label) {
+                              match = member;
+                              break;
+                            }
+                          }
+                          final staffId = match?.staffId ??
+                              (label == fallbackName ? selectedStaffId : null);
+                          field.didChange(staffId);
+                          onChanged(staffId);
+                        },
                 ),
-                if (field.hasError) ...[
+                if (isEmptyList) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'No staff members are available.',
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFB86E00),
+                    ),
+                  ),
+                ] else if (field.hasError) ...[
                   const SizedBox(height: 6),
                   Text(
                     field.errorText!,

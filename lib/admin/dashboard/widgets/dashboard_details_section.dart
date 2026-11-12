@@ -10,6 +10,7 @@ import '../cubit/dashboard_cubit.dart';
 import '../model/dashboard_model.dart';
 import '../model/top_investors_model.dart';
 import 'dashboard_shimmer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class DashboardDetailsSection extends StatelessWidget {
   const DashboardDetailsSection({super.key});
@@ -284,7 +285,7 @@ class _FundingOverviewCard extends StatelessWidget {
             Expanded(
               child: _FundingMetricTile(
                 label: 'Project Fund',
-                value: _formatAmount(dashboard.projectFund),
+                value: CurrencyFormatter.format(dashboard.projectFund),
                 color: AppColors.accent,
               ),
             ),
@@ -292,7 +293,7 @@ class _FundingOverviewCard extends StatelessWidget {
             Expanded(
               child: _FundingMetricTile(
                 label: 'Total Investment',
-                value: _formatAmount(dashboard.totalInvestmentAmount),
+                value: CurrencyFormatter.format(dashboard.totalInvestmentAmount),
                 color: const Color(0xFF2CB5A8),
               ),
             ),
@@ -304,7 +305,7 @@ class _FundingOverviewCard extends StatelessWidget {
             Expanded(
               child: _FundingMetricTile(
                 label: 'Total Received',
-                value: _formatAmount(dashboard.totalReceivedAmount),
+                value: CurrencyFormatter.format(dashboard.totalReceivedAmount),
                 color: AppColors.green,
               ),
             ),
@@ -312,7 +313,7 @@ class _FundingOverviewCard extends StatelessWidget {
             Expanded(
               child: _FundingMetricTile(
                 label: 'Total Pending',
-                value: _formatAmount(dashboard.totalPendingAmount),
+                value: CurrencyFormatter.format(dashboard.totalPendingAmount),
                 color: const Color(0xFFE06B7A),
               ),
             ),
@@ -327,20 +328,6 @@ class _FundingOverviewCard extends StatelessWidget {
     return value;
   }
 
-  String _formatAmount(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
 }
 
 class _FundingMetricTile extends StatelessWidget {
@@ -700,7 +687,7 @@ class _InvestorRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final imageUrl = resolveMediaUrl(investor.profileImage);
     final paidPercent = _paidPercent(investor);
-    final amountLabel = _formatAmount(investor.investmentAmount);
+    final amountLabel = CurrencyFormatter.format(investor.investmentAmount);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -788,18 +775,4 @@ class _InvestorRow extends StatelessWidget {
         .clamp(0, 100);
   }
 
-  String _formatAmount(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
 }

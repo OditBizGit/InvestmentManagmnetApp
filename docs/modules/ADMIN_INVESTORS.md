@@ -39,7 +39,7 @@ Lists investors with totals, and provides the register-investor and edit-investo
 
 ## Cubit / state
 States: `InvestorsInitial`, `InvestorsLoading`, `InvestorsSuccess(investors, total)`, `InvestorsFailure(message)`, `InvestorTypesLoading/Success(types)/Failure`, `StaffListLoading/Success(staff)/Failure`, `RegisterInvestorLoading/Success(message, data)/Failure`, `UpdateInvestorLoading/Success(message, data: String?)/Failure`.
-Methods: `fetchInvestors()` (success if `status || code==200 || message contains 'success'` or data non-empty), `fetchStaffList()`, `fetchInvestorTypes()` (caches `investorTypes`, `staffList` getters), `registerInvestor(request)` (ignored if already loading; success = `status || code == 200`; empty failure message -> "Failed to register investor. Please try again."), `updateInvestor(request)`. Errors via `ApiErrorMessage.from`.
+Methods: `fetchInvestors()` (success if `status || code==200 || message contains 'success'` or data non-empty), `fetchStaffList()` (success if `status`/`success` or `code==200`; empty `data` is Success, not Failure — UI shows "No staff members are available."), `fetchInvestorTypes()` (caches `investorTypes`, `staffList` getters), `registerInvestor(request)` (ignored if already loading; success = `status || code == 200`; empty failure message -> "Failed to register investor. Please try again."), `updateInvestor(request)`. Errors via `ApiErrorMessage.from`.
 
 ## Repository (`InvestorsRepository(dio)`)
 | Method | HTTP | Constant -> path | Request | Response |
@@ -59,7 +59,7 @@ Register form fields: Username, Password, FullName, StaffId, StaffId2, StaffAllo
 - `InvestorStaffAssignmentPayload.toFormFields`: StaffId, StaffId2 (blank if none), StaffAllocationPercentage, Staff2AllocationPercentage.
 
 ## Business rules / validation
-- Form validators: full name, mobile (10 digits, required), alternate mobile (optional 10 digits), email, address required; username >= 3 chars and password >= 6 chars (register only); investment amount valid; investment date required; installments > 0; interval > 0 for Week/Day; advance >= 0 and <= total investment.
+- Form validators: full name, investor type (required dropdown with `*` and inline error), mobile (10 digits, required), alternate mobile (optional 10 digits), email, address required; username >= 3 chars and password >= 6 chars (register only); investment amount valid; investment date required; installments > 0; interval > 0 for Week/Day; advance >= 0 and <= total investment.
 - Submit order: form validation, investor type, nominee completeness (any filled nominee needs name, relationship, 10-digit phone), staff selected, staff allocation, date, installment count/interval, advance, then (register only) a non-empty schedule.
 - Staff allocation: one staff = 100%. With second staff: must differ from first; staff-1 percent integer 1-99; sum must be 100. Default when second staff added: 70/30.
 - KYC format helpers in edit prefill: Aadhaar 12 digits, PAN `^[A-Z]{5}[0-9]{4}[A-Z]$`, IFSC `^[A-Z]{4}0[A-Z0-9]{6}$`, account number length >= 9 (prefilled only if valid).
@@ -68,7 +68,7 @@ Register form fields: Username, Password, FullName, StaffId, StaffId2, StaffAllo
 
 ## User workflow
 1. Open Investors tab -> list + totals load; limit dialog may show.
-2. "Add Investor": fill form, preview schedule, Submit -> toast; form resets (stays in add screen).
+2. "Add Investor": fill form, preview schedule, Submit -> on API success toast + clear controllers/state and replace `Form` key so validation errors do not reappear; stays on add screen. On API failure, values are preserved.
 3. Edit icon on a row: form prefilled; Submit -> toast; returns to list and refetches.
 
 ```mermaid

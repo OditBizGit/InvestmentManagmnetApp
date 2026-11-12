@@ -64,12 +64,39 @@ class TopInvestorModel {
           (json['investmentAmount'] as num?)?.toDouble() ?? 0.0,
       totalPaidAmount: (json['totalPaidAmount'] as num?)?.toDouble() ?? 0.0,
       pendingAmount: (json['pendingAmount'] as num?)?.toDouble() ?? 0.0,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      rating: _readRating(json),
     );
   }
 
+  TopInvestorModel copyWith({double? rating}) {
+    return TopInvestorModel(
+      userId: userId,
+      investorCode: investorCode,
+      fullName: fullName,
+      profileImage: profileImage,
+      investorType: investorType,
+      organization: organization,
+      investmentAmount: investmentAmount,
+      totalPaidAmount: totalPaidAmount,
+      pendingAmount: pendingAmount,
+      rating: rating ?? this.rating,
+    );
+  }
+
+  /// Saved/default star rating (0.5–5), or null when missing/invalid.
   double? get savedStarRating =>
       rating >= 0.5 && rating <= 5 ? rating : null;
+
+  static double _readRating(Map<String, dynamic> json) {
+    final raw = json['rating'] ??
+        json['Rating'] ??
+        json['starRating'] ??
+        json['StarRating'] ??
+        json['investorRating'] ??
+        json['InvestorRating'];
+    if (raw is num) return raw.toDouble();
+    return double.tryParse(raw?.toString() ?? '') ?? 0.0;
+  }
 
   String get initials {
     final parts = fullName

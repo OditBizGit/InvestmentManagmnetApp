@@ -66,7 +66,7 @@ Base: `lib/admin/settings/screens/`
 ### InvestorRatingCubit (`InvestorRatingState`, non-sealed class)
 Fields: investors, topInvestors, draftRatings (code->1..5), selectedInvestorCodes, savingInvestorCodes, removingTopInvestorUserIds, topInvestorAddingEnabled (default false), isLoading, isSaving, isLoadingTopInvestors, isUpdatingTopInvestorButton, loadError, bannerMessage, bannerIsError. `maxTopRated = 5`.
 - `fetchInvestorRatingDetails()`: load list, reset drafts/selection, then `fetchTopInvestors(silent:true)`.
-- `fetchTopInvestors({silent})`.
+- `fetchTopInvestors({silent})`: loads Top Rated list, then enriches each entry’s `rating` from Investor Rating Details when GetTopInvestors returns 0/missing (default stars not yet persisted via SaveInvestorStarRating).
 - `updateTopInvestorAddingFeature(bool)`: optimistic update of the toggle; reverts on failure (rollback to previousEnabled - see lines 94-160).
 - `setDraftRating(code, rating)`: clamps 1..5.
 - `toggleInvestorSelected(code)`: ignored if already Top Rated; blocks selection when top + selected >= 5.
@@ -116,7 +116,7 @@ Note: staff models read `success`; investor-rating/project/admin models read `st
 - AdminModel: userId, username, fullName, email, phoneNumber, alternativeNumber, investorCode, isActive, createdDate, modifiedDate, userRole.
 - ProjectModel (accepts PascalCase or camelCase): ProjectId, Name, Description, TotalFund, Status(int), Image, ProjectSignaturePath, Createdby, CreatedDate, Modifiedby, ModifiedDate; `imageUrl` via `resolveMediaUrl`.
 - InvestorRatingDetailsModel: investorName, investorCode, totalInvestmentAmount, totalDueCount, onTimePaymentCount, delayedPaymentCount, onTimePaymentPercentage, rating, userId; `savedStarRating` = rating if 1..5 else null; labels 5 Excellent, 4 Good, 3 Fair (rest in source).
-- TopInvestorModel: userId, investorCode, fullName, profileImage, investorType, organization, investmentAmount, totalPaidAmount, pendingAmount, rating.
+- TopInvestorModel: userId, investorCode, fullName, profileImage, investorType, organization, investmentAmount, totalPaidAmount, pendingAmount, rating (also reads starRating/investorRating keys); `savedStarRating` when 0.5–5.
 - StaffModel: staffId, fullName, designation, email, phoneNumber, isActive, createdDate. StaffInvestorModel: userId, investorCode, fullName, email, phoneNumber, profileImage, createdDate.
 - UserComplaintModel: complaintId, investorId, investorCode, investorName, profileImage, complaint, complaintDate, status (reads camel or Pascal). Derived: id = `CMP-<id>`, isRead (viewed/read/solved), isSolved, isPending (pending/empty), createdAt (ISO parse, else dd-mm-yyyy / dd/mm/yyyy, else now).
 

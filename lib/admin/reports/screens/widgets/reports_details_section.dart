@@ -12,6 +12,7 @@ import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../cubit/report__cubit.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class ReportsDetailsSection extends StatelessWidget {
   const ReportsDetailsSection({
@@ -654,20 +655,6 @@ class _GroupedBarLinePainter extends CustomPainter {
   static const _gridColor = Color(0xFFEDEDED);
   static const _topLabelSpace = 22.0;
 
-  static String _formatAmount(double value) {
-    final isWhole = value == value.roundToDouble();
-    final raw = isWhole ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
-
   @override
   void paint(Canvas canvas, Size size) {
     final plotTop = _topLabelSpace;
@@ -726,7 +713,7 @@ class _GroupedBarLinePainter extends CustomPainter {
       _drawValueLabel(
         canvas,
         chartWidth: size.width,
-        text: _formatAmount(funding[i]),
+        text: CurrencyFormatter.format(funding[i]),
         centerX: fundingLeft + barWidth / 2,
         barTop: fundingTop,
         style: baseStyle.copyWith(color: _fundingColor),
@@ -734,7 +721,7 @@ class _GroupedBarLinePainter extends CustomPainter {
       _drawValueLabel(
         canvas,
         chartWidth: size.width,
-        text: _formatAmount(payments[i]),
+        text: CurrencyFormatter.format(payments[i]),
         centerX: paymentsLeft + barWidth / 2,
         barTop: paymentsTop,
         style: baseStyle.copyWith(color: const Color(0xFF5B8DEF)),

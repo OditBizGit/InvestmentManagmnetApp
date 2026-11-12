@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class InvestorsOverviewSection extends StatelessWidget {
   const InvestorsOverviewSection({
@@ -39,14 +40,14 @@ class InvestorsOverviewSection extends StatelessWidget {
       ),
       _StatCardData(
         label: 'Total Commitment By Investors',
-        value: _formatCurrency(totalProjectInvestment),
+        value: CurrencyFormatter.format(totalProjectInvestment),
         icon: ImageConstants.totalFunding,
         iconColor: const Color(0xFFE06B7A),
         iconBg: const Color(0xFFFDECEE),
       ),
       _StatCardData(
         label: 'Total Paid Amount By Investors',
-        value: _formatCurrency(totalPaidAmount),
+        value: CurrencyFormatter.format(totalPaidAmount),
         icon: ImageConstants.totalCollection,
         iconColor: const Color(0xFFE89A3C),
         iconBg: const Color(0xFFFFF3E8),
@@ -63,22 +64,6 @@ class InvestorsOverviewSection extends StatelessWidget {
     );
   }
 
-  static String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final digits = parts.first;
-    final withCommas = digits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
 }
 
 class _InvestorsTitleRow extends StatelessWidget {

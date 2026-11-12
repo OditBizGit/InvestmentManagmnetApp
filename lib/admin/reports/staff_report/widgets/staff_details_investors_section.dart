@@ -134,6 +134,7 @@ class _StaffDetailsInvestorsSectionState
                       UserManagementHeaderCell('Investor Code', flex: 2),
                       UserManagementHeaderCell('Investor Name', flex: 3),
                       UserManagementHeaderCell('Amount Received', flex: 3),
+                      UserManagementHeaderCell('Refund Amnt', flex: 3),
                       UserManagementHeaderCell(
                         'Amount Received Date',
                         flex: 3,
@@ -343,6 +344,10 @@ class _InvestorAmountRow extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
+              ),
+              UserManagementDataCell(
+                CurrencyFormatter.format(item.refundAmount),
+                flex: 3,
               ),
               UserManagementDataCell(
                 _formatAmountReceivedDate(item.amountReceivedDate),

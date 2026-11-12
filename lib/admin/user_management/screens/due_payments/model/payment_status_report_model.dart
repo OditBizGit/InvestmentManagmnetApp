@@ -35,6 +35,7 @@ class PaymentStatusReportModel {
   final double totalPayable;
   final double amountPaid;
   final double outstanding;
+  final double discountAmount;
   final double dueAmount;
   final DateTime? dueDate;
   final String paymentStatus;
@@ -52,6 +53,7 @@ class PaymentStatusReportModel {
     required this.totalPayable,
     required this.amountPaid,
     required this.outstanding,
+    required this.discountAmount,
     required this.dueAmount,
     this.dueDate,
     required this.paymentStatus,
@@ -73,6 +75,7 @@ class PaymentStatusReportModel {
       totalPayable: _toDouble(json['totalPayable']),
       amountPaid: _toDouble(json['amountPaid']),
       outstanding: _toDouble(json['outstanding']),
+      discountAmount: _toDouble(json['discountAmount']),
       dueAmount: _toDouble(json['dueAmount']),
       dueDate: json['dueDate'] == null
           ? null

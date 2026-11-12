@@ -76,7 +76,10 @@ class InvestorsCubit extends Cubit<InvestorsState> {
     try {
       final response = await _repository.getStaffList();
 
-      if (!response.status && response.data.isEmpty) {
+      // success/status true (or HTTP-equivalent code 200) with an empty data
+      // array is a valid response — show an empty list, not an error.
+      final succeeded = response.status || response.code == 200;
+      if (!succeeded) {
         emit(
           StaffListFailure(
             response.message.isNotEmpty
@@ -156,9 +159,9 @@ class InvestorsCubit extends Cubit<InvestorsState> {
 
       emit(
         RegisterInvestorSuccess(
-          message: response.message.isNotEmpty
-              ? response.message
-              : 'Investor registered successfully',
+          message: response.message.trim().isNotEmpty
+              ? response.message.trim()
+              : 'Investor registered successfully!',
           data: response.data,
         ),
       );

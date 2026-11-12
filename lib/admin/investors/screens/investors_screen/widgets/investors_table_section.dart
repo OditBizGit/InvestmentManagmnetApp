@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/constants/image_constants.dart';
 import 'package:sizer/sizer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class InvestorsTableSection extends StatefulWidget {
   const InvestorsTableSection({
@@ -79,23 +80,6 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
       'Dec',
     ];
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}, ${date.year}';
-  }
-
-  String _formatAmount(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw = isWhole
-        ? amount.toStringAsFixed(0)
-        : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final digits = parts.first;
-    final withCommas = digits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
   }
 
   @override
@@ -204,10 +188,10 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
                                               email: _displayOrNA(
                                                 investor.email,
                                               ),
-                                              investAmount: _formatAmount(
+                                              investAmount: CurrencyFormatter.format(
                                                 investor.totalInvestmentAmount,
                                               ),
-                                              paidAmount: _formatAmount(
+                                              paidAmount: CurrencyFormatter.format(
                                                 investor.totalPaidAmount,
                                               ),
                                               status: investor.isActive
@@ -216,10 +200,10 @@ class _InvestorsTableSectionState extends State<InvestorsTableSection> {
                                               joinedDate: _formatDate(
                                                 investor.createdDate,
                                               ),
-                                              refundAmount: _formatAmount(
+                                              refundAmount: CurrencyFormatter.format(
                                                 investor.refundAmount,
                                               ),
-                                              discountAmount: _formatAmount(
+                                              discountAmount: CurrencyFormatter.format(
                                                 investor.discountAmount,
                                               ),
                                               profileImage:

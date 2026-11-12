@@ -140,9 +140,23 @@ class _TopRatedChip extends StatelessWidget {
   final bool removeEnabled;
   final VoidCallback onRemove;
 
+  double _resolvedRating(BuildContext context) {
+    final fromTop = investor.savedStarRating;
+    if (fromTop != null) return fromTop;
+
+    final details = context.read<InvestorRatingCubit>().state.investors;
+    for (final detail in details) {
+      if (detail.userId == investor.userId ||
+          detail.investorCode == investor.investorCode) {
+        return detail.savedStarRating ?? 0.0;
+      }
+    }
+    return 0.0;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final rating = investor.savedStarRating ?? 0.0;
+    final rating = _resolvedRating(context);
     final canTapRemove = removeEnabled && !isRemoving;
 
     return Stack(

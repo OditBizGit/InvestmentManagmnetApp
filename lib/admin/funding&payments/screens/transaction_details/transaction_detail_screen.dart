@@ -9,6 +9,7 @@ import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
 import 'package:sizer/sizer.dart';
 
 import '../funding&payents/widgets/funding_transactions_table.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 /// Detail page shown when a transaction row is selected.
 /// Keeps the admin side drawer visible (in-shell navigation).
@@ -45,21 +46,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       return;
     }
     Navigator.of(context).maybePop();
-  }
-
-  String _formatCurrency(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
   }
 
   String _formatDate(DateTime? date) {
@@ -209,19 +195,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         children: [
                           InvestorProfileOverview(
                             details: details,
-                            formatCurrency: _formatCurrency,
+                            formatCurrency: CurrencyFormatter.format,
                             formatDate: _formatDate,
                           ),
                           const SizedBox(height: 16),
                           InvestorProfileDetailsSection(
                             details: details,
-                            formatCurrency: _formatCurrency,
+                            formatCurrency: CurrencyFormatter.format,
                             formatDate: _formatDate,
                           ),
                           const SizedBox(height: 16),
                           TransactionPaymentHistorySection(
                             dueDates: details.dueDates,
-                            formatCurrency: _formatCurrency,
+                            formatCurrency: CurrencyFormatter.format,
                             formatDate: _formatDate,
                           ),
                         ],

@@ -11,6 +11,7 @@ import '../cubit/dashboard_cubit.dart';
 import '../model/all_transaction_history_model.dart';
 import '../model/recent_updates_model.dart';
 import 'dashboard_shimmer.dart';
+import 'package:maribel_wellness_centre_application/core/utils/currency_formatter.dart';
 
 class DashboardActivitySection extends StatelessWidget {
   const DashboardActivitySection({super.key});
@@ -288,7 +289,7 @@ class _PaymentRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final name =
         payment.fullName.isNotEmpty ? payment.fullName : 'Unknown Investor';
-    final amount = _formatAmount(
+    final amount = CurrencyFormatter.format(
       payment.paidAmount > 0 ? payment.paidAmount : payment.pendingAmount,
     );
 
@@ -368,20 +369,6 @@ class _PaymentRow extends StatelessWidget {
     return '$day ${months[date.month - 1]}, ${date.year}';
   }
 
-  String _formatAmount(double amount) {
-    final isWhole = amount == amount.roundToDouble();
-    final raw =
-        isWhole ? amount.toStringAsFixed(0) : amount.toStringAsFixed(2);
-    final parts = raw.split('.');
-    final withCommas = parts.first.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]},',
-    );
-    if (parts.length > 1) {
-      return '₹$withCommas.${parts[1]}';
-    }
-    return '₹$withCommas';
-  }
 }
 
 class _RecentUpdatesCard extends StatelessWidget {

@@ -10,6 +10,7 @@ import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/s
 import 'package:maribel_wellness_centre_application/admin/monthly_payment_list/screen/widgets/reject_payment_verification_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_nav_permissions.dart';
 import 'package:maribel_wellness_centre_application/core/storage/local_storage.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_table_widgets.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/network/service_locator.dart';
@@ -297,6 +298,18 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
       return;
     }
 
+    final count = pending.length;
+    final confirmed = await showUserManagementConfirmDialog(
+      context: context,
+      title: 'Approve all payments?',
+      message: count == 1
+          ? 'Approve 1 pending payment in the current list?'
+          : 'Approve all $count pending payments in the current list?',
+      confirmLabel: 'Approve All',
+      confirmColor: AppColors.green,
+    );
+    if (!confirmed || !mounted) return;
+
     setState(() {
       for (final payment in pending) {
         _reviewIntents[payment.id] = PaymentReviewIntent.approve;
@@ -413,10 +426,6 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
 
     final pendingCount =
         allPayments.where((p) => p.status == PaymentStatus.pending).length;
-    final approvedCount =
-        allPayments.where((p) => p.status == PaymentStatus.approved).length;
-    final rejectedCount =
-        allPayments.where((p) => p.status == PaymentStatus.rejected).length;
 
     final totalPayments = data?.totalPayments ?? 0;
     final totalAmount = data?.totalAmount ?? 0.0;
@@ -440,8 +449,6 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
             totalPayments: totalPayments,
             totalAmount: totalAmount,
             pendingCount: pendingCount,
-            approvedCount: approvedCount,
-            rejectedCount: rejectedCount,
           ),
           const SizedBox(height: 20),
           if (isError && errorMessage != null)
