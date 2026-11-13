@@ -6,6 +6,9 @@ class AddInvestorPaymentRequestModel {
   final bool isFullSettlement;
   final double discountAmount;
   final String remarks;
+
+  /// API expects a string amount (e.g. `"15000"`). Response may store
+  /// `"15000 for 10 days"` after combining with [days].
   final String medicalAllowance;
   final double extraAmount;
   final int days;
@@ -36,6 +39,14 @@ class AddInvestorPaymentRequestModel {
       'extraAmount': extraAmount,
       'days': days,
     };
+  }
+
+  /// Formats a parsed amount for the string `medicalAllowance` field.
+  static String amountToApiString(double amount) {
+    if (amount == amount.roundToDouble()) {
+      return amount.toInt().toString();
+    }
+    return amount.toString();
   }
 }
 

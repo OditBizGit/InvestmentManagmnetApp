@@ -25,13 +25,14 @@ class InvestorPaymentRepository {
 
       return AddInvestorPaymentResponseModel.fromJson(response.data);
     } on DioException catch (e) {
-      appLog('Add Investor Payment Error: ${e.message}');
-
-
+      appLog(
+        'Add Investor Payment Error: ${e.message}; '
+        'status=${e.response?.statusCode}; body=${e.response?.data}; '
+        'request=${request.toJson()}',
+      );
       rethrow;
     } catch (e) {
       appLog('Add Investor Payment Error: $e');
-
       rethrow;
     }
   }

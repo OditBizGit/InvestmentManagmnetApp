@@ -120,7 +120,7 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SvgPicture.asset(
-                              ImageConstants.Meribel,
+                              ImageConstants.newAdminIcon,
                               height: 10.h,
                               fit: BoxFit.contain,
                               alignment: Alignment.centerLeft,

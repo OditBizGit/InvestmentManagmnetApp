@@ -12,11 +12,13 @@ class UserBenefitsSummaryCard extends StatelessWidget {
     required this.committedAmount,
     this.depositDiscountAmount = 0,
     this.medicalAllowanceNote = '',
+    this.isLoading = false,
   });
 
   final double committedAmount;
   final double depositDiscountAmount;
   final String medicalAllowanceNote;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,18 @@ class UserBenefitsSummaryCard extends StatelessWidget {
       title: 'Deposit & company benefits',
       subtitle:
           'Discount applied on this customer\'s deposit and medical allowance given by the company',
-      child: Column(
+      child: isLoading
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            )
+          : Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           LayoutBuilder(
@@ -48,13 +61,6 @@ class UserBenefitsSummaryCard extends StatelessWidget {
                   iconColor: const Color(0xFFE89A3C),
                   iconBg: const Color(0xFFFFF3E8),
                 ),
-                // _BenefitTile(
-                //   label: 'Medical allowance',
-                //   value: CurrencyFormatter.format(user.medicalAllowanceAmount),
-                //   icon: ImageConstants.totalCollection,
-                //   iconColor: const Color(0xFF2CB5A8),
-                //   iconBg: const Color(0xFFE6F7F5),
-                // ),
               ];
 
               if (stacked) {
@@ -88,35 +94,23 @@ class UserBenefitsSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          TextFormField(
-            readOnly: true,
-            maxLines: 3,
-            initialValue: displayNote,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w400,
-              color: note.isEmpty ? AppColors.hint : AppColors.textPrimary,
-              height: 1.4,
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 84),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F7FA),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
             ),
-            decoration: InputDecoration(
-              hintText: 'Medical allowance details from funding records',
-              filled: true,
-              fillColor: const Color(0xFFF8F7FA),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
+            alignment: Alignment.topLeft,
+            child: Text(
+              displayNote,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w400,
+                color: note.isEmpty ? AppColors.hint : AppColors.textPrimary,
+                height: 1.4,
               ),
             ),
           ),

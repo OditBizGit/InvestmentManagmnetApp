@@ -406,6 +406,80 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     }
   }
 
+  /// Loads benefits card fields from InvestorDetails (committed, discount,
+  /// medical allowance). Summary card uses this API only — not GetInvestors.
+  Future<void> fetchInvestorBenefits(int userId) async {
+    final current = state;
+    if (current is! ManageUsersSuccess) return;
+    if (current.benefitsLoadingUserId == userId) return;
+
+    emit(
+      current.copyWith(
+        benefitsLoadingUserId: userId,
+        clearStatusFeedback: true,
+      ),
+    );
+
+    try {
+      final response = await _repository.getInvestorDetails(userId);
+      if (isClosed) return;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return;
+
+      final details = response.data;
+      final loadedIds = {...latest.benefitsLoadedUserIds, userId};
+
+      if (details == null) {
+        emit(
+          latest.copyWith(
+            benefitsLoadedUserIds: loadedIds,
+            clearBenefitsLoadingUserId: true,
+          ),
+        );
+        return;
+      }
+
+      final allowance = (details.medicalAllowance ?? '').trim();
+      final committed = details.investmentAmount > 0
+          ? details.investmentAmount
+          : null;
+
+      final users = latest.users.map((user) {
+        if (user.id != userId) return user;
+        return user.copyWith(
+          totalPayable: committed,
+          depositDiscountAmount: details.discountAmount,
+          medicalAllowanceDescription: allowance,
+        );
+      }).toList(growable: false);
+
+      emit(
+        latest.copyWith(
+          users: users,
+          benefitsLoadedUserIds: loadedIds,
+          clearBenefitsLoadingUserId: true,
+        ),
+      );
+    } catch (error) {
+      appLog(
+        'Fetch investor benefits failed: $error',
+        name: 'ManageUsersCubit',
+      );
+      if (isClosed) return;
+
+      final latest = state;
+      if (latest is! ManageUsersSuccess) return;
+
+      emit(
+        latest.copyWith(
+          benefitsLoadedUserIds: {...latest.benefitsLoadedUserIds, userId},
+          clearBenefitsLoadingUserId: true,
+        ),
+      );
+    }
+  }
+
   Future<void> fetchInvestorMouStatus(int investorId) async {
     final current = state;
     if (current is! ManageUsersSuccess) return;

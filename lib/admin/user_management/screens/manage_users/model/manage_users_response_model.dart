@@ -131,6 +131,8 @@ class ManageUsersInvestor {
   final bool isActive;
   final DateTime? joinedDate;
   final double depositDiscountAmount;
+
+  /// API returns a display string (e.g. `"15000 for 10 days"`).
   final String medicalAllowanceDescription;
   final String terminateRemarks;
 
@@ -156,6 +158,9 @@ class ManageUsersInvestor {
     bool? isActive,
     double? amountPaid,
     double? totalPendingAmount,
+    double? totalPayable,
+    double? depositDiscountAmount,
+    String? medicalAllowanceDescription,
     String? terminateRemarks,
     bool? hasPendingTerminateRequest,
   }) {
@@ -165,13 +170,15 @@ class ManageUsersInvestor {
       name: name,
       email: email,
       phoneNumber: phoneNumber,
-      totalPayable: totalPayable,
+      totalPayable: totalPayable ?? this.totalPayable,
       amountPaid: amountPaid ?? this.amountPaid,
       totalPendingAmount: totalPendingAmount ?? this.totalPendingAmount,
       isActive: isActive ?? this.isActive,
       joinedDate: joinedDate,
-      depositDiscountAmount: depositDiscountAmount,
-      medicalAllowanceDescription: medicalAllowanceDescription,
+      depositDiscountAmount:
+          depositDiscountAmount ?? this.depositDiscountAmount,
+      medicalAllowanceDescription:
+          medicalAllowanceDescription ?? this.medicalAllowanceDescription,
       terminateRemarks: terminateRemarks ?? this.terminateRemarks,
       hasPendingTerminateRequest:
           hasPendingTerminateRequest ?? this.hasPendingTerminateRequest,
@@ -210,23 +217,9 @@ class ManageUsersInvestor {
       ),
       isActive: _readBool(json['isActive'] ?? json['IsActive']),
       joinedDate: _readDate(json['createdDate'] ?? json['CreatedDate']),
-      depositDiscountAmount: _readDouble(
-        json['discountAmount'] ??
-            json['DiscountAmount'] ??
-            json['depositDiscountAmount'] ??
-            json['DepositDiscountAmount'] ??
-            json['totalDiscountAmount'] ??
-            json['TotalDiscountAmount'],
-      ),
-      medicalAllowanceDescription: _readString(
-            json['medicalAllowanceDescription'] ??
-                json['MedicalAllowanceDescription'] ??
-                json['medicalAllowanceNote'] ??
-                json['MedicalAllowanceNote'] ??
-                json['medicalAllowance'] ??
-                json['MedicalAllowance'],
-          ) ??
-          '',
+      // Benefits card fields come from InvestorDetails via fetchInvestorBenefits.
+      depositDiscountAmount: 0,
+      medicalAllowanceDescription: '',
       terminateRemarks: _readString(
             json['remarks'] ??
                 json['Remarks'] ??

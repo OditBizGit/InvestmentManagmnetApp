@@ -37,6 +37,7 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final cubit = context.read<ManageUsersCubit>();
+      cubit.fetchInvestorBenefits(widget.userId);
       cubit.fetchInvestorMouStatus(widget.userId);
       cubit.fetchInvestorLlpStatus(widget.userId);
     });
@@ -121,6 +122,9 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                   successState?.mouLoadingUserId == user.id;
               final isLlpBusy = successState?.llpUpdatingUserId == user.id ||
                   successState?.llpLoadingUserId == user.id;
+              final isBenefitsLoading = successState == null ||
+                  successState.benefitsLoadingUserId == user.id ||
+                  !successState.benefitsLoadedUserIds.contains(user.id);
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,6 +155,7 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           UserBenefitsSummaryCard(
+                            isLoading: isBenefitsLoading,
                             committedAmount: user.totalPayable,
                             depositDiscountAmount: user.depositDiscountAmount,
                             medicalAllowanceNote:

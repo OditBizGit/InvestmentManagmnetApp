@@ -48,7 +48,7 @@ Base `lib/admin/user_management/`
 ## 3. Screens and widgets
 - **ManageUsersScreen(isActive)**: lives in the admin shell IndexedStack; refetches users when it becomes active; drops the detail view when the tab becomes inactive. Tapping a row sets `_selectedUserId/_selectedCommittedAmount/_selectedPaidAmount` and shows `UserStatusUpdateScreen`. Navigation swaps are deferred (`scheduleFrameCallback` + `Future.delayed(Duration.zero)`).
 - **ManageUsersTableSection**: search "Search by name, mobile, email...", filter All / Active / Blocked (client-side), export icons. Row action: "Terminate" for active users; after request submitted shows "Req sent" (still Active); terminated rows show "Terminated".
-- **UserStatusUpdateScreen**: on init fetches MOU and LLP status; shows UserBenefitsSummaryCard, UserRefundCard, two UserStatusCheckboxCards (MOU, LLP), UserReceiptsCard. If the user is not found in cubit state, shows "Investor not found".
+- **UserStatusUpdateScreen**: on init fetches InvestorDetails (medical allowance / discount), MOU and LLP status; shows UserBenefitsSummaryCard, UserRefundCard, two UserStatusCheckboxCards (MOU, LLP), UserReceiptsCard. If the user is not found in cubit state, shows "Investor not found".
 - **DuePaymentsScreen(isActive)**: overview stats + table; row actions: view details dialog, send WhatsApp reminder (only when outstanding dues and not already sending).
 
 ## 4. Cubit / state classes
@@ -76,6 +76,7 @@ States: Initial, Loading, Success(items,statusFilter,search,overview,isTableLoad
 | Method | HTTP | Constant | Path | Request | Response -> model |
 |---|---|---|---|---|---|
 | ManageUsersRepository.getInvestors | GET | investorsList | /api/Investor/GetInvestors | none | `_decodePayload` (accepts JSON string) -> ManageUsersResponse (data list or nested investors/items/list/data; totals from `total`) |
+| getInvestorDetails | GET | investorDetails | /api/Investor/InvestorDetails/{userId} | path | `InvestorDetailsResponseModel` (medicalAllowance string, discountAmount) |
 | getBlockRequests({status}) | GET | getBlockRequests | /api/Investor/GetBlockRequests | optional query `status` | InvestorBlockRequestsResponse; throws unless status or code 200 |
 | reviewBlockRequest | POST | reviewBlockRequest | /api/Investor/ReviewBlockRequest | JSON requestId, status, remarks | ReviewBlockRequestResponse |
 | blockUser | POST | blockUser | /api/Investor/UpdateInvestorStatus | JSON userId, isActive, remarks (only if non-empty) | BlockUserResponseModel |
@@ -89,7 +90,7 @@ States: Initial, Loading, Success(items,statusFilter,search,overview,isTableLoad
 | PaymentStatusReportRepository.getPaymentStatusReport | GET | paymentStatusReport | /api/Investor/PaymentStatusReport | query status, optional search | PaymentStatusReportResponseModel; throws if `status` false; maps timeouts/401/403/404 to friendly messages |
 
 ## 6. Models (key JSON)
-- ManageUsersInvestor (camel or Pascal keys): userId, userName/username, fullName, email, phoneNumber, totalInvestmentAmount (fallback investmentAmount) -> totalPayable, totalPaidAmount -> amountPaid, totalPendingAmount, isActive, createdDate, discountAmount/depositDiscountAmount/totalDiscountAmount, medicalAllowanceDescription/Note/medicalAllowance. Derived: `isBlocked = !isActive`; label "Terminated"/"Active"; `outstandingBalance = max(totalPayable - amountPaid, totalPendingAmount, 0)`; `hasPendingDues` if > 0.01. `terminateRemarks` is local-only (set at terminate; remainder of fromJson not read - Unclear - needs human clarification whether API returns remarks).
+- ManageUsersInvestor (camel or Pascal keys): userId, userName/username, fullName, email, phoneNumber, totalInvestmentAmount (fallback investmentAmount) -> totalPayable, totalPaidAmount -> amountPaid, totalPendingAmount, isActive, createdDate. Benefits fields (`depositDiscountAmount`, `medicalAllowanceDescription`) are not taken from GetInvestors; they are filled by `fetchInvestorBenefits` from InvestorDetails. Derived: `isBlocked = !isActive`; label "Terminated"/"Active"; `outstandingBalance = max(totalPayable - amountPaid, totalPendingAmount, 0)`; `hasPendingDues` if > 0.01. `terminateRemarks` is local-only (set at terminate; remainder of fromJson not read - Unclear - needs human clarification whether API returns remarks).
 - InvestorBlockRequestModel: requestId, userId, investorCode, fullName, email, phoneNumber, isActive, status (`pending` => isPendingReview), remarks, requestedDate, requestedBy(+Name), reviewedBy(+Name), reviewedDate, reviewRemarks.
 - SaveInvestorMOUDataModel: id, investorId, status, documentPath, createdDateTime, modifiedDateTime. Response helpers: `latestRecord` (furthest status rank then newest), `recordForStatus`, `timestampForStatus`, `latestDocumentRecord`, `effectiveDocumentPath`.
 - PdfExcelInvestorModel: tolerant multi-key reading. due = first of totalInvestmentAmount/dueAmount/totalPayable/investmentAmount/committedAmount/installmentAmount; paid = first of totalPaidTillDate/amountPaidDuringPeriod/paidAmount/amountPaid/totalPaidAmount/receivedAmount; pending = first of pendingAmountAsOfToDate/pendingAmount/outstanding/totalPendingAmount, else computed due - paid when > 0.01; paymentDetails list; `exportRows` expands each paymentDetail into a row (paid = paidAmount if > 0 else receivedAmount). `PdfExcelResponseModel.rowsForSection('due')` returns investors as-is; for 'all' returns expanded transaction rows.
@@ -159,4 +160,4 @@ In: admin shell tabs (Manage Users, Due Payments) with `isActive` flag. Pending 
 - Whether the server returns terminate remarks on investors list.
 - Role-to-screen permission mapping.
 - Why Excel is a CSV (naming) - code only; no xlsx library used here.
-- Exact UserBenefitsSummaryCard fields (reads medical allowance and discount from `ManageUsersInvestor`; not fully traced).
+- UserBenefitsSummaryCard fields come only from InvestorDetails via `fetchInvestorBenefits`: committed amount (`investmentAmount`), deposit discount (`discountAmount`), medical allowance note (`medicalAllowance` string). Shows a loader until that fetch completes.

@@ -7,6 +7,7 @@ import 'package:maribel_wellness_centre_application/admin/user_management/screen
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
 import '../../../../../user/investments/model/investor_transaction_history_response_model.dart';
+import '../../../../../user/profile/model/investor_details_response_model.dart';
 import '../model/block_user_request_model.dart';
 import '../model/investor_block_requests_model.dart';
 import '../model/review_block_request_model.dart';
@@ -18,6 +19,38 @@ class ManageUsersRepository {
   ManageUsersRepository({required this.dio});
 
   final Dio dio;
+
+  Future<InvestorDetailsResponseModel> getInvestorDetails(int userId) async {
+    try {
+      final response = await dio.get(
+        '${ApiEndpoints.investorDetails}$userId',
+      );
+      final raw = response.data;
+      if (raw is! Map) {
+        return InvestorDetailsResponseModel(
+          status: false,
+          message: 'Unexpected response format',
+          code: 0,
+        );
+      }
+      return InvestorDetailsResponseModel.fromJson(
+        Map<String, dynamic>.from(raw),
+      );
+    } on DioException catch (error) {
+      appLog(
+        'Get investor details failed: ${error.message} '
+        '(status ${error.response?.statusCode})',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    } catch (error) {
+      appLog(
+        'Get investor details failed: $error',
+        name: 'ManageUsersRepository',
+      );
+      rethrow;
+    }
+  }
 
   Future<ManageUsersResponse> getInvestors() async {
     try {

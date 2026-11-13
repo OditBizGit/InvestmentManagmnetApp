@@ -37,7 +37,7 @@ Request vs response legend below: **Req** = built by the app and sent; **Resp** 
 ### Funding & Payments (`A/funding&payments/model`)
 | Model | Kind | Key fields |
 |---|---|---|
-| `AddInvestorPaymentRequestModel` | Req | `userId`, `paidAmount`, `narration`, `paymentMethod`, `isFullSettlement`, `discountAmount`, `remarks`, `medicalAllowance` (String), `extraAmount`, `days` |
+| `AddInvestorPaymentRequestModel` | Req | `userId`, `paidAmount`, `narration`, `paymentMethod`, `isFullSettlement`, `discountAmount`, `remarks`, `medicalAllowance` (String amount), `extraAmount`, `days` |
 | `AddInvestorPaymentResponseModel` / `InvestorPaymentDataModel` | Resp | `status`, `message`, `code`; data: `userId`, `investorCode`, `fullName`, `totalInvestmentAmount`, `totalPaidAmount`, `remainingAmount`, `paidAmount`, `entryNo` |
 | `FundingInvestorsResponseModel` / `FundingInvestorModel` | Resp | identity, `investorCode`, `investorType`, `isActive`, `totalInvestmentAmount`, `totalPaidAmount`, `totalPendingAmount`, `latestPaymentAmount`, `status` |
 | `InvestorDetailsResponseModel` / `InvestorDetailsModel` | Resp | identity, KYC, bank, investment plan (`investmentAmount`, `investmentSplitMonths/Gap/Type`, `investmentAdvanceAmount`), totals, `nominees[]`, due dates |

@@ -393,6 +393,13 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
+    final medicalAllowanceAmount =
+        _parseAmount(_medicalAllowanceAmountController.text) ?? 0;
+    final medicalAllowanceDays = int.tryParse(
+          _medicalAllowanceDaysController.text.trim().replaceAll(',', ''),
+        ) ??
+        0;
+
     final request = AddInvestorPaymentRequestModel(
       userId: _selectedInvestor!.userId,
       paidAmount: paidAmount,
@@ -401,11 +408,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       isFullSettlement: isFullSettlement,
       discountAmount: discount,
       remarks: '',
-      medicalAllowance: _medicalAllowanceAmountController.text.trim(),
+      medicalAllowance: AddInvestorPaymentRequestModel.amountToApiString(
+        medicalAllowanceAmount,
+      ),
       extraAmount: 0,
-      days: int.tryParse(
-        _medicalAllowanceDaysController.text.trim(),
-      ) ?? 0,
+      days: medicalAllowanceDays,
     );
 
     await cubit.addInvestorPayment(request);

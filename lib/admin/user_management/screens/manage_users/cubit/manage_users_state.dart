@@ -75,6 +75,8 @@ final class ManageUsersSuccess extends ManageUsersState {
     this.mouLoadingUserId,
     this.llpUpdatingUserId,
     this.llpLoadingUserId,
+    this.benefitsLoadingUserId,
+    this.benefitsLoadedUserIds = const {},
     this.statusFeedback,
     this.isTableLoading = false,
     this.isExporting = false,
@@ -105,6 +107,8 @@ final class ManageUsersSuccess extends ManageUsersState {
   final int? mouLoadingUserId;
   final int? llpUpdatingUserId;
   final int? llpLoadingUserId;
+  final int? benefitsLoadingUserId;
+  final Set<int> benefitsLoadedUserIds;
   final ManageUsersStatusFeedback? statusFeedback;
   final bool isTableLoading;
   final bool isExporting;
@@ -153,6 +157,9 @@ final class ManageUsersSuccess extends ManageUsersState {
     bool clearLlpUpdatingUserId = false,
     int? llpLoadingUserId,
     bool clearLlpLoadingUserId = false,
+    int? benefitsLoadingUserId,
+    bool clearBenefitsLoadingUserId = false,
+    Set<int>? benefitsLoadedUserIds,
     ManageUsersStatusFeedback? statusFeedback,
     bool clearStatusFeedback = false,
     bool? isTableLoading,
@@ -204,6 +211,11 @@ final class ManageUsersSuccess extends ManageUsersState {
       llpLoadingUserId: clearLlpLoadingUserId
           ? null
           : llpLoadingUserId ?? this.llpLoadingUserId,
+      benefitsLoadingUserId: clearBenefitsLoadingUserId
+          ? null
+          : benefitsLoadingUserId ?? this.benefitsLoadingUserId,
+      benefitsLoadedUserIds:
+          benefitsLoadedUserIds ?? this.benefitsLoadedUserIds,
       statusFeedback: clearStatusFeedback
           ? null
           : statusFeedback ?? this.statusFeedback,
@@ -271,6 +283,8 @@ final class InvestorTransactionHistoryLoading extends ManageUsersSuccess {
     super.mouLoadingUserId,
     super.llpUpdatingUserId,
     super.llpLoadingUserId,
+    super.benefitsLoadingUserId,
+    super.benefitsLoadedUserIds = const {},
     super.statusFeedback,
     super.isTableLoading = false,
     super.isExporting = false,
@@ -300,6 +314,8 @@ final class InvestorTransactionHistoryLoading extends ManageUsersSuccess {
       mouLoadingUserId: success.mouLoadingUserId,
       llpUpdatingUserId: success.llpUpdatingUserId,
       llpLoadingUserId: success.llpLoadingUserId,
+      benefitsLoadingUserId: success.benefitsLoadingUserId,
+      benefitsLoadedUserIds: success.benefitsLoadedUserIds,
       statusFeedback: success.statusFeedback,
       isTableLoading: success.isTableLoading,
       isExporting: success.isExporting,
@@ -330,6 +346,8 @@ final class InvestorTransactionHistorySuccess extends ManageUsersSuccess {
     super.mouLoadingUserId,
     super.llpUpdatingUserId,
     super.llpLoadingUserId,
+    super.benefitsLoadingUserId,
+    super.benefitsLoadedUserIds = const {},
     super.statusFeedback,
     super.isTableLoading = false,
     super.isExporting = false,
@@ -362,6 +380,8 @@ final class InvestorTransactionHistorySuccess extends ManageUsersSuccess {
       mouLoadingUserId: success.mouLoadingUserId,
       llpUpdatingUserId: success.llpUpdatingUserId,
       llpLoadingUserId: success.llpLoadingUserId,
+      benefitsLoadingUserId: success.benefitsLoadingUserId,
+      benefitsLoadedUserIds: success.benefitsLoadedUserIds,
       statusFeedback: success.statusFeedback,
       isTableLoading: success.isTableLoading,
       isExporting: success.isExporting,
@@ -389,6 +409,8 @@ final class InvestorTransactionHistoryFailure extends ManageUsersSuccess {
     super.mouLoadingUserId,
     super.llpUpdatingUserId,
     super.llpLoadingUserId,
+    super.benefitsLoadingUserId,
+    super.benefitsLoadedUserIds = const {},
     super.statusFeedback,
     super.isTableLoading = false,
     super.isExporting = false,
@@ -421,6 +443,8 @@ final class InvestorTransactionHistoryFailure extends ManageUsersSuccess {
       mouLoadingUserId: success.mouLoadingUserId,
       llpUpdatingUserId: success.llpUpdatingUserId,
       llpLoadingUserId: success.llpLoadingUserId,
+      benefitsLoadingUserId: success.benefitsLoadingUserId,
+      benefitsLoadedUserIds: success.benefitsLoadedUserIds,
       statusFeedback: success.statusFeedback,
       isTableLoading: success.isTableLoading,
       isExporting: success.isExporting,
