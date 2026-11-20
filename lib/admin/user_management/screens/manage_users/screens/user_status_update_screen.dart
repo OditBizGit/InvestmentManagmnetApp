@@ -158,8 +158,8 @@ class _UserStatusUpdateScreenState extends State<UserStatusUpdateScreen> {
                             isLoading: isBenefitsLoading,
                             committedAmount: user.totalPayable,
                             depositDiscountAmount: user.depositDiscountAmount,
-                            medicalAllowanceNote:
-                                user.medicalAllowanceDescription,
+                            extraAmount: user.extraAmount,
+                            days: user.days,
                           ),
                           const SizedBox(height: 20),
                           UserRefundCard(

@@ -7,9 +7,9 @@ class AddInvestorPaymentRequestModel {
   final double discountAmount;
   final String remarks;
 
-  /// API expects a string amount (e.g. `"15000"`). Response may store
-  /// `"15000 for 10 days"` after combining with [days].
-  final String medicalAllowance;
+  /// Medical allowance amount (also mirrored to [extraAmount]).
+  /// API `medicalAllowance` is System.String.
+  final double medicalAllowance;
   final double extraAmount;
   final int days;
 
@@ -21,12 +21,19 @@ class AddInvestorPaymentRequestModel {
     this.isFullSettlement = false,
     this.discountAmount = 0,
     this.remarks = '',
-    this.medicalAllowance = '',
+    this.medicalAllowance = 0,
     this.extraAmount = 0,
     this.days = 0,
   });
 
   Map<String, dynamic> toJson() {
+    final amount = extraAmount > 0 ? extraAmount : medicalAllowance;
+    final amountString = amount <= 0
+        ? ''
+        : (amount == amount.roundToDouble()
+            ? amount.toInt().toString()
+            : amount.toString());
+
     return {
       'userId': userId,
       'paidAmount': paidAmount,
@@ -35,18 +42,12 @@ class AddInvestorPaymentRequestModel {
       'isFullSettlement': isFullSettlement,
       'discountAmount': discountAmount,
       'remarks': remarks,
-      'medicalAllowance': medicalAllowance,
-      'extraAmount': extraAmount,
+      // String for legacy combined display ("1500 for 25 days").
+      'medicalAllowance': amountString,
+      // Numeric medical-allowance amount.
+      'extraAmount': amount <= 0 ? 0 : amount,
       'days': days,
     };
-  }
-
-  /// Formats a parsed amount for the string `medicalAllowance` field.
-  static String amountToApiString(double amount) {
-    if (amount == amount.roundToDouble()) {
-      return amount.toInt().toString();
-    }
-    return amount.toString();
   }
 }
 

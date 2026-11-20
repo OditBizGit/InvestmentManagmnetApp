@@ -407,7 +407,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
   }
 
   /// Loads benefits card fields from InvestorDetails (committed, discount,
-  /// medical allowance). Summary card uses this API only — not GetInvestors.
+  /// extraAmount, days). Summary card uses this API only — not GetInvestors.
   Future<void> fetchInvestorBenefits(int userId) async {
     final current = state;
     if (current is! ManageUsersSuccess) return;
@@ -440,7 +440,6 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         return;
       }
 
-      final allowance = (details.medicalAllowance ?? '').trim();
       final committed = details.investmentAmount > 0
           ? details.investmentAmount
           : null;
@@ -450,7 +449,8 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         return user.copyWith(
           totalPayable: committed,
           depositDiscountAmount: details.discountAmount,
-          medicalAllowanceDescription: allowance,
+          extraAmount: details.extraAmount,
+          days: details.days,
         );
       }).toList(growable: false);
 

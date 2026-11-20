@@ -98,6 +98,7 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   bool _amountsEqual(double a, double b) => (a - b).abs() < _amountEpsilon;
 
   double get _currentDiscount {
+    if (_paymentAction != _FundPaymentAction.settleFull) return 0;
     final discount = _parseAmount(_discountController.text);
     return discount == null || discount < 0 ? 0 : discount;
   }
@@ -225,6 +226,10 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
   String? _validateDiscount(String? value) {
     if (value == null || value.trim().isEmpty) return null;
 
+    if (_paymentAction != _FundPaymentAction.settleFull) {
+      return 'Discount is allowed only for full settlement';
+    }
+
     final discount = _parseAmount(value);
     if (discount == null) {
       return 'Enter a valid discount';
@@ -241,14 +246,12 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return 'Payment plus discount cannot exceed outstanding balance';
     }
 
-    if (_paymentAction == _FundPaymentAction.settleFull) {
-      final expectedDeposit = outstanding - discount;
-      if (expectedDeposit < 0) {
-        return 'Discount cannot exceed outstanding balance';
-      }
-      if (!_amountsEqual(deposit, expectedDeposit)) {
-        return 'Adjust deposit or discount so they equal the outstanding balance';
-      }
+    final expectedDeposit = outstanding - discount;
+    if (expectedDeposit < 0) {
+      return 'Discount cannot exceed outstanding balance';
+    }
+    if (!_amountsEqual(deposit, expectedDeposit)) {
+      return 'Adjust deposit or discount so they equal the outstanding balance';
     }
 
     return null;
@@ -282,6 +285,8 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       _paymentAction = _FundPaymentAction.none;
       _payingNowController.clear();
       _discountController.clear();
+      _medicalAllowanceAmountController.clear();
+      _medicalAllowanceDaysController.clear();
       _selectedPaymentMethod = null;
       if (selected == null) {
         _resetDueState();
@@ -362,10 +367,24 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    final discount = _parseAmount(_discountController.text) ?? 0;
+    var discount = _parseAmount(_discountController.text) ?? 0;
     if (discount < 0) {
       AppToast.error('Discount cannot be negative', context: context);
       return;
+    }
+
+    final isFullSettlement = _paymentAction == _FundPaymentAction.settleFull;
+
+    // Discount and medical allowance are allowed only for full settlement.
+    if (!isFullSettlement && discount > 0) {
+      AppToast.error(
+        'Discount is allowed only for full settlement',
+        context: context,
+      );
+      return;
+    }
+    if (!isFullSettlement) {
+      discount = 0;
     }
 
     final outstanding = _outstandingBalance;
@@ -378,7 +397,6 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    final isFullSettlement = _paymentAction == _FundPaymentAction.settleFull;
     if (isFullSettlement && !_amountsEqual(totalApplied, outstanding)) {
       AppToast.error(
         'Full settlement requires deposit plus discount to equal outstanding balance',
@@ -393,12 +411,23 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       return;
     }
 
-    final medicalAllowanceAmount =
-        _parseAmount(_medicalAllowanceAmountController.text) ?? 0;
-    final medicalAllowanceDays = int.tryParse(
-          _medicalAllowanceDaysController.text.trim().replaceAll(',', ''),
-        ) ??
-        0;
+    // Medical allowance → extraAmount (number) + days; also string medicalAllowance.
+    final rawMedicalAmount = _medicalAllowanceAmountController.text.trim();
+    final rawMedicalDays = _medicalAllowanceDaysController.text.trim();
+    var extraAmount = _parseAmount(rawMedicalAmount) ?? 0;
+    var days = int.tryParse(rawMedicalDays.replaceAll(',', '')) ?? 0;
+
+    if (!isFullSettlement) {
+      if (extraAmount > 0 || days > 0) {
+        AppToast.error(
+          'Medical allowance is allowed only for full settlement',
+          context: context,
+        );
+        return;
+      }
+      extraAmount = 0;
+      days = 0;
+    }
 
     final request = AddInvestorPaymentRequestModel(
       userId: _selectedInvestor!.userId,
@@ -408,11 +437,9 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
       isFullSettlement: isFullSettlement,
       discountAmount: discount,
       remarks: '',
-      medicalAllowance: AddInvestorPaymentRequestModel.amountToApiString(
-        medicalAllowanceAmount,
-      ),
-      extraAmount: 0,
-      days: medicalAllowanceDays,
+      medicalAllowance: extraAmount,
+      extraAmount: extraAmount,
+      days: days,
     );
 
     await cubit.addInvestorPayment(request);
@@ -529,9 +556,11 @@ class _AddNewFundViewState extends State<_AddNewFundView> {
                 discountValidator: _validateDiscount,
                 descriptionController: _descriptionController,
                 medicalAllowanceAmountController:
-                _medicalAllowanceAmountController,
+                    _medicalAllowanceAmountController,
                 medicalAllowanceDaysController:
-                _medicalAllowanceDaysController,
+                    _medicalAllowanceDaysController,
+                enableFullSettlementFields:
+                    _paymentAction == _FundPaymentAction.settleFull,
                 paymentMethodOptions: kFundPaymentMethodOptions,
                 selectedPaymentMethod: _selectedPaymentMethod,
                 onPaymentMethodChanged: (value) =>

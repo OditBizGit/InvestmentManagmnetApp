@@ -27,6 +27,8 @@ class InvestorDetailsModel {
   final DateTime? dateOfBirth;
   final String? description;
   final String? medicalAllowance;
+  final double extraAmount;
+  final int days;
   final double investmentAmount;
   final DateTime? investmentDate;
   final double investmentAdvanceAmount;
@@ -68,6 +70,8 @@ class InvestorDetailsModel {
     this.dateOfBirth,
     this.description,
     this.medicalAllowance,
+    this.extraAmount = 0,
+    this.days = 0,
     this.investmentAmount = 0,
     this.investmentDate,
     this.investmentAdvanceAmount = 0,
@@ -137,6 +141,12 @@ class InvestorDetailsModel {
       description: _readString(json['description'] ?? json['Description']),
       medicalAllowance: _readString(
         json['medicalAllowance'] ?? json['MedicalAllowance'],
+      ),
+      extraAmount: _readDouble(
+        json['extraAmount'] ?? json['ExtraAmount'],
+      ),
+      days: _readInt(
+        json['days'] ?? json['Days'],
       ),
       investmentAmount: _readDouble(
         json['investmentAmount'] ??

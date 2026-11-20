@@ -45,6 +45,7 @@ class AddFundFormCard extends StatelessWidget {
     required this.medicalAllowanceDaysController,
     this.isLoadingInvestors = false,
     this.canSettleFull = false,
+    this.enableFullSettlementFields = false,
   });
 
   final GlobalKey<FormState> formKey;
@@ -72,6 +73,9 @@ class AddFundFormCard extends StatelessWidget {
   final String Function(DateTime) formatDate;
   final bool isLoadingInvestors;
   final bool canSettleFull;
+
+  /// Discount and medical allowance are allowed only for full settlement.
+  final bool enableFullSettlementFields;
   final TextEditingController medicalAllowanceAmountController;
   final TextEditingController medicalAllowanceDaysController;
 
@@ -218,14 +222,20 @@ class AddFundFormCard extends StatelessWidget {
                 );
                 final discountField = _LabeledField(
                   label: 'Discount',
-                  child: _TextInput(
-                    controller: discountController,
-                    hint: 'Optional — reduces remaining outstanding with deposit',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: discountValidator,
-                  ),
+                  child: enableFullSettlementFields
+                      ? _TextInput(
+                          controller: discountController,
+                          hint:
+                              'Optional — reduces remaining outstanding with deposit',
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: discountValidator,
+                        )
+                      : const _ReadOnlyField(
+                          value: null,
+                          hint: 'Available for full settlement only',
+                        ),
                 );
                 final paymentMethodField = _LabeledField(
                   label: 'Payment Method',
@@ -243,23 +253,29 @@ class AddFundFormCard extends StatelessWidget {
                     },
                   ),
                 );
+                // Keep TextFields mounted so controllers stay bound. Swapping
+                // to a read-only placeholder was clearing the amount on save.
                 final medicalAllowanceAmountField = _LabeledField(
                   label: 'Medical Allowance Amount',
-                  child: _TextInput(
+                  child: _PlainNumberInput(
                     controller: medicalAllowanceAmountController,
-                    hint: 'Enter allowance amount',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
+                    hint: enableFullSettlementFields
+                        ? 'Enter allowance amount'
+                        : 'Available for full settlement only',
+                    decimal: true,
+                    enabled: enableFullSettlementFields,
                   ),
                 );
 
                 final medicalAllowanceDaysField = _LabeledField(
                   label: 'Medical Allowance Days',
-                  child: _TextInput(
+                  child: _PlainNumberInput(
                     controller: medicalAllowanceDaysController,
-                    hint: 'Enter number of days',
-                    keyboardType: TextInputType.number,
+                    hint: enableFullSettlementFields
+                        ? 'Enter number of days'
+                        : 'Available for full settlement only',
+                    decimal: false,
+                    enabled: enableFullSettlementFields,
                   ),
                 );
 
@@ -614,6 +630,40 @@ class _TextInput extends StatelessWidget {
       ),
       decoration: _inputDecoration(hint).copyWith(
         fillColor: readOnly ? const Color(0xFFF8F7FA) : AppColors.white,
+      ),
+    );
+  }
+}
+
+/// Non-form number field so the controller always receives typed values.
+class _PlainNumberInput extends StatelessWidget {
+  const _PlainNumberInput({
+    required this.controller,
+    required this.hint,
+    this.decimal = false,
+    this.enabled = true,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final bool decimal;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: decimal
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.number,
+      style: TextStyle(
+        fontSize: 11.sp,
+        fontWeight: FontWeight.w400,
+        color: enabled ? AppColors.textPrimary : AppColors.hint,
+      ),
+      decoration: _inputDecoration(hint).copyWith(
+        fillColor: enabled ? AppColors.white : const Color(0xFFF8F7FA),
       ),
     );
   }

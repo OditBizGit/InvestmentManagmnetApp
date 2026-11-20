@@ -11,20 +11,19 @@ class UserBenefitsSummaryCard extends StatelessWidget {
     super.key,
     required this.committedAmount,
     this.depositDiscountAmount = 0,
-    this.medicalAllowanceNote = '',
+    this.extraAmount = 0,
+    this.days = 0,
     this.isLoading = false,
   });
 
   final double committedAmount;
   final double depositDiscountAmount;
-  final String medicalAllowanceNote;
+  final double extraAmount;
+  final int days;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    final note = medicalAllowanceNote.trim();
-    final displayNote = note.isEmpty ? 'No medical allowance recorded' : note;
-
     return AddInvestorSectionCard(
       title: 'Deposit & company benefits',
       subtitle:
@@ -41,81 +40,130 @@ class UserBenefitsSummaryCard extends StatelessWidget {
               ),
             )
           : Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 640;
-              final tiles = [
-                _BenefitTile(
-                  label: 'Committed amount',
-                  value: CurrencyFormatter.format(committedAmount),
-                  icon: ImageConstants.addPayment,
-                  iconColor: const Color(0xFF9B7EBF),
-                  iconBg: const Color(0xFFF0EBF6),
-                ),
-                _BenefitTile(
-                  label: 'Discount on deposit',
-                  value: CurrencyFormatter.format(depositDiscountAmount),
-                  icon: ImageConstants.amountRemaining,
-                  iconColor: const Color(0xFFE89A3C),
-                  iconBg: const Color(0xFFFFF3E8),
-                ),
-              ];
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stacked = constraints.maxWidth < 640;
+                    final tiles = [
+                      _BenefitTile(
+                        label: 'Committed amount',
+                        value: CurrencyFormatter.format(committedAmount),
+                        icon: ImageConstants.addPayment,
+                        iconColor: const Color(0xFF9B7EBF),
+                        iconBg: const Color(0xFFF0EBF6),
+                      ),
+                      _BenefitTile(
+                        label: 'Discount on deposit',
+                        value: CurrencyFormatter.format(depositDiscountAmount),
+                        icon: ImageConstants.amountRemaining,
+                        iconColor: const Color(0xFFE89A3C),
+                        iconBg: const Color(0xFFFFF3E8),
+                      ),
+                    ];
 
-              if (stacked) {
-                return Column(
-                  children: [
-                    for (var i = 0; i < tiles.length; i++) ...[
-                      if (i > 0) const SizedBox(height: 10),
-                      tiles[i],
-                    ],
-                  ],
-                );
-              }
+                    if (stacked) {
+                      return Column(
+                        children: [
+                          for (var i = 0; i < tiles.length; i++) ...[
+                            if (i > 0) const SizedBox(height: 10),
+                            tiles[i],
+                          ],
+                        ],
+                      );
+                    }
 
-              return Row(
-                children: [
-                  for (var i = 0; i < tiles.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 10),
-                    Expanded(child: tiles[i]),
-                  ],
-                ],
-              );
-            },
+                    return Row(
+                      children: [
+                        for (var i = 0; i < tiles.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 10),
+                          Expanded(child: tiles[i]),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stacked = constraints.maxWidth < 640;
+                    final amountField = _ReadOnlyTextField(
+                      label: 'Extra amount',
+                      value: CurrencyFormatter.format(extraAmount),
+                    );
+                    final daysField = _ReadOnlyTextField(
+                      label: 'Days',
+                      value: '$days',
+                    );
+
+                    if (stacked) {
+                      return Column(
+                        children: [
+                          amountField,
+                          const SizedBox(height: 12),
+                          daysField,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: amountField),
+                        const SizedBox(width: 12),
+                        Expanded(child: daysField),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _ReadOnlyTextField extends StatelessWidget {
+  const _ReadOnlyTextField({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
           ),
-          const SizedBox(height: 14),
-          Text(
-            'Medical allowance',
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F7FA),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Text(
+            value,
             style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w600,
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w400,
               color: AppColors.textPrimary,
+              height: 1.4,
             ),
           ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 84),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F7FA),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
-            ),
-            alignment: Alignment.topLeft,
-            child: Text(
-              displayNote,
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w400,
-                color: note.isEmpty ? AppColors.hint : AppColors.textPrimary,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

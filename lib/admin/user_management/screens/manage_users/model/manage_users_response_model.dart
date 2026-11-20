@@ -115,7 +115,8 @@ class ManageUsersInvestor {
     required this.isActive,
     this.joinedDate,
     this.depositDiscountAmount = 0,
-    this.medicalAllowanceDescription = '',
+    this.extraAmount = 0,
+    this.days = 0,
     this.terminateRemarks = '',
     this.hasPendingTerminateRequest = false,
   });
@@ -132,8 +133,9 @@ class ManageUsersInvestor {
   final DateTime? joinedDate;
   final double depositDiscountAmount;
 
-  /// API returns a display string (e.g. `"15000 for 10 days"`).
-  final String medicalAllowanceDescription;
+  /// From InvestorDetails (`extraAmount` / `days`).
+  final double extraAmount;
+  final int days;
   final String terminateRemarks;
 
   /// Local UI flag: terminate request submitted, awaiting approval.
@@ -160,7 +162,8 @@ class ManageUsersInvestor {
     double? totalPendingAmount,
     double? totalPayable,
     double? depositDiscountAmount,
-    String? medicalAllowanceDescription,
+    double? extraAmount,
+    int? days,
     String? terminateRemarks,
     bool? hasPendingTerminateRequest,
   }) {
@@ -177,8 +180,8 @@ class ManageUsersInvestor {
       joinedDate: joinedDate,
       depositDiscountAmount:
           depositDiscountAmount ?? this.depositDiscountAmount,
-      medicalAllowanceDescription:
-          medicalAllowanceDescription ?? this.medicalAllowanceDescription,
+      extraAmount: extraAmount ?? this.extraAmount,
+      days: days ?? this.days,
       terminateRemarks: terminateRemarks ?? this.terminateRemarks,
       hasPendingTerminateRequest:
           hasPendingTerminateRequest ?? this.hasPendingTerminateRequest,
@@ -219,7 +222,8 @@ class ManageUsersInvestor {
       joinedDate: _readDate(json['createdDate'] ?? json['CreatedDate']),
       // Benefits card fields come from InvestorDetails via fetchInvestorBenefits.
       depositDiscountAmount: 0,
-      medicalAllowanceDescription: '',
+      extraAmount: 0,
+      days: 0,
       terminateRemarks: _readString(
             json['remarks'] ??
                 json['Remarks'] ??
