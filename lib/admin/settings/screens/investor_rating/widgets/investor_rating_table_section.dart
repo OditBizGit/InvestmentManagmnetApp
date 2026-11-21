@@ -413,6 +413,7 @@ class _InvestorRatingRow extends StatelessWidget {
                     rating: effectiveRating,
                     starSize: 16,
                     onRatingChanged: onRatingChanged,
+                    enabled: !state.isSaving,
                   ),
                 ),
               ),
@@ -427,7 +428,7 @@ class _InvestorRatingRow extends StatelessWidget {
                     children: [
                       if (hasUnsaved)
                         TextButton(
-                          onPressed: isSavingRow ? null : onSaveRating,
+                          onPressed: isSavingRow || state.isSaving ? null : onSaveRating,
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.green,
                             padding: const EdgeInsets.symmetric(horizontal: 4),

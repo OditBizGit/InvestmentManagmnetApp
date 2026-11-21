@@ -58,7 +58,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       emit(
         state.copyWith(
           investors: investors,
-          draftRatings: const {},
+          draftRatings: _seedDefaultDrafts(investors),
           selectedInvestorCodes: const {},
           savingInvestorCodes: const {},
           removingTopInvestorUserIds: const {},
@@ -396,6 +396,45 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
     if (state.isSaving) return;
     if (state.isRemovingTopInvestorAny) return;
 
+    var allSaved = true;
+
+    if (state.draftRatings.isNotEmpty) {
+      allSaved = await _savePendingRatings();
+      if (isClosed) return;
+
+      if (state.selectedInvestorCodes.isEmpty) {
+        emit(
+          state.copyWith(
+            bannerMessage:
+                allSaved ? 'Ratings saved.' : _ratingsNotSavedMessage,
+            bannerIsError: !allSaved,
+          ),
+        );
+        return;
+      }
+    }
+
+    await _addSelectionToTopRated();
+    if (isClosed) return;
+
+    // A failed rating save must stay visible after the Top Rated step.
+    if (!allSaved) {
+      final previous = state.bannerMessage;
+      emit(
+        state.copyWith(
+          bannerMessage: previous == null || previous.isEmpty
+              ? _ratingsNotSavedMessage
+              : '$previous $_ratingsNotSavedMessage',
+          bannerIsError: true,
+        ),
+      );
+    }
+  }
+
+  static const String _ratingsNotSavedMessage =
+      'Some ratings could not be saved. Please try again.';
+
+  Future<void> _addSelectionToTopRated() async {
     if (state.selectedInvestorCodes.isEmpty) {
       emit(
         state.copyWith(
@@ -542,6 +581,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
   }
 
   void setDraftRating(String investorCode, double rating) {
+    if (state.isSaving) return;
     final snapped = (rating * 2).round() / 2.0;
     final clamped = snapped.clamp(0.5, 5.0);
     final nextDraft = Map<String, double>.from(state.draftRatings)
@@ -583,8 +623,49 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
   }
 
   Future<void> saveInvestorRating(String investorCode) async {
+    await _persistRating(investorCode);
+  }
+
+  /// Saves every pending (draft) rating one after another through
+  /// [_persistRating]. A failed save keeps its draft and the rest continue.
+  /// Returns true when every pending rating was saved.
+  Future<bool> _savePendingRatings() async {
+    final pendingCodes = state.draftRatings.keys.toList();
+    emit(state.copyWith(isSaving: true, clearBanner: true));
+
+    var allSaved = true;
+    for (final code in pendingCodes) {
+      if (isClosed) return false;
+      final saved = await _persistRating(code);
+      if (!saved) allSaved = false;
+    }
+
+    if (isClosed) return false;
+    emit(state.copyWith(isSaving: false));
+    return allSaved;
+  }
+
+  /// Seeds drafts for investors whose rating is the backend default (3) or
+  /// missing. The backend returns 3 for investors without a persisted rating,
+  /// so it cannot be told apart from a saved 3; re-saving 3 is idempotent.
+  Map<String, double> _seedDefaultDrafts(
+    List<InvestorRatingDetailsModel> investors,
+  ) {
+    final drafts = <String, double>{};
+    for (final investor in investors) {
+      final saved = investor.savedStarRating;
+      if (saved == null || saved == InvestorRatingState.defaultRating) {
+        drafts[investor.investorCode] = InvestorRatingState.defaultRating;
+      }
+    }
+    return drafts;
+  }
+
+  /// POSTs the current effective rating of [investorCode]. Returns true when
+  /// the backend confirmed the save.
+  Future<bool> _persistRating(String investorCode) async {
     final investor = state.investorByCode(investorCode);
-    if (investor == null) return;
+    if (investor == null) return false;
 
     final rating = state.effectiveRating(investorCode);
     if (rating == null || rating < 0.5 || rating > 5) {
@@ -594,10 +675,10 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
           bannerIsError: true,
         ),
       );
-      return;
+      return false;
     }
 
-    if (state.isSavingInvestor(investorCode)) return;
+    if (state.isSavingInvestor(investorCode)) return false;
 
     final refreshTopInvestors = state.isInTopRated(investorCode);
 
@@ -615,7 +696,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
         investorId: investor.userId,
         rating: rating,
       );
-      if (isClosed) return;
+      if (isClosed) return false;
 
       if (!response.status) {
         _clearSavingInvestor(investorCode);
@@ -627,7 +708,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
             bannerIsError: true,
           ),
         );
-        return;
+        return false;
       }
 
       final savedRating = response.data?.rating ?? rating;
@@ -646,8 +727,9 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
       if (refreshTopInvestors) {
         await fetchTopInvestors(silent: true);
       }
+      return true;
     } on DioException catch (e) {
-      if (isClosed) return;
+      if (isClosed) return false;
       _clearSavingInvestor(investorCode);
       final message = _dioErrorMessage(e);
       emit(
@@ -658,8 +740,9 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
           bannerIsError: true,
         ),
       );
+      return false;
     } catch (e) {
-      if (isClosed) return;
+      if (isClosed) return false;
       _clearSavingInvestor(investorCode);
       emit(
         state.copyWith(
@@ -667,6 +750,7 @@ class InvestorRatingCubit extends Cubit<InvestorRatingState> {
           bannerIsError: true,
         ),
       );
+      return false;
     }
   }
 

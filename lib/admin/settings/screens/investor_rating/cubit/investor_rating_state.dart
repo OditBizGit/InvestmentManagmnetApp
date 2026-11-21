@@ -40,6 +40,11 @@ class InvestorRatingState {
 
   static const int maxTopRated = 5;
 
+  /// The backend reports this value for investors that have no persisted
+  /// rating, so an untouched default cannot be told apart from a saved 3.
+  /// It is therefore treated as pending (draft) until the admin saves it.
+  static const double defaultRating = 3.0;
+
   int get topRatedCount => topInvestors.length;
 
   bool get topRatedFull => topRatedCount >= maxTopRated;
@@ -125,16 +130,10 @@ class InvestorRatingState {
 
   bool get isRemovingTopInvestorAny => removingTopInvestorUserIds.isNotEmpty;
 
+  /// A draft stays pending until a save succeeds (`_applySavedRating` removes it).
   bool hasUnsavedRating(String investorCode) {
-    if (!draftRatings.containsKey(investorCode)) return false;
-    final saved = investorByCode(investorCode)?.savedStarRating;
-    return draftRatings[investorCode] != saved;
+    return draftRatings.containsKey(investorCode);
   }
 
-  bool get hasAnyUnsavedRatings {
-    for (final code in draftRatings.keys) {
-      if (hasUnsavedRating(code)) return true;
-    }
-    return false;
-  }
+  bool get hasAnyUnsavedRatings => draftRatings.isNotEmpty;
 }
