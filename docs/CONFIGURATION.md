@@ -13,7 +13,7 @@
 - `lib/firebase_options.dart` (FlutterFire generated), `firebase.json`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`. Firebase project id: `maribel-wellness`. Values are client config and are not copied here. Used only by the user mobile build.
 
 ## Assets and fonts (`pubspec.yaml`)
-- Assets dirs: `assets/svg_icons/`, `assets/logo/`, `assets/gif/`, `assets/lottie/`. Constants in `lib/core/constants/image_constants.dart`, `lottie_constants.dart`, colors in `app_colors.dart`.
+- Assets dirs: `assets/svg_icons/`, `assets/logo/`, `assets/gif/`, `assets/lottie/`, `assets/team/` (Team Overview photos). Constants in `lib/core/constants/image_constants.dart`, `lottie_constants.dart`, colors in `app_colors.dart`.
 - Font: family `Montserrat`, only `assets/font/Montserrat-Bold.ttf` declared (weight 700); other weights are synthesised/unavailable. `MyApp.fontFamily = 'Montserrat'`.
 - `uses-material-design: true`.
 - Launcher icons: `assets/logo/maribelAppIcon.png` for android, web, windows (256); ios disabled.

@@ -2,6 +2,19 @@
 
 Format: date — decision — approved by — status.
 
+## 2026-11-21 — Team Overview screen, user Profile (spec: docs/superpowers/specs/2026-11-21-team-overview-screen-design.md)
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| T0 | UI-only screen from Figma frame `376:3233`; hardcoded content (the PM-approved exception to the no-mock-data rule); no API, model, repository, service or DI change | PM (request) | Done |
+| T1 | Project font Montserrat instead of the Figma font Poppins (design system not changed, Poppins not bundled) | Team Head | Done |
+| T2/T6 | Header stays inline like the sibling sub-screens (no shared widget exists; extracting it would touch unrelated screens) | Team Head (Solution Architect) | Done; tech debt noted |
+| T3 | Hardcoded data in a `const` file inside the screen folder, not in `model/` | Team Head (Solution Architect) | Done |
+| T4 | Original 1080x1080 PNGs kept unedited and cropped in code like Figma; bundle +~9 MB; `cacheWidth` caps decode memory | Team Head | Done; compression is a later option |
+| T5 | New asset folder `assets/team/` declared in `pubspec.yaml`; icons in the existing `assets/svg_icons/` | Team Head | Done |
+| T7 | Card = AspectRatio > LayoutBuilder > ClipRect > Stack with fractional positions; runtime card width (no fixed 171) | Team Head (Solution Architect) | Done |
+| T8 | Text sizes use `.sp` values chosen for Sizer 3.1.3's quadratic scale (12 px -> 14.sp, 10 px -> 12.7.sp); found in the visual check, spec corrected | Team Head | Done |
+
 ## 2026-11-09 — Security hardening (plan: docs/plans/SECURITY_HARDENING_PLAN.md)
 
 | # | Decision | Approved by | Status |

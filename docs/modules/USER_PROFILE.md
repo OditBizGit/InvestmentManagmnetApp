@@ -30,16 +30,22 @@ Investor "Profile" tab and its sub-screens: profile summary, Personal Info (with
 | .../widgets/bank_details_card.dart | `BankDetailsCard` | |
 | .../widgets/nominee_details_card.dart | `NomineeDetailsCard` | |
 | .../widgets/document_fullscreen_image.dart | `DocumentFullscreenImage` | |
+| screens/team_overview_screen/team_overview_screen.dart | `TeamOverviewScreen` | Static screen: back header + scrolling sections of team cards. No cubit, no API. |
+| .../team_overview_data.dart | `TeamMember`, `TeamSection`, `TeamOverviewData` | Hardcoded `const` content (3 sections, 16 cards, 12 unique photos). Not a model/repository. |
+| .../widgets/team_section_header.dart | `TeamSectionHeader` | Accent pill with icon + title. |
+| .../widgets/team_member_card.dart | `TeamMemberCard` | Lavender arch + Figma-cropped local photo, name, role. |
+| .../widgets/team_member_row.dart | `TeamMemberRow` | Two equal cards, or one centered card at one-column width. |
 | screens/register_complaint_screen/register_complaint_screen.dart | `RegisterComplaintScreen` | |
 | .../widgets/register_complaint_section.dart | `RegisterComplaintSection` | |
 | .../widgets/registered_complaints_section.dart | `RegisteredComplaintsSection` | |
 | .../widgets/complaint_success_screen.dart | `ComplaintSuccessScreen` | |
 
 ## 3. Screens and widgets
-- Profile tab: avatar, name (or 'Investor'), investor code label (`INV - {code}` unless it starts with INV; 'Not Provided' if empty), email and phone tiles. Menu tiles: Personal Info, Investment Details, Documents, Register Complaints, Team Overview (onTap is empty - no action), Logout (red). Social icons open YouTube, WhatsApp, Instagram, website via `launchUrl(externalApplication)`. App version label. Pull to refresh -> `loadProfile()`.
+- Profile tab: avatar, name (or 'Investor'), investor code label (`INV - {code}` unless it starts with INV; 'Not Provided' if empty), email and phone tiles. Menu tiles: Personal Info, Investment Details, Documents, Register Complaints, Team Overview (pushes `TeamOverviewScreen`), Logout (red). Social icons open YouTube, WhatsApp, Instagram, website via `launchUrl(externalApplication)`. App version label. Pull to refresh -> `loadProfile()`.
 - Personal Info: `PersonalInfoCard` rows Name, Email Address, Phone Number, Alternate Phone Number, Permanent Address, Description, Medical Allowance (each 'Not Provided' when empty); `RelationshipManagerCard` lists `staffAllocations` (title "Relationship Manager" or "Relationship Managers"; empty list shows one placeholder entry) with a slide-to-call control (`tel:` URI of digits and +; snackbar 'Unable to open the phone app' on failure).
 - Investment Details: `InvestmentSummarySection` (name, code, avatar, Total Commitment, "Commitment completed" or "Balance: x", optional Discount, "Last Payment: amount - date", installment duration label e.g. Monthly / Every N Weeks / Daily) + `PaymentScheduleSection` cards (Completed / Partially Completed / Next Due / Pending). Silent refresh immediately and every 5 s using the passed `ProfileCubit`; go-to-top when more than 8 installments.
 - Documents: pulls `getInvestorDetails` itself; refresh also refreshes MOU/LLP. Cards: Legal Documentation (MOU, LLP Registration), Additional information (Aadhaar masked into 4-4-rest groups, PAN, email, Aadhaar/PAN photos), Bank Details (Account No, IFSC Code, bank name), Nominee Details (name, relationship, phone, address, Aadhaar, PAN, photos per nominee).
+- Team Overview: static, UI-only (Figma frame `376:3233`). Header like the sibling sub-screens (back arrow, title), then three sections in order: Board Members (6 cards), Doctors Panel (5), Advisory Committee Membership (5); each section starts with a `TeamSectionHeader` pill. Cards are in rows of two (equal columns, 5.w gap, top aligned); the last card of Doctors Panel and of Advisory Committee is single and centered at one-column width. Photos are local PNGs in `assets/team/` (1080x1080, transparent background; `ImageConstants.team*`), drawn over a 12%-opacity accent arch and cropped in code as in Figma (box 149.25% x 160.73% of the photo block, offset -24.63% / -23.31%, `cacheWidth` capped to the displayed size). Names are uppercased at render; roles wrap without ellipsis. Text sizes use `.sp` values chosen for Sizer's quadratic scale (`14.sp` = 12 px, `12.7.sp` = 10 px at 402 wide). Section icons: `assets/svg_icons/team_*.svg`. Dr. Naeema, Dr. Anandha Kishore and Dr. Surabhila appear in Doctors Panel and Advisory Committee; Dr. Fidha Fathima appears in Board Members and Doctors Panel with different roles and the same photo. Content is hardcoded in `team_overview_data.dart`; changing the team means editing that file and the assets (no backend).
 - Register Complaint: multiline text field (10 lines, hint 'Text here...'), submit button enabled only when text non-empty, then `ComplaintSuccessScreen`; below, 'Registered Complaints' list with status chips.
 - `ChangeRequestScreen`: text request form that just navigates to a success screen; no API call.
 
@@ -102,13 +108,14 @@ flowchart TD
 ```
 
 ## 9. Navigation
-In: tab 4 of `UserMainScreen`. Out: PersonalInfoScreen, InvestmentDetailsScreen (shares the ProfileCubit via `BlocProvider.value`), DocumentsScreen, RegisterComplaintScreen, LoginScreen (logout), external apps (social links, phone dialer). Documents/Complaints screens read `ProfileRepository` from the `RepositoryProvider` in main.dart.
+In: tab 4 of `UserMainScreen`. Out: PersonalInfoScreen, InvestmentDetailsScreen (shares the ProfileCubit via `BlocProvider.value`), DocumentsScreen, RegisterComplaintScreen, TeamOverviewScreen (plain `MaterialPageRoute`, no providers needed), LoginScreen (logout), external apps (social links, phone dialer). Documents/Complaints screens read `ProfileRepository` from the `RepositoryProvider` in main.dart.
 
 ## 10. Dependencies
 `LocalStorage`, `LoginCubit` (logout), auth/account (`AccountStatusMonitor` depends on this module's `getInvestorDetails`), core utils (`CurrencyFormatter`, `ApiErrorMessage`, `AppSnackBar`, `GoToTopButton`, `resolveMediaUrl`), url_launcher.
 
 ## 11. Unclear items
-- Unclear - needs human clarification: Team Overview tile has an empty handler.
+- Team Overview photos add ~9 MB to the app bundle (original 1080x1080 PNGs kept unedited, decision T4 in `docs/superpowers/specs/2026-11-21-team-overview-screen-design.md`); compression is a possible later step.
+- Team Overview back header is a copy of the inline header used by about five user screens (no shared widget exists); extracting one is tech debt.
 - Unclear - needs human clarification: `ChangeRequestScreen` is dead code (entry button commented out) and does not call any API.
 - Unclear - needs human clarification: medical allowance is a free-text string ('Not Provided' fallback), format is server defined.
 - Unclear - needs human clarification: staff phone numbers/percentages displayed vs hidden in the manager card were not fully reviewed.

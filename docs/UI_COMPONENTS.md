@@ -55,7 +55,7 @@ Naming pattern: `*_overview_section` = stat cards; `*_table_section` / `*_table`
 - investments: `recent_transactions_section`, `work_progress_graph_card`; screen `transaction_receipt_screen.dart`
 - status: `status_card_actions`, `status_image_card`, `status_video_card`
 - updates: `work_update_fullscreen_image`, `work_update_inline_video`
-- profile sub-screens (`personal_info_screen`, `document_screen`, `investment_details_screen`, `register_complaint_screen`) each have a `widgets/` folder.
+- profile sub-screens (`personal_info_screen`, `document_screen`, `investment_details_screen`, `register_complaint_screen`, `team_overview_screen`) each have a `widgets/` folder. `team_overview_screen/widgets` holds `TeamSectionHeader`, `TeamMemberCard`, `TeamMemberRow`.
 
 ## Forms
 Form cards are per-module; inputs are styled inline (no shared text-field widget found). Photo picking via `PhotoPickerHelper`; media forms in `admin/work_progress/screens/add_update/`.

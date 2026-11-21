@@ -54,7 +54,6 @@ Auth and account, API client core, local storage, configuration, state managemen
 | Local-only Admin Settings / staff permissions + `dummyAdminStaff` | `A/settings/screens/admin_settings/*` | Card commented out in `settings_option_cards.dart` yet still wired in `_showAdminSettings`; seeded with dummy data, no API |
 | `work_progress_big_cards.dart` | `A/work_progress/screens/work_progress/widgets/` | Reported fully commented out (module doc); not re-verified line by line |
 | Old `main()` | `lib/main.dart` | Commented-out earlier `main` kept above the live one |
-| Team Overview tile | user Profile | Empty handler |
 | Share action | user Status | Placeholder |
 | `ProjectPhaseUpdate`/`MediaUpdate` local models, `_mediaUpdates` list | `A/work_progress/models/add_update_models.dart`, `AddUpdateScreen` | Possibly unused (module doc Unclear) |
 | Duplicate endpoint constants | `getBanner`/`getBanners`, `workPhaseList`/`workProgressDetails` | Same path, two names |

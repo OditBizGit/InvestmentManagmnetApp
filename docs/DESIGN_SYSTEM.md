@@ -58,7 +58,9 @@ Flat style: `elevation: 0` appears 45x; `elevation: 1` 6x, `2` 4x. `BoxShadow` b
 - Logos in `assets/logo/` (`ImageConstants.logo`, `webLoginLogo`, `webLogin3`), GIF `assets/gif/splash_logo.gif` (`splashGif`).
 - Lottie: `assets/lottie/success.json` via `LottieConstants.success` (`lib/core/constants/lottie_constants.dart`), package `lottie`.
 - Network images via `cached_network_image`; error placeholders `ImageConstants.imageError` / `videoError`.
-- `pubspec.yaml` asset entries are directory-level (`assets/svg_icons/`, `assets/logo/`, `assets/gif/`, `assets/lottie/`), not recursive.
+- Team photos (PNG, 1080x1080, transparent background) in `assets/team/` (`ImageConstants.team<Name>`), used only by the Team Overview screen.
+- `pubspec.yaml` asset entries are directory-level (`assets/svg_icons/`, `assets/logo/`, `assets/gif/`, `assets/lottie/`, `assets/team/`), not recursive.
+- Sizer `.sp` (3.1.3) is quadratic, not linear: at 402x874, `sp(v) = v*v*0.0618` px (11.sp = 7.5 px, 15.sp = 13.9 px). Pick `.sp` values by the resulting px when matching a Figma size (12 px -> `14.sp`, 10 px -> `12.7.sp`); `.w` is linear (5.w = 20 px at 402).
 
 ## Feedback colors
 Toast styling in `lib/core/utils/app_toast.dart`: white background, `textPrimary` foreground, per-type primary color from `AppColors`.

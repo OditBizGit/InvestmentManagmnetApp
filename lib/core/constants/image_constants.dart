@@ -4,6 +4,7 @@ class ImageConstants {
   static const String _svgPath = 'assets/svg_icons';
   static const String _logoPath = 'assets/logo';
   static const String _gifPath = 'assets/gif';
+  static const String _teamPath = 'assets/team';
 
 //User Dashboard
   static const String home = '$_svgPath/home.svg';
@@ -83,6 +84,25 @@ class ImageConstants {
   static const String meribelIcon = '$_logoPath/Meribel_icon.svg';
   static const String maribelLogo = '$_logoPath/maribelLogo.png';
   static const String appIcon = '$_logoPath/maribelAppIcon.png';
+
+  /// Team Overview screen (user profile)
+  static const String teamBoardMembersIcon = '$_svgPath/team_board_members.svg';
+  static const String teamDoctorsPanelIcon = '$_svgPath/team_doctors_panel.svg';
+  static const String teamAdvisoryCommitteeIcon =
+      '$_svgPath/team_advisory_committee.svg';
+  static const String teamShameer = '$_teamPath/shameer.png';
+  static const String teamAzarudheen = '$_teamPath/azarudheen.png';
+  static const String teamMohammedAli = '$_teamPath/mohammed_ali.png';
+  static const String teamMoideen = '$_teamPath/moideen.png';
+  static const String teamFidhaFathima = '$_teamPath/fidha_fathima.png';
+  static const String teamMusthafa = '$_teamPath/musthafa.png';
+  static const String teamNaeema = '$_teamPath/naeema.png';
+  static const String teamAnandhaKishore = '$_teamPath/anandha_kishore.png';
+  static const String teamSurabhila = '$_teamPath/surabhila.png';
+  static const String teamAnjaliJ = '$_teamPath/anjali_j.png';
+  static const String teamRanjithPallyath = '$_teamPath/ranjith_pallyath.png';
+  static const String teamMohamedBavaEranhikkal =
+      '$_teamPath/mohamed_bava_eranhikkal.png';
 
   //social media
   static const String whatsapp = '$_svgPath/whatsapp.svg';

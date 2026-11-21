@@ -18,6 +18,7 @@ import 'package:maribel_wellness_centre_application/user/profile/screens/documen
 import 'package:maribel_wellness_centre_application/user/profile/screens/investment_details_screen/investment_details_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/screens/personal_info_screen/personal_info_screen.dart';
 import 'package:maribel_wellness_centre_application/user/profile/screens/register_complaint_screen/register_complaint_screen.dart';
+import 'package:maribel_wellness_centre_application/user/profile/screens/team_overview_screen/team_overview_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sizer/sizer.dart';
@@ -215,6 +216,11 @@ class _UserProfileViewState extends State<_UserProfileView> {
                       iconPath: ImageConstants.team,
                       label: 'Team Overview',
                       onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const TeamOverviewScreen(),
+                          ),
+                        );
                       },
                     ),
                     _MenuTile(

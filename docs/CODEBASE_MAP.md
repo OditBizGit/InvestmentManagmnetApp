@@ -22,7 +22,7 @@
 - Investments: `U/investments/investments_screen.dart`, `U/investments/transaction_receipt_screen.dart`
 - Status: `U/status/status_screen.dart`
 - Updates: `U/updates/updates_screen.dart`
-- Profile: `U/profile/profile_screen.dart` + `screens/personal_info_screen`, `document_screen/documents_screen.dart`, `investment_details_screen`, `register_complaint_screen`
+- Profile: `U/profile/profile_screen.dart` + `screens/personal_info_screen`, `document_screen/documents_screen.dart`, `investment_details_screen`, `register_complaint_screen`, `team_overview_screen` (static, hardcoded)
 
 **Admin / Super Admin** - drawer (`A/navigation/admin_side_drawer.dart`): Dashboard (`A/dashboard/dashboard_screen.dart`), Investors (`A/investors/screens/investors_screen`, `add_new_investor`), Funding & Payments (`A/funding&payments/screens/...`), Work Progress (`A/work_progress/screens/work_progress`, `add_update`), Reports (`A/reports/screens/reports_screen.dart`, `staff_report/`), Manage Users (`A/user_management/screens/manage_users/screens/`), Due Payments (`A/user_management/screens/due_payments/`), Settings (`A/settings/screens/settings/settings_screen.dart` and the six sub-screens under `A/settings/screens/*`). Monthly List is also reachable by these roles per `AdminNavPermissions`.
 
