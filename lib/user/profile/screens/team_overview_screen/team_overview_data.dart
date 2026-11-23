@@ -38,7 +38,7 @@ const TeamMember _naeema = TeamMember(
 const TeamMember _anandhaKishore = TeamMember(
   name: 'Dr. ANANDHA KISHORE',
   role:
-      'Sr. Chief Ayurvedic Physician, 26 Years in Kottakkal Arya Vaidya Sala, - Ex Chief Medical Officer',
+      'Sr. Chief Ayurvedic Physician, 26 Years in Kottakkal Arya Vaidya Sala, Ex Chief Medical Officer',
   photoAsset: ImageConstants.teamAnandhaKishore,
 );
 
@@ -94,7 +94,7 @@ abstract final class TeamOverviewData {
         _anandhaKishore,
         TeamMember(
           name: 'Dr. FIDHA FATHIMA',
-          role: 'MBBS, POCERT in Medical Education',
+          role: 'MBBS, PGCERT in Medical Education',
           photoAsset: ImageConstants.teamFidhaFathima,
         ),
         _surabhila,
