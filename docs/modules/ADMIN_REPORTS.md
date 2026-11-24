@@ -1,6 +1,6 @@
-# Admin Reports (Overview + Staff Report)
+# Admin Reports (Overview, Staff Report, finance reports)
 
-Source: `lib/admin/reports/` (`reports_screen.dart` and `staff_report/staff_report_screen.dart` have uncommitted edits). Two drawer entries under the "Reports" group: **Overview** (`AdminReportsScreen`) and **Staff Report** (`StaffReportScreen`).
+Source: `lib/admin/reports/`. Six drawer entries under the "Reports" group (Admin/SuperAdmin only): **Overview** (`AdminReportsScreen`), **Staff Report** (`StaffReportScreen`), **Expected vs Actual**, **Refunds & Terminations**, **Investor Statement** (2026-11-23, see "Finance reports" below; spec `docs/superpowers/specs/2026-11-23-high-priority-reports-design.md`, decisions R1–R35). **Collection Aging** is fully coded (`collection_aging/`, tests, API) but its drawer entry is commented out until the PM restores it (R35).
 
 ## Purpose
 - Overview: funding/payments summary cards, a 12-month-max funding bar/line chart, work progress report, investor summary by type, latest 10 transactions.
@@ -61,7 +61,8 @@ Repository quirk: in `getInvestorTypeCount` the message lookup uses the key `'m 
 - `FundingPaymentOverviewModel`: `data[]` (`FundingPaymentMonthModel`: month, monthDate, dueAmount, fundingReceived, pendingAmount) and `summary[]` (`FundingPaymentSummaryModel`: projectAmount, totalInvestmentAmount, totalPaidAmount, totalPendingAmount); keys `data/Data`, `summary/Summary`.
 - `InvestorTypeCountModel`: totalInvestors, investorTypes[] (`investorType`, `count`).
 - `StaffReportModel`: staffId, staffCode, staffName, mobileNumber, totalAmount. Response wrapper uses `success` (not `status`), `message`, `data[]`.
-- `StaffReportDetailsModel`: transactionType, userId, investorCode, investorName, investmentAmount, allocationPercentage, paymentDate, paymentAmount, staffAllocatedAmount, refundAmount, netAmount. UI shows investorCode, investorName, paymentAmount, paymentDate only.
+- `StaffReportDetailsModel`: transactionType, userId, investorCode, investorName, investmentAmount, allocationPercentage, paymentDate, paymentAmount, staffAllocatedAmount, refundAmount, netAmount.
+- Staff Report UI (list and details) is unchanged from before the 2026-11-23 phase (R35): list columns Staff Code, Staff Name, Mobile Number, Total Amount, Action; details columns Investor Code, Investor Name, Amount Received, Refund Amnt, Amount Received Date. Since 2026-11-23 `Api_StaffReportList` also returns receivedAmount, allocatedAmount, refundAmount, netAmount, investorCount; the app ignores them. `Api_StaffReportList` search is now literal (`%`/`_` are not wildcards).
 - All fromJson only; no toJson.
 
 ## Business rules / permissions
@@ -98,3 +99,24 @@ work_progress (`AddPhaseRepository`, `WorkPhaseListModel`), funding&payments (`I
 - The staff report does not refetch when its tab is re-activated (only on first build and on period change) - intentional? Unclear.
 - Work progress status colours (completed/progress) were only partly inspected.
 - First `loadReports()` leaves the funding overview unfetched until the chart card's post-frame fetch; behaviour on re-activation relies on remembered dates.
+
+## Finance reports (2026-11-23)
+
+Spec: `docs/superpowers/specs/2026-11-23-high-priority-reports-design.md`; plan `docs/superpowers/plans/2026-11-23-high-priority-reports-plan.md`; decisions R1–R30 in `docs/DECISIONS.md`.
+
+| Report | Folder | Screen / State | API (`ReportController`, Admin/SuperAdmin) | Procedure |
+|---|---|---|---|---|
+| Collection Aging | `collection_aging/` | `CollectionAgingScreen`; sealed state | GET `/api/Report/CollectionAging?asOfDate&search` (app omits `asOfDate` when it is today, R29) | `Api_CollectionAgingReport` |
+| Expected vs Actual | `expected_vs_actual/` | `ExpectedVsActualScreen` + month details; status-enum state | GET `/api/Report/ExpectedVsActual?fromDate&toDate`, `/ExpectedVsActualDetails?month` (yyyy-MM-01) | `Api_ExpectedVsActualCollections`, `..Details` |
+| Refunds & Terminations | `refund_termination/` | `RefundTerminationScreen`; sealed state | GET `/api/Report/RefundTermination?fromDate&toDate&search` | `Api_RefundTerminationReport` |
+| Investor Statement | `investor_statement/` | `InvestorStatementScreen`; status-enum state; PDF via `shared/investor_statement_pdf.dart` | GET `/api/Report/InvestorStatement/{userId}?fromDate&toDate` | `Api_InvestorStatement` |
+
+Shared: `shared/month_range_picker.dart` (12 months inclusive, R24), `shared/report_period_range.dart` (This/Last Month/Custom → dates), errors via `ApiErrorMessage.from` (now also reads ASP.NET ProblemDetails, R27).
+
+Rules (details in the spec §2):
+- Aging: unpaid installments by days past the effective due date (Not yet due, 1–30, 31–60, 61–90, 90+), payments FIFO; active + blocked investors; settled excluded. Footnote when bucket sum < outstanding (unpaid advance is not in the schedule).
+- Expected vs Actual: expected = full installments due in the month; actual = payments in the month (incl. advance) − refunds in the month; rate 1 decimal or "—".
+- Refunds & Terminations: refunds by refund date; terminated = inactive with terminated date in range (approved block request date, else `ModifiedDate` shown "(approx.)"); remaining refundable = max(0, paid − refunded − pending request amount), 0 when settled. Investors unblocked later are not listed.
+- Statement: header totals as of today; ledger in range with opening balance and running balance (charges = Investment, Refund; payments = Payment, Discount; rejected payments excluded); schedule = Investor Details schedule. Closing balance and Pending are shown separately. PDF shows only on-screen data (R28).
+
+Testing status: UI/cubit/model/PDF tests in `test/admin/reports/**`. SQL `Verify_*.sql` scripts and API smoke tests (`Maribel.Wellness.Api.http`) are written but not yet run: waiting for a local database restore (R18).

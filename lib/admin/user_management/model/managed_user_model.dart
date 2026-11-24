@@ -1,6 +1,17 @@
 enum UserPaymentStatus { pending, partiallyPaid, fullyPaid }
 
-enum ManageUsersStatusFilter { all, active, blocked }
+/// Manage Users list filter. Each value is a server-side filter of
+/// `GET /api/Investor/GetAllInvestors?status=<apiValue>`.
+enum ManageUsersStatusFilter {
+  /// "Active" chip: the API value is `all` (returns only active investors).
+  active('all'),
+  blocked('blocked');
+
+  const ManageUsersStatusFilter(this.apiValue);
+
+  /// The only place that maps the filter to the `status` query value.
+  final String apiValue;
+}
 
 enum DuePaymentsStatusFilter { all, pending, partiallyPaid, fullyPaid }
 

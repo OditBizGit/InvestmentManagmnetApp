@@ -20,6 +20,11 @@ import '../dashboard/dashboard_screen.dart';
 import '../funding&payments/screens/funding&payents/funding_payments_screen.dart';
 import '../monthly_payment_list/screen/monthly_payments_list_screen.dart';
 import '../pending_requests/screens/pending_requests/pending_requests_screen.dart';
+// PM 2026-11-23: Collection Aging hidden for now — uncomment to restore.
+// import '../reports/collection_aging/collection_aging_screen.dart';
+import '../reports/expected_vs_actual/expected_vs_actual_screen.dart';
+import '../reports/investor_statement/investor_statement_screen.dart';
+import '../reports/refund_termination/refund_termination_screen.dart';
 import '../reports/screens/reports_screen.dart';
 import '../reports/staff_report/staff_report_screen.dart';
 
@@ -117,6 +122,23 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       case AdminDrawerItem.staffReport:
         return StaffReportScreen(
           isActive: _selectedItem == AdminDrawerItem.staffReport,
+        );
+      // PM 2026-11-23: Collection Aging hidden for now — uncomment to restore.
+      // case AdminDrawerItem.collectionAging:
+      //   return CollectionAgingScreen(
+      //     isActive: _selectedItem == AdminDrawerItem.collectionAging,
+      //   );
+      case AdminDrawerItem.expectedVsActual:
+        return ExpectedVsActualScreen(
+          isActive: _selectedItem == AdminDrawerItem.expectedVsActual,
+        );
+      case AdminDrawerItem.refundTermination:
+        return RefundTerminationScreen(
+          isActive: _selectedItem == AdminDrawerItem.refundTermination,
+        );
+      case AdminDrawerItem.investorStatement:
+        return InvestorStatementScreen(
+          isActive: _selectedItem == AdminDrawerItem.investorStatement,
         );
       case AdminDrawerItem.manageUsers:
         return ManageUsersScreen(

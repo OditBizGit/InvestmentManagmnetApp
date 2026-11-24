@@ -29,12 +29,20 @@ Consolidated list of every backend endpoint the app calls. Client architecture (
 | `investorTypeCount` | GET | `/api/Investor/InvestorTypeCount` | `ReportRepository.getInvestorTypeCount` | `ReportCubit` | `AdminReportsScreen` | `InvestorTypeCountModel` |
 | `getStaffReport` | GET (`Period`,`FromDate`,`ToDate`,`Search`) | `/api/Staff/GetStaffReport` | `StaffReportRepository.getStaffReport` (`A/reports/staff_report/repository/`) | `StaffReportCubit` | `StaffReportScreen` | `StaffReportResponseModel`/`StaffReportModel` |
 | `getStaffReportByID` | GET (same query) | `/api/Staff/GetStaffReportDetails/{staffId}` | `StaffReportRepository.getStaffReportDetails` | `StaffReportCubit` | `StaffDetailsScreen` | `StaffReportDetailsResponseModel` |
+| `reportCollectionAging` | GET (`asOfDate` omitted when today, `search` unused) | `/api/Report/CollectionAging` | `CollectionAgingRepository` (`A/reports/collection_aging/`) | `CollectionAgingCubit` | `CollectionAgingScreen` | `CollectionAgingModel` (rows, totals) |
+| `reportExpectedVsActual` | GET (`fromDate`,`toDate` as yyyy-MM-01, max 12 months) | `/api/Report/ExpectedVsActual` | `ExpectedVsActualRepository` (`A/reports/expected_vs_actual/`) | `ExpectedVsActualCubit` | `ExpectedVsActualScreen` | months, totals |
+| `reportExpectedVsActualDetails` | GET (`month` yyyy-MM-01) | `/api/Report/ExpectedVsActualDetails` | `ExpectedVsActualRepository` | `ExpectedVsActualCubit` | month details view | rows, totals |
+| `reportRefundTermination` | GET (`fromDate`,`toDate`) | `/api/Report/RefundTermination` | `RefundTerminationRepository` (`A/reports/refund_termination/`) | `RefundTerminationCubit` | `RefundTerminationScreen` | refunds, terminated, totals |
+| `reportInvestorStatement` | GET (`fromDate`,`toDate` optional; `{userId}` placeholder) | `/api/Report/InvestorStatement/{userId}` | `InvestorStatementRepository` (`A/reports/investor_statement/`) | `InvestorStatementCubit` | `InvestorStatementScreen` | header, ledger, schedule |
+
+Report endpoints (`ReportController`) are Admin/SuperAdmin only and use the `{success, message, data}` envelope; validation 400s may come as ASP.NET ProblemDetails (`title`, `errors`), which `ApiErrorMessage.from` reads (R27).
 
 ## Investors, funding and payments
 
 | Constant | Method | Path | Repository.method (file) | Cubit | Screen | Models |
 |---|---|---|---|---|---|---|
-| `investorsList` | GET | `/api/Investor/GetInvestors` | `InvestorsRepository.getInvestors`; `InvestorPaymentRepository.getFundingInvestors`; `ManageUsersRepository.getInvestors` | `InvestorsCubit`; `FundingPaymentsCubit`; `ManageUsersCubit` | Investors; Funding & Payments; Manage Users | `InvestorResponseModel`; `FundingInvestorsResponseModel`; `ManageUsersResponse` |
+| `investorsList` | GET | `/api/Investor/GetInvestors` | `InvestorsRepository.getInvestors`; `InvestorPaymentRepository.getFundingInvestors` | `InvestorsCubit`; `FundingPaymentsCubit` | Investors; Funding & Payments | `InvestorResponseModel`; `FundingInvestorsResponseModel` |
+| `investorsAllList` | GET | `/api/Investor/GetAllInvestors?status=all\|blocked` (`all` = only active investors, `blocked` = only blocked investors; response shape unchanged) | `ManageUsersRepository.getInvestors({filter})` | `ManageUsersCubit` | Manage Users (Active / Blocked chips) | `ManageUsersResponse` |
 | `registerInvestor` | POST multipart | `/api/Investor/RegisterInvestor` | `InvestorsRepository.registerInvestor` (`A/investors/repository/investors_repository.dart`) | `InvestorsCubit` | `add_new_investor` | `RegisterInvestorRequestModel.toFormData` -> `RegisterInvestorResponseModel` |
 | `updateInvestor` | POST multipart | `/api/Investor/UpdateInvestor` | `InvestorsRepository.updateInvestor` | `InvestorsCubit` | `add_new_investor` (edit) | `UpdateInvestorRequestModel` -> `UpdateInvestorResponseModel` |
 | `investorTypes` | GET | `/api/Investor/GetInvestorTypes` | `InvestorsRepository.getInvestorTypes` | `InvestorsCubit` | `add_new_investor` | `InvestorTypeResponseModel` |

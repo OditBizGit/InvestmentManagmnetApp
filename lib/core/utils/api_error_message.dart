@@ -25,6 +25,9 @@ class ApiErrorMessage {
         if (message != null && message.toString().trim().isNotEmpty) {
           return message.toString().trim();
         }
+
+        final problem = _problemDetailsText(data);
+        if (problem != null) return problem;
       }
 
       return fallback;
@@ -33,6 +36,22 @@ class ApiErrorMessage {
     final text = error.toString().replaceFirst('Exception: ', '').trim();
     if (_looksLikeNetworkText(text)) return noInternet;
     return text.isNotEmpty ? text : fallback;
+  }
+
+  /// ASP.NET ProblemDetails: first string of `errors` (map of lists), then
+  /// `title`.
+  static String? _problemDetailsText(Map data) {
+    final errors = data['errors'];
+    if (errors is Map) {
+      for (final value in errors.values) {
+        final first = value is List && value.isNotEmpty ? value.first : value;
+        final text = first is String ? first.trim() : '';
+        if (text.isNotEmpty) return text;
+      }
+    }
+    final title = data['title'];
+    if (title is String && title.trim().isNotEmpty) return title.trim();
+    return null;
   }
 
   static bool isNetworkError(DioException error) {
@@ -44,7 +63,9 @@ class ApiErrorMessage {
         return true;
       case DioExceptionType.unknown:
         return error.error is SocketException ||
-            _looksLikeNetworkText('${error.error ?? ''} ${error.message ?? ''}');
+            _looksLikeNetworkText(
+              '${error.error ?? ''} ${error.message ?? ''}',
+            );
       default:
         return _looksLikeNetworkText(error.message ?? '');
     }

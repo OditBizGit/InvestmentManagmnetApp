@@ -56,10 +56,10 @@ Complete feature inventory of the Maribel Wellness Centre Flutter app. Source of
 - **Depends on:** funding&payments, user_management, navigation. **Doc:** [modules/ADMIN_PENDING_REQUESTS.md](modules/ADMIN_PENDING_REQUESTS.md).
 
 ### 2.7 Reports (`lib/admin/reports`, incl. `staff_report`)
-- **Responsibility:** funding/payment overview chart by date range, work-progress report, investor-type counts, recent transactions; staff report (ThisMonth/LastMonth/Custom, search) and per-staff details.
-- **Screens:** `reports_screen` (+ overview cards, details section with custom painter chart, recent transactions table), `staff_report_screen`, `staff_details_screen` (+ table/investor sections).
-- **Cubit/Repository:** `ReportCubit` / `ReportRepository` (+ `AddPhaseRepository`, `InvestorPaymentRepository`); `StaffReportCubit` / `StaffReportRepository`.
-- **API:** `FundingPaymentOverview` (POST), `InvestorTypeCount`, `GetStaffReport`, `GetStaffReportDetails/{staffId}`, `WorkProgressDetails`, `AllInvestorTransactionHistory`.
+- **Responsibility:** funding/payment overview chart by date range, work-progress report, investor-type counts, recent transactions; staff report (ThisMonth/LastMonth/Custom, search) and per-staff details; finance reports (2026-11-23): Collection Aging (built, navigation commented out for now), Expected vs Actual (+ month drill-down), Refunds & Terminations, Investor Statement (+ client PDF).
+- **Screens:** `reports_screen` (+ overview cards, details section with custom painter chart, recent transactions table), `staff_report_screen`, `staff_details_screen` (+ table/investor sections), `collection_aging_screen`, `expected_vs_actual_screen` (+ details), `refund_termination_screen`, `investor_statement_screen`; shared `month_range_picker`, `report_period_range`, `investor_statement_pdf`.
+- **Cubit/Repository:** `ReportCubit` / `ReportRepository` (+ `AddPhaseRepository`, `InvestorPaymentRepository`); `StaffReportCubit` / `StaffReportRepository`; `CollectionAgingCubit`, `ExpectedVsActualCubit`, `RefundTerminationCubit`, `InvestorStatementCubit` with one repository each (created by the screen with `getIt<Dio>()`).
+- **API:** `FundingPaymentOverview` (POST), `InvestorTypeCount`, `GetStaffReport`, `GetStaffReportDetails/{staffId}`, `WorkProgressDetails`, `AllInvestorTransactionHistory`, `Report/CollectionAging`, `Report/ExpectedVsActual`, `Report/ExpectedVsActualDetails`, `Report/RefundTermination`, `Report/InvestorStatement/{userId}`.
 - **Doc:** [modules/ADMIN_REPORTS.md](modules/ADMIN_REPORTS.md).
 
 ### 2.8 Settings (`lib/admin/settings`)
