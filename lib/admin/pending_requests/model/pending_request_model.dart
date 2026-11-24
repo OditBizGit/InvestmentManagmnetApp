@@ -73,6 +73,7 @@ class PendingRequestModel {
     this.accountNumber,
     this.ifscCode,
     this.nominees = const [],
+    this.staffName = '',
   });
 
   final String id;
@@ -101,6 +102,7 @@ class PendingRequestModel {
   final String? accountNumber;
   final String? ifscCode;
   final List<PendingRequestNominee> nominees;
+  final String staffName;
 
   factory PendingRequestModel.fromPaymentRequest(
     PaymentRequestDataModel data,
@@ -131,6 +133,7 @@ class PendingRequestModel {
       discountAmount: data.discountAmount,
       submittedAt: data.requestedDate ?? DateTime.now(),
       status: PendingRequestStatusX.fromApi(data.status),
+      staffName: data.staffName.trim(),
     );
   }
 
@@ -197,6 +200,7 @@ class PendingRequestModel {
       accountNumber: accountNumber,
       ifscCode: ifscCode,
       nominees: nominees,
+      staffName: staffName,
     );
   }
 }

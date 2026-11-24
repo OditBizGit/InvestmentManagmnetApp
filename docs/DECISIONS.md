@@ -2,6 +2,14 @@
 
 Format: date — decision — approved by — status.
 
+## 2026-11-24 — Staff name on Pending Request card (spec: docs/superpowers/specs/2026-11-24-pending-request-staff-name-design.md)
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| S1 | Show the investor's staff name(s) on `PendingRequestCard`; additive `staffName` column on `GetPaymentRequests` (Action 18), no schema change, no new endpoint | PM | Approved |
+| S2 | Current staff (not staff at request time); both names when two staff ("A, B", primary first); fallback to `AssignedStaffId` when no allocation rows | PM (defaults approved with plan) | Approved |
+| S3 | Backend repo `investmentmanagmentAppApi` edited as part of this task; SQL applied to local DB only, server deploy by PM | PM | Approved; local DB verification T1-T5 passed 2026-11-24 (procedure applied to local `MARIBEL_WELLNESS_CENTRE` only; server deploy by PM pending) |
+
 ## 2026-11-23 — High-priority finance reports (spec: docs/superpowers/specs/2026-11-23-high-priority-reports-design.md)
 
 | # | Decision | Approved by | Status |

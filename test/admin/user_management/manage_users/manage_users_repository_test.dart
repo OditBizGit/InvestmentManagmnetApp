@@ -28,18 +28,18 @@ void main() {
     expect(response.users.single.id, 1);
   });
 
-  test('Blocked sends GetAllInvestors?status=blocked', () async {
+  test('Blocked sends GetAllInvestors?status=block', () async {
     await repository.getInvestors(filter: ManageUsersStatusFilter.blocked);
 
     final request = adapter.requests.single;
     expect(request.path, '/api/Investor/GetAllInvestors');
-    expect(request.queryParameters, {'status': 'blocked'});
-    expect(request.uri.query, 'status=blocked');
+    expect(request.queryParameters, {'status': 'block'});
+    expect(request.uri.query, 'status=block');
   });
 
   test('filter maps to the API value in one place', () {
     expect(ManageUsersStatusFilter.values, hasLength(2));
     expect(ManageUsersStatusFilter.active.apiValue, 'all');
-    expect(ManageUsersStatusFilter.blocked.apiValue, 'blocked');
+    expect(ManageUsersStatusFilter.blocked.apiValue, 'block');
   });
 }

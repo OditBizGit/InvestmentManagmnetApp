@@ -76,7 +76,7 @@ States: Initial, Loading, Success(items,statusFilter,search,overview,isTableLoad
 
 | Method | HTTP | Constant | Path | Request | Response -> model |
 |---|---|---|---|---|---|
-| ManageUsersRepository.getInvestors({filter}) | GET | investorsAllList | /api/Investor/GetAllInvestors | query `status`: `all` = only active investors (Active chip), `blocked` = only blocked investors (Blocked chip); mapping in `ManageUsersStatusFilter.apiValue` | `_decodePayload` (accepts JSON string) -> ManageUsersResponse (data list or nested investors/items/list/data; totals from `total`) |
+| ManageUsersRepository.getInvestors({filter}) | GET | investorsAllList | /api/Investor/GetAllInvestors | query `status`: `all` = only active investors (Active chip), `block` = only blocked investors (Blocked chip; the API accepts only `All` or `Block`, `blocked` returns 400); mapping in `ManageUsersStatusFilter.apiValue` | `_decodePayload` (accepts JSON string) -> ManageUsersResponse (data list or nested investors/items/list/data; totals from `total`) |
 | getInvestorDetails | GET | investorDetails | /api/Investor/InvestorDetails/{userId} | path | `InvestorDetailsResponseModel` (medicalAllowance string, discountAmount) |
 | getBlockRequests({status}) | GET | getBlockRequests | /api/Investor/GetBlockRequests | optional query `status` | InvestorBlockRequestsResponse; throws unless status or code 200 |
 | reviewBlockRequest | POST | reviewBlockRequest | /api/Investor/ReviewBlockRequest | JSON requestId, status, remarks | ReviewBlockRequestResponse |

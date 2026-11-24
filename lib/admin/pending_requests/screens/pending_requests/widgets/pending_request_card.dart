@@ -274,6 +274,13 @@ class _ApplicantBlock extends StatelessWidget {
           icon: ImageConstants.phone,
           text: request.phoneNumber,
         ),
+        const SizedBox(height: 4),
+        _ContactLine(
+          icon: ImageConstants.username,
+          text: request.staffName.trim().isNotEmpty
+              ? request.staffName.trim()
+              : '—',
+        ),
       ],
     );
   }

@@ -34,7 +34,7 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
   // Order matches ManageUsersStatusFilter.values (chip index == enum index).
   static const _filters = [
     'Active',
-    'Blocked',
+    'Block',
   ];
 
   final TextEditingController _searchController = TextEditingController();

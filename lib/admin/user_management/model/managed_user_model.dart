@@ -5,7 +5,9 @@ enum UserPaymentStatus { pending, partiallyPaid, fullyPaid }
 enum ManageUsersStatusFilter {
   /// "Active" chip: the API value is `all` (returns only active investors).
   active('all'),
-  blocked('blocked');
+  /// The API only accepts `All` or `Block` (case-insensitive); `blocked`
+  /// is rejected with 400 "Status must be All or Block."
+  blocked('block');
 
   const ManageUsersStatusFilter(this.apiValue);
 

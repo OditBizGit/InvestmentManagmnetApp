@@ -43,18 +43,18 @@ Future<ManageUsersCubit> _pump(
 }
 
 void main() {
-  testWidgets('shows only Active and Blocked chips, no All', (tester) async {
+  testWidgets('shows only Active and Block chips, no All', (tester) async {
     await _pump(tester, FakeManageUsersRepository(
       (filter) async => usersResponse([investor(1)]),
     ));
 
     expect(find.text('Active'), findsWidgets);
-    expect(find.text('Blocked'), findsOneWidget);
+    expect(find.text('Block'), findsOneWidget);
     expect(find.text('All'), findsNothing);
     expect(find.text('Investor 1'), findsOneWidget);
   });
 
-  testWidgets('tapping Blocked refetches, tapping Active switches back',
+  testWidgets('tapping Block refetches, tapping Active switches back',
       (tester) async {
     final repo = FakeManageUsersRepository(
       (filter) async => usersResponse(
@@ -65,7 +65,7 @@ void main() {
     );
     final cubit = await _pump(tester, repo);
 
-    await tester.tap(find.text('Blocked'));
+    await tester.tap(find.text('Block'));
     await tester.pumpAndSettle();
 
     expect(repo.calls.last, ManageUsersStatusFilter.blocked);
@@ -80,7 +80,7 @@ void main() {
     expect(find.text('Investor 1'), findsOneWidget);
   });
 
-  testWidgets('chips stay usable when Blocked is empty', (tester) async {
+  testWidgets('chips stay usable when Block is empty', (tester) async {
     final repo = FakeManageUsersRepository(
       (filter) async => usersResponse(
         filter == ManageUsersStatusFilter.active ? [investor(1)] : [],
@@ -88,13 +88,13 @@ void main() {
     );
     final cubit = await _pump(tester, repo);
 
-    await tester.tap(find.text('Blocked'));
+    await tester.tap(find.text('Block'));
     await tester.pumpAndSettle();
 
     expect(cubit.state, isA<ManageUsersEmpty>());
     expect(find.text('No investors found'), findsOneWidget);
     expect(find.text('Active'), findsWidgets);
-    expect(find.text('Blocked'), findsOneWidget);
+    expect(find.text('Block'), findsOneWidget);
 
     await tester.tap(find.text('Active'));
     await tester.pumpAndSettle();
@@ -110,12 +110,12 @@ void main() {
     });
     final cubit = await _pump(tester, repo);
 
-    await tester.tap(find.text('Blocked'));
+    await tester.tap(find.text('Block'));
     await tester.pumpAndSettle();
 
     expect(cubit.state, isA<ManageUsersFailure>());
     expect(find.text('Retry'), findsOneWidget);
-    expect(find.text('Blocked'), findsOneWidget);
+    expect(find.text('Block'), findsOneWidget);
 
     await tester.tap(find.text('Active'));
     await tester.pumpAndSettle();
