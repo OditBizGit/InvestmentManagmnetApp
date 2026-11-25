@@ -22,7 +22,7 @@ Consolidated list of every backend endpoint the app calls. Client architecture (
 
 | Constant | Method | Path | Repository.method (file) | Cubit | Screen | Models |
 |---|---|---|---|---|---|---|
-| `getDashboard` | GET (query `FromDate`,`ToDate`) | `/api/Dashboard/GetFundingDashboard` | `DashboardRepository.getDashboard` (`A/dashboard/repository/dashboard_repository.dart`) | `DashboardCubit` | `AdminDashboardScreen` | `DashboardModel` |
+| `getDashboard` | GET (query `FromDate`,`ToDate`) | `/api/Dashboard/GetDashboard` | `DashboardRepository.getDashboard` (`A/dashboard/repository/dashboard_repository.dart`) | `DashboardCubit` | `AdminDashboardScreen` | `DashboardModel` |
 | `topInvestors` | GET | `/api/Investor/GetTopInvestors` | `DashboardRepository.getTopInvestors`; `InvestorRatingRepository.getTopInvestors`; `HomeRepository.getTopInvestors` | `DashboardCubit`; `InvestorRatingCubit`; `HomeCubit` | Dashboard; Investor Rating; User Home | `TopInvestorsModel` (dashboard); `TopInvestorsResponse` (settings); `TopInvestorsResponseModel`/`TopInvestorModel` (user) |
 | `transactionHistory` | GET | `/api/Investor/AllInvestorTransactionHistory` | `DashboardRepository.getPaymentHistory`; `InvestorPaymentRepository.getAllInvestorTransactionHistory` | `DashboardCubit`; `ReportCubit` | Dashboard activity; Reports recent transactions | `TransactionHistoryModel`; `InvestorTransactionHistoryResponseModel` (admin) |
 | `fundingPaymentOverview` | POST JSON `{fromDate,toDate}` | `/api/Investor/FundingPaymentOverview` | `ReportRepository.getFundingPaymentOverview` (`A/reports/repository/report_repository.dart`) | `ReportCubit` | `AdminReportsScreen` | `FundingPaymentOverviewModel` |

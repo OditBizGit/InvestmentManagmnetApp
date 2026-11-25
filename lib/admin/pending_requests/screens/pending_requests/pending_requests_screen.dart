@@ -35,6 +35,8 @@ class PendingRequestsScreen extends StatelessWidget {
     if (!AdminNavPermissions.canAccessPendingRequests(role)) {
       return const _PendingRequestsAccessDenied();
     }
+    // SuperAdmin can open the screen but is strictly read-only.
+    final canReview = AdminNavPermissions.canReviewPendingRequests(role);
 
     return MultiRepositoryProvider(
       providers: [
@@ -59,16 +61,20 @@ class PendingRequestsScreen extends StatelessWidget {
             ),
           ),
         ],
-        child: _PendingRequestsView(isActive: isActive),
+        child: _PendingRequestsView(isActive: isActive, canReview: canReview),
       ),
     );
   }
 }
 
 class _PendingRequestsView extends StatefulWidget {
-  const _PendingRequestsView({required this.isActive});
+  const _PendingRequestsView({
+    required this.isActive,
+    required this.canReview,
+  });
 
   final bool isActive;
+  final bool canReview;
 
   @override
   State<_PendingRequestsView> createState() => _PendingRequestsViewState();
@@ -165,6 +171,7 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
       return ReviewRequestScreen(
         requestId: selectedRequestId,
         onBack: _backToRequests,
+        canReview: widget.canReview,
       );
     }
 
@@ -204,14 +211,16 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
                           if (showOverview)
                             PendingRequestsOverviewSection(
                               overview: overview,
+                              canReview: widget.canReview,
                               onRefresh: isRefreshing ? null : _manualRefresh,
                               isRefreshing: isRefreshing,
                             )
                           else
                             UserManagementSectionHeader(
                               title: 'Pending Requests',
-                              subtitle:
-                                  'Review and approve investor payment requests',
+                              subtitle: widget.canReview
+                                  ? 'Review and approve investor payment requests'
+                                  : 'View investor payment requests',
                               trailing: _RefreshButton(
                                 onPressed:
                                     isRefreshing ? null : _manualRefresh,
@@ -219,7 +228,10 @@ class _PendingRequestsViewState extends State<_PendingRequestsView> {
                               ),
                             ),
                           const SizedBox(height: 20),
-                          PendingRequestsListSection(onReview: _openRequest),
+                          PendingRequestsListSection(
+                            onReview: _openRequest,
+                            canReview: widget.canReview,
+                          ),
                         ],
                       ),
                     ),
@@ -261,7 +273,7 @@ class _PendingRequestsAccessDenied extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Pending Requests is available only for Marketing Manager accounts.',
+                'Pending Requests is not available for your account role.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10.5.sp,

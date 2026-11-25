@@ -15,9 +15,14 @@ class PendingRequestsListSection extends StatefulWidget {
   const PendingRequestsListSection({
     super.key,
     required this.onReview,
+    required this.canReview,
   });
 
   final ValueChanged<PendingRequestModel> onReview;
+
+  /// False for view-only roles (SuperAdmin): no review wording, no
+  /// approve/reject on the Terminated Investor tab.
+  final bool canReview;
 
   @override
   State<PendingRequestsListSection> createState() =>
@@ -119,7 +124,10 @@ class _PendingRequestsListSectionState
             ),
             const SizedBox(height: 14),
             if (isTerminatedFilter)
-              TerminatedInvestorsSection(searchQuery: _query)
+              TerminatedInvestorsSection(
+                searchQuery: _query,
+                canReview: widget.canReview,
+              )
             else if (isLoading)
               const _ListLoading()
             else if (failureMessage != null)
@@ -139,6 +147,7 @@ class _PendingRequestsListSectionState
                     PendingRequestCard(
                       request: filtered[i],
                       onReview: () => widget.onReview(filtered[i]),
+                      canReview: widget.canReview,
                     ),
                   ],
                 ],

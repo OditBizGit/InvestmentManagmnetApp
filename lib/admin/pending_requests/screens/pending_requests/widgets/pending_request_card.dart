@@ -14,10 +14,15 @@ class PendingRequestCard extends StatelessWidget {
     super.key,
     required this.request,
     required this.onReview,
+    required this.canReview,
   });
 
   final PendingRequestModel request;
   final VoidCallback onReview;
+
+  /// False for view-only roles (SuperAdmin): the button always reads
+  /// "View request".
+  final bool canReview;
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +44,17 @@ class PendingRequestCard extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 760) {
-            return _CompactLayout(request: request, onReview: onReview);
+            return _CompactLayout(
+              request: request,
+              onReview: onReview,
+              canReview: canReview,
+            );
           }
-          return _WideLayout(request: request, onReview: onReview);
+          return _WideLayout(
+            request: request,
+            onReview: onReview,
+            canReview: canReview,
+          );
         },
       ),
     );
@@ -52,10 +65,12 @@ class _WideLayout extends StatelessWidget {
   const _WideLayout({
     required this.request,
     required this.onReview,
+    required this.canReview,
   });
 
   final PendingRequestModel request;
   final VoidCallback onReview;
+  final bool canReview;
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +130,11 @@ class _WideLayout extends StatelessWidget {
         const SizedBox(width: 16),
         SizedBox(
           width: 148,
-          child: _StatusAndAction(request: request, onReview: onReview),
+          child: _StatusAndAction(
+            request: request,
+            onReview: onReview,
+            canReview: canReview,
+          ),
         ),
       ],
     );
@@ -126,10 +145,12 @@ class _CompactLayout extends StatelessWidget {
   const _CompactLayout({
     required this.request,
     required this.onReview,
+    required this.canReview,
   });
 
   final PendingRequestModel request;
   final VoidCallback onReview;
+  final bool canReview;
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +216,7 @@ class _CompactLayout extends StatelessWidget {
         _StatusAndAction(
           request: request,
           onReview: onReview,
+          canReview: canReview,
           expanded: true,
         ),
       ],
@@ -394,11 +416,13 @@ class _StatusAndAction extends StatelessWidget {
   const _StatusAndAction({
     required this.request,
     required this.onReview,
+    required this.canReview,
     this.expanded = false,
   });
 
   final PendingRequestModel request;
   final VoidCallback onReview;
+  final bool canReview;
   final bool expanded;
 
   UserManagementBadgeTone get _tone => switch (request.status) {
@@ -423,7 +447,9 @@ class _StatusAndAction extends StatelessWidget {
           ),
         ),
         child: Text(
-          request.isAwaitingReview ? 'Review request' : 'View request',
+          canReview && request.isAwaitingReview
+              ? 'Review request'
+              : 'View request',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

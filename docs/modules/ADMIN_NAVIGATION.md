@@ -28,7 +28,8 @@ None.
 ## Business rules / permissions (`AdminNavPermissions`)
 - Roles: `Admin`, `SuperAdmin`, `FinancialManager`, `MarketingManager`. Web-login roles = these four; dropdown labels "Admin", "Super Admin", "Financial Manager", "Marketing Manager"; `apiRoleForWebLoginLabel` maps label -> API role (default Admin).
 - `normalizeRole`: lowercase, whitespace removed.
-- `allowedDrawerItems`: MarketingManager -> {pendingRequests}; FinancialManager -> {monthlyList}; otherwise (Admin, SuperAdmin, other, null) -> all items except pendingRequests.
+- `allowedDrawerItems`: MarketingManager -> {pendingRequests}; FinancialManager -> {monthlyList}; SuperAdmin -> all items (explicit branch; Pending Requests and Monthly List are view-only for SuperAdmin); otherwise (Admin, other, null) -> all items except pendingRequests and monthlyList (PM 2026-11-25, SA1).
+- Helpers: `isSuperAdmin`; `canAccessPendingRequests` = MarketingManager or SuperAdmin; `canReviewPendingRequests` = MarketingManager only (accept/reject payment requests, approve/reject block requests); `canAccessMonthlyList` = FinancialManager or SuperAdmin; `canModifyMonthlyList` = FinancialManager only. Screens pass the resulting flag down as a required constructor bool; the API enforces the same rules.
 - `defaultDrawerItem`: Marketing -> pendingRequests; Financial -> monthlyList; else dashboard. Shell falls back to first allowed item if default is not openable.
 - `_onSelect` ignores the already-selected item and items the role cannot open.
 - Source comment: permissions are local "until backend permissions arrive".

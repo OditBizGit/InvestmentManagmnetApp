@@ -10,11 +10,15 @@ class PendingRequestsOverviewSection extends StatelessWidget {
   const PendingRequestsOverviewSection({
     super.key,
     required this.overview,
+    required this.canReview,
     this.onRefresh,
     this.isRefreshing = false,
   });
 
   final PendingRequestsOverviewStats overview;
+
+  /// False for view-only roles (SuperAdmin): the subtitle drops "approve".
+  final bool canReview;
   final VoidCallback? onRefresh;
   final bool isRefreshing;
 
@@ -25,6 +29,7 @@ class PendingRequestsOverviewSection extends StatelessWidget {
       children: [
         _Header(
           awaitingReview: overview.awaitingReview,
+          canReview: canReview,
           onRefresh: onRefresh,
           isRefreshing: isRefreshing,
         ),
@@ -69,11 +74,13 @@ class PendingRequestsOverviewSection extends StatelessWidget {
 class _Header extends StatelessWidget {
   const _Header({
     required this.awaitingReview,
+    required this.canReview,
     this.onRefresh,
     this.isRefreshing = false,
   });
 
   final int awaitingReview;
+  final bool canReview;
   final VoidCallback? onRefresh;
   final bool isRefreshing;
 
@@ -83,9 +90,11 @@ class _Header extends StatelessWidget {
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 640;
 
-        const titleBlock = UserManagementSectionHeader(
+        final titleBlock = UserManagementSectionHeader(
           title: 'Pending Requests',
-          subtitle: 'Review and approve investor payment requests',
+          subtitle: canReview
+              ? 'Review and approve investor payment requests'
+              : 'View investor payment requests',
         );
 
         final queueBadge = Container(
@@ -143,7 +152,7 @@ class _Header extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(child: titleBlock),
+                  Expanded(child: titleBlock),
                   refreshButton,
                 ],
               ),
@@ -156,7 +165,7 @@ class _Header extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Expanded(child: titleBlock),
+            Expanded(child: titleBlock),
             const SizedBox(width: 16),
             queueBadge,
             const SizedBox(width: 4),

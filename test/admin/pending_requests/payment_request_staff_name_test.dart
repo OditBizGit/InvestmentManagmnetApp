@@ -35,7 +35,11 @@ Future<void> _pumpCard(
       builder: (context, orientation, screenType) => MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: PendingRequestCard(request: request, onReview: () {}),
+            child: PendingRequestCard(
+              request: request,
+              onReview: () {},
+              canReview: true,
+            ),
           ),
         ),
       ),

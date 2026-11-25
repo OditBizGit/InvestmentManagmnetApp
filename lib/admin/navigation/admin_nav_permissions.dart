@@ -1,6 +1,15 @@
 import 'package:maribel_wellness_centre_application/admin/navigation/admin_side_drawer.dart';
 
 /// Role → admin sidebar visibility. Local until backend permissions arrive.
+///
+/// - MarketingManager: Pending Requests only (can review requests).
+/// - FinancialManager: Monthly List only (can approve/reject payments).
+/// - SuperAdmin: every item, explicitly. Pending Requests and Monthly List are
+///   view-only for SuperAdmin (the review/modify checks below are false).
+/// - Admin and unknown/null roles: every item except Pending Requests and
+///   Monthly List.
+///
+/// The API is the real guard; these rules only decide what the UI shows.
 class AdminNavPermissions {
   AdminNavPermissions._();
 
@@ -57,9 +66,17 @@ class AdminNavPermissions {
   static bool isFinancialManager(String? role) =>
       normalizeRole(role) == normalizeRole(financialManagerRole);
 
-  static Set<AdminDrawerItem> _allExceptPendingRequests() {
+  static bool isSuperAdmin(String? role) =>
+      normalizeRole(role) == normalizeRole(superAdminRole);
+
+  /// Fallback set for Admin and unknown/null roles.
+  static Set<AdminDrawerItem> _allExceptPendingRequestsAndMonthlyList() {
     return AdminDrawerItem.values
-        .where((item) => item != AdminDrawerItem.pendingRequests)
+        .where(
+          (item) =>
+              item != AdminDrawerItem.pendingRequests &&
+              item != AdminDrawerItem.monthlyList,
+        )
         .toSet();
   }
 
@@ -71,7 +88,12 @@ class AdminNavPermissions {
     if (isFinancialManager(role)) {
       return {AdminDrawerItem.monthlyList};
     }
-    return _allExceptPendingRequests();
+    if (isSuperAdmin(role)) {
+      // Explicit, not via the fallback helper: a later fallback change must not
+      // widen or shrink SuperAdmin.
+      return AdminDrawerItem.values.toSet();
+    }
+    return _allExceptPendingRequestsAndMonthlyList();
   }
 
   static AdminDrawerItem defaultDrawerItem(String? role) {
@@ -87,9 +109,18 @@ class AdminNavPermissions {
   static bool canOpen(AdminDrawerItem item, String? role) =>
       allowedDrawerItems(role).contains(item);
 
+  /// May open Pending Requests (MarketingManager reviews, SuperAdmin views).
   static bool canAccessPendingRequests(String? role) =>
+      isMarketingManager(role) || isSuperAdmin(role);
+
+  /// May accept/reject payment and block requests (MarketingManager only).
+  static bool canReviewPendingRequests(String? role) =>
       isMarketingManager(role);
 
+  /// May open Monthly List (FinancialManager, SuperAdmin).
   static bool canAccessMonthlyList(String? role) =>
       canOpen(AdminDrawerItem.monthlyList, role);
+
+  /// May approve/reject monthly payments (FinancialManager only).
+  static bool canModifyMonthlyList(String? role) => isFinancialManager(role);
 }

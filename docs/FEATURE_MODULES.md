@@ -6,7 +6,7 @@ Complete feature inventory of the Maribel Wellness Centre Flutter app. Source of
 
 - One codebase, two interfaces selected at compile time by `const bool isAdmin` in `lib/main.dart` (`true` = admin web/desktop shell, `false` = investor/user mobile app). Role at login is additionally checked by `LoginCubit`; see [AUTHENTICATION.md](AUTHENTICATION.md).
 - Every feature follows `cubit/ + repository/ + model/ + screens|widgets` (see [ARCHITECTURE.md](ARCHITECTURE.md)). Repositories take the shared `Dio` from `get_it`; there is no router, navigation is `IndexedStack` + in-place sub-screens ([NAVIGATION.md](NAVIGATION.md)).
-- Admin role access (`AdminNavPermissions`, client-side only): `Admin`/`SuperAdmin` see all drawer items except Pending Requests; `MarketingManager` sees only Pending Requests; `FinancialManager` sees only Monthly List.
+- Admin role access (`AdminNavPermissions`): `SuperAdmin` sees all drawer items (Pending Requests and Monthly List view-only); `Admin` sees all except Pending Requests and Monthly List; `MarketingManager` sees only Pending Requests (can review); `FinancialManager` sees only Monthly List (can modify). The API enforces the same split with `[Authorize(Roles=...)]` (2026-11-25, SA1-SA7 in DECISIONS.md).
 
 ## 2. Admin modules (`lib/admin/*`)
 
@@ -15,7 +15,7 @@ Complete feature inventory of the Maribel Wellness Centre Flutter app. Source of
 - **Screens/widgets:** `AdminDashboardScreen`; `dashboard_overview`, `dashboard_details_section`, `dashboard_activity_section`, `dashboard_shimmer`.
 - **Business logic:** default range month start..today, invalid range rejected; only the summary reacts to the range; offline message applied to all sections. Hidden from Marketing/Financial roles.
 - **Cubit/Repository:** `DashboardCubit` / `DashboardRepository` (4 calls) + `AddPhaseRepository.workPhaseList`.
-- **API:** `GetFundingDashboard`, `GetTopInvestors`, `AllInvestorTransactionHistory`, `GetWorkUpdates`, `WorkProgressDetails`.
+- **API:** `GetDashboard`, `GetTopInvestors`, `AllInvestorTransactionHistory`, `GetWorkUpdates`, `WorkProgressDetails`.
 - **Depends on:** work_progress, navigation, core. **Doc:** [modules/ADMIN_DASHBOARD.md](modules/ADMIN_DASHBOARD.md).
 
 ### 2.2 Funding & Payments (`lib/admin/funding&payments`)

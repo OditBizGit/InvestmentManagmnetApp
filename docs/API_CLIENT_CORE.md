@@ -94,7 +94,7 @@ Payments / funding
 - `monthlyPaymentList` /api/Investor/PaymentVerificationList
 - `paymentVerificationHistory` /api/Investor/PaymentVerificationHistory
 - `acceptOrRejectPaymentStatus` /api/Investor/ReviewPaymentVerification
-- `getDashboard` /api/Dashboard/GetFundingDashboard
+- `getDashboard` /api/Dashboard/GetDashboard
 
 Complaints
 - `registerComplaint` /api/Investor/RegisterComplaint

@@ -16,14 +16,14 @@ Landing screen of the admin shell. Shows funding summary stats for a selectable 
 | model/top_investors_model.dart | `TopInvestorsModel` | Top investor row |
 | model/all_transaction_history_model.dart | `TransactionHistoryModel` | Recent payment row |
 | model/recent_updates_model.dart | `WorkUpdateModel` | Recent work update row |
-| widgets/dashboard_overview.dart | `DashboardOverview`, `_DashboardDateRangeFilter`, `_SummaryCard`, `_StatsGrid` | Title, date filter, 6 stat cards |
+| widgets/dashboard_overview.dart | `DashboardOverview`, `_DashboardDateRangeFilter`, `_SummaryCard`, `_StatsGrid` | Title, date filter, 6 stat cards (Total Funding, Committed Amount, Amount Received, Amount Remaining, Total Investors, Funding Progress) |
 | widgets/dashboard_details_section.dart | `DashboardDetailsSection` | Funding overview, hospital work progress, top rated investors cards |
 | widgets/dashboard_activity_section.dart | `DashboardActivitySection` | Recent payments, recent updates, quick actions |
 | widgets/dashboard_shimmer.dart | `DashboardShimmer`, `Dashboard*Shimmer` | Loading placeholders |
 
 ## Screens & widgets
 - `AdminHomeScreen(isActive)` wraps content in `AdminMainScreenLayout` and `RefreshIndicator`; `BlocBuilder` rebuilds only on dashboard summary fields. A refetch progress bar shows when `dashboardLoading` and data/loaded already present.
-- Stat cards (from `DashboardModel`): Total Funding (`projectFund`), Amount Received (`totalReceivedAmount`), Amount Remaining (`totalPendingAmount`), Total Investors (`totalInvestors`), Active Investors (also `totalInvestors`, same value), Funding Progress (`fundingProgress` + "%").
+- Stat cards (from `DashboardModel`, in order): Total Funding (`projectFund`), Committed Amount (`totalInvestmentAmount`, icon `totalCommitment`), Amount Received (`totalReceivedAmount`), Amount Remaining (`totalPendingAmount`), Total Investors (`totalInvestors`), Funding Progress (`fundingProgress` + "%"). The former "Active Investors" card (duplicate of Total Investors) was removed on 2026-11-25.
 - Date filter: two date fields, `showDatePicker` range 2020-2035; if To < From a SnackBar error shows and the range is not applied (cubit also ignores it). Fields disabled while loading.
 - Funding Overview: circular ring; `_normalizePercent` multiplies by 100 if value <= 1; ring clamped 0..1. Tiles: Project Fund, Total Investment, Total Received, Total Pending.
 - Work progress card: rows per `WorkPhaseListModel`; overall = rounded average of phase `progress`.
@@ -45,7 +45,7 @@ Methods:
 All parse envelope `{status|Status, message|Message, data|Data}`; success when status is true/1/"true"/"success"; otherwise throws Exception(message). Non-200 throws. Errors are logged and rethrown.
 | Method | HTTP | Constant -> path | Request | Response -> model |
 |---|---|---|---|---|
-| `getDashboard` | GET | `ApiEndpoints.getDashboard` -> /api/Dashboard/GetFundingDashboard | query `FromDate`, `ToDate` (yyyy-MM-dd) | data map -> `DashboardModel` |
+| `getDashboard` | GET | `ApiEndpoints.getDashboard` -> /api/Dashboard/GetDashboard | query `FromDate`, `ToDate` (yyyy-MM-dd) | data map -> `DashboardModel` |
 | `getTopInvestors` | GET | `topInvestors` -> /api/Investor/GetTopInvestors | none | data list -> `TopInvestorsModel` (null -> []) |
 | `getPaymentHistory` | GET | `transactionHistory` -> /api/Investor/AllInvestorTransactionHistory | none | list -> `TransactionHistoryModel` |
 | `recentWorkUpdates` | GET | `getWorkUpdates` -> /api/Project/GetWorkUpdates | none | list -> `WorkUpdateModel` |
@@ -96,5 +96,4 @@ In: shell default tab / drawer. Out: `AdminNavigateNotification` to investors, f
 `work_progress` (AddPhaseRepository, WorkPhaseListModel), `navigation` (AdminDrawerItem, notification), core (ApiEndpoints, ApiErrorMessage, AppToast, AppColors, ImageConstants, AdminMainScreenLayout).
 
 ## Unclear
-- "Active Investors" card shows the same `totalInvestors` value as "Total Investors" - Unclear - needs human clarification whether intentional.
 - Whether API `fundingProgress` is a 0-1 fraction or a percentage: details card normalises heuristically, stats card appends "%" without normalising. Unclear - needs human clarification.

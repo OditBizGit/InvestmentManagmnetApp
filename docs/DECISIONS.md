@@ -2,6 +2,39 @@
 
 Format: date — decision — approved by — status.
 
+## 2026-11-25 — Receipt message while approving a payment request (spec: docs/superpowers/specs/2026-11-25-approve-receipt-loading-message-design.md)
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| AR1 | While a payment request is approved on the review screen, the loading overlay also shows "Please wait... Sending email receipt and app receipt." until the approval call returns. UI only: a local `_isApproving` flag in `ReviewRequestScreen`; no cubit, repository, API or backend change. | PM (request 2026-11-25) | Implemented, QA Ready |
+| AR2 | Approve only. The backend sends the "Payment Received" push notification, the PDF receipt and the email inside the one `ReviewPaymentRequest` call, awaited before it responds, so the existing `isReviewSubmitting` window covers them. Reject sends no receipt, so Reject keeps the spinner-only overlay (the PM asked that the message reflect the real process). | Team Head, from the PM's accuracy requirement | Recorded |
+| AR3 | Duplicate clicks stay blocked by the opaque overlay, disabled buttons, the cubit's `isReviewSubmitting` guard and a new re-check after the confirm dialog. The flag resets in `finally` for success, DioException and other errors. Receipt failures are swallowed by the backend, so a receipt failure still ends as a successful approval. | QA review | Recorded |
+| AR4 | Test gaps found by QA and tester were closed: R12 covers the two-confirm-dialog re-check, and R3/R4 now prove the flag reset (each verified by removing the guard and seeing the test fail). Tester: 12 new tests pass, 59 in the three related folders, full suite 3 known unrelated failures, `flutter analyze` still 68 (none in touched code). Still open: no manual visual check on web or mobile. | QA review, tester | Closed, visual check open |
+
+## 2026-11-25 — SuperAdmin read-only Monthly List and Pending Requests (spec: docs/superpowers/specs/2026-11-25-superadmin-readonly-monthly-list-pending-requests-design.md)
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| SA1 | Monthly List is visible only to FinancialManager and SuperAdmin. Admin and null/unknown roles lose the drawer item (it never worked for Admin: the API returned 403) | PM (G1, option A) | Approved |
+| SA2 | SuperAdmin sees the Terminated Investor tab on Pending Requests, read-only | PM (G2, option A) | Approved |
+| SA3 | Local test credentials only, as already available; no password reset without PM approval | PM (G3) | Approved |
+| SA4 | The wider API read permissions on `GetPaymentRequests` / `GetBlockRequests` stay unchanged | PM (G4) | Approved |
+| SA5 | Production deploy and production DB checks are done by the PM after local verification; the team never touches production | PM (G5) | Approved |
+| SA6 | SuperAdmin sees "View investor payment requests"; the access-denied text is role-neutral | PM (G6) | Approved |
+| SA7 | Backend: only `PaymentVerificationList` and `PaymentVerificationHistory` gain `SuperAdmin`; `ReviewPaymentVerification`, `ReviewPaymentRequest` and `ReviewBlockRequest` stay unchanged; no DB change (database-architect: none needed). Frontend: role rules in `AdminNavPermissions` (`canReviewPendingRequests`, `canModifyMonthlyList`), a required flag passed down to the widgets | Team Head (Solution Architect: approve with changes) | Approved |
+| SA8 | Accepted risk, unchanged by this work: tokens do not expire (`EnforceExpiry` off) and the role is fixed in the JWT, so a role change applies at next login | Team Head | Accepted |
+| SA9 | Test outcome (2026-11-25): frontend suites for navigation, monthly list and pending requests pass (47 tests); `flutter analyze` has no new issue (68 baseline); `dotnet build` 0 errors; the API diff is exactly 2 attribute lines. The full `flutter test` has 3 failures in untouched code (`no_sensitive_logging_test` on `funding_payments_repository.dart`, team overview TC-2 x2), unrelated, logged as follow-ups. **API authorization run on the local DB (`FaezLaptop\SQLEXPRESSMICTCO`) with the PM's local logins for SuperAdmin, FinancialManager and MarketingManager, all as expected:** SuperAdmin 200 on PaymentVerificationList/History, GetPaymentRequests, GetBlockRequests and InvestorDetails, and 403 on ReviewPaymentVerification, ReviewPaymentRequest and ReviewBlockRequest; FinancialManager 200 on both verification GETs and 400 (id 0, no write) on ReviewPaymentVerification, 403 on the other two review POSTs; MarketingManager 403 on both verification GETs and ReviewPaymentVerification, 400 (id 0, no write) on the other two review POSTs; no token or bad token 401; SuperAdmin and FinancialManager get identical verification response data. JWT role claims are exactly `SuperAdmin`, `FinancialManager`, `MarketingManager`. The API ran from a scratch copy whose config holds only the local DB and whose worker marker blocked the startup email catch-up. **Not run:** the Admin and Investor cases (no logins), A10 with a validly structured tampered token, and manual UI checks M1-M11. | Tester, Team Head | Open: Admin/Investor logins, M1-M11 |
+| SA10 | QA review of F2 and F3: Ready (no blocker/major/minor; two optional low test gaps: screen-level role-to-flag mapping tests). Security check S1-S11: Ready, all PASS in code. One flag for the PM (G5): the API compares the role claim case-sensitively while the app lowercases it, so if production stores a different spelling of `SuperAdmin`, the tabs would show but the API would answer 403 (fails closed). | qa-team-head | Recorded |
+
+## 2026-11-25 — Dashboard Committed Amount card (spec: docs/superpowers/specs/2026-11-25-dashboard-committed-amount-card-design.md)
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| C0 | Replace the Dashboard "Active Investors" card (duplicate of Total Investors) with a "Committed Amount" card | PM (request) | Done |
+| C1 | "Committed amount" = `totalInvestmentAmount` from the existing `GetDashboard` API (sum of Investment transactions, date-range filtered); no backend, model or DI change | Team Head | Done |
+| C2 | Reuse the existing card widget, `ImageConstants.totalCommitment` icon and the removed card's green; no new UI component | Team Head | Done |
+| C3 | Order: Total Funding, Committed Amount, Amount Received, Amount Remaining, Total Investors, Funding Progress | Team Head | Done |
+
 ## 2026-11-24 — Staff name on Pending Request card (spec: docs/superpowers/specs/2026-11-24-pending-request-staff-name-design.md)
 
 | # | Decision | Approved by | Status |
