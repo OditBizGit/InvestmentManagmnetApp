@@ -34,6 +34,8 @@ class PendingRequestNominee {
     this.panNumber,
     this.aadhaarPhotoUrl,
     this.panPhotoUrl,
+    this.aadhaarBackPhotoUrl,
+    this.panBackPhotoUrl,
   });
 
   final String name;
@@ -43,6 +45,8 @@ class PendingRequestNominee {
   final String? panNumber;
   final String? aadhaarPhotoUrl;
   final String? panPhotoUrl;
+  final String? aadhaarBackPhotoUrl;
+  final String? panBackPhotoUrl;
 }
 
 class PendingRequestModel {
@@ -69,6 +73,8 @@ class PendingRequestModel {
     this.aadhaarPhotoUrl,
     this.panNumber,
     this.panPhotoUrl,
+    this.aadhaarBackPhotoUrl,
+    this.panBackPhotoUrl,
     this.bankName,
     this.accountNumber,
     this.ifscCode,
@@ -98,6 +104,8 @@ class PendingRequestModel {
   final String? aadhaarPhotoUrl;
   final String? panNumber;
   final String? panPhotoUrl;
+  final String? aadhaarBackPhotoUrl;
+  final String? panBackPhotoUrl;
   final String? bankName;
   final String? accountNumber;
   final String? ifscCode;
@@ -196,6 +204,8 @@ class PendingRequestModel {
       aadhaarPhotoUrl: aadhaarPhotoUrl,
       panNumber: panNumber,
       panPhotoUrl: panPhotoUrl,
+      aadhaarBackPhotoUrl: aadhaarBackPhotoUrl,
+      panBackPhotoUrl: panBackPhotoUrl,
       bankName: bankName,
       accountNumber: accountNumber,
       ifscCode: ifscCode,

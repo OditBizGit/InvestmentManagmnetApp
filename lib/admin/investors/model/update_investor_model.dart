@@ -38,10 +38,13 @@ class UpdateInvestorRequestModel {
   final int nomineeId;
   final List<InvestorNomineeSubmitData> nominees;
 
-  // Images — API field names: ProfileImage, AadhaarPhoto, PanCardPhoto
+  // Images — API field names: ProfileImage, AadhaarPhoto, AadhaarBackPhoto,
+  // PanCardPhoto, PanCardBackPhoto. Aadhaar/PAN "Photo" is the front image.
   final MultipartFile? profileImage;
   final MultipartFile? aadhaarPhoto;
+  final MultipartFile? aadhaarBackPhoto;
   final MultipartFile? panCardPhoto;
+  final MultipartFile? panCardBackPhoto;
 
   UpdateInvestorRequestModel({
     required this.userId,
@@ -75,7 +78,9 @@ class UpdateInvestorRequestModel {
     this.nominees = const [],
     this.profileImage,
     this.aadhaarPhoto,
+    this.aadhaarBackPhoto,
     this.panCardPhoto,
+    this.panCardBackPhoto,
   });
 
   Future<FormData> toFormData() async {
@@ -135,6 +140,16 @@ class UpdateInvestorRequestModel {
     }
     if (panCardPhoto != null) {
       formData.files.add(MapEntry('PanCardPhoto', panCardPhoto!.clone()));
+    }
+    if (aadhaarBackPhoto != null) {
+      formData.files.add(
+        MapEntry('AadhaarBackPhoto', aadhaarBackPhoto!.clone()),
+      );
+    }
+    if (panCardBackPhoto != null) {
+      formData.files.add(
+        MapEntry('PanCardBackPhoto', panCardBackPhoto!.clone()),
+      );
     }
 
     appendUpdateInvestorNomineesToFormData(formData, nominees);

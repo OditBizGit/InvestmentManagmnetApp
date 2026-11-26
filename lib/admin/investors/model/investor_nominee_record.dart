@@ -13,7 +13,9 @@ class InvestorNomineeRecord {
     this.phoneNumber,
     this.profilePhoto,
     this.aadhaarCardImage,
+    this.aadhaarCardBackImage,
     this.panCardImage,
+    this.panCardBackImage,
   });
 
   final int? nomineeId;
@@ -26,11 +28,15 @@ class InvestorNomineeRecord {
   final String? phoneNumber;
   final String? profilePhoto;
   final String? aadhaarCardImage;
+  final String? aadhaarCardBackImage;
   final String? panCardImage;
+  final String? panCardBackImage;
 
   String? get profilePhotoUrl => resolveMediaUrl(profilePhoto);
   String? get aadhaarCardImageUrl => resolveMediaUrl(aadhaarCardImage);
   String? get panCardImageUrl => resolveMediaUrl(panCardImage);
+  String? get aadhaarCardBackImageUrl => resolveMediaUrl(aadhaarCardBackImage);
+  String? get panCardBackImageUrl => resolveMediaUrl(panCardBackImage);
 
   bool get isEmpty {
     return (name?.trim().isEmpty ?? true) &&
@@ -42,7 +48,9 @@ class InvestorNomineeRecord {
         (phoneNumber?.trim().isEmpty ?? true) &&
         (profilePhoto?.trim().isEmpty ?? true) &&
         (aadhaarCardImage?.trim().isEmpty ?? true) &&
-        (panCardImage?.trim().isEmpty ?? true);
+        (aadhaarCardBackImage?.trim().isEmpty ?? true) &&
+        (panCardImage?.trim().isEmpty ?? true) &&
+        (panCardBackImage?.trim().isEmpty ?? true);
   }
 
   factory InvestorNomineeRecord.fromJson(Map<String, dynamic> json) {
@@ -109,6 +117,9 @@ class InvestorNomineeRecord {
             json['aadhaarCardImage'] ??
             json['AadhaarCardImage'],
       ),
+      aadhaarCardBackImage: _readString(
+        json['nomineeAadhaarBackPhoto'] ?? json['NomineeAadhaarBackPhoto'],
+      ),
       panCardImage: _readString(
         json['nomineePanCardPhoto'] ??
             json['NomineePanCardPhoto'] ??
@@ -116,6 +127,9 @@ class InvestorNomineeRecord {
             json['NomineePanCardImage'] ??
             json['panCardImage'] ??
             json['PanCardImage'],
+      ),
+      panCardBackImage: _readString(
+        json['nomineePanCardBackPhoto'] ?? json['NomineePanCardBackPhoto'],
       ),
     );
   }

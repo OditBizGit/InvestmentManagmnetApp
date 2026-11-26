@@ -14,6 +14,8 @@ class InvestorNomineeModel {
     this.nomineeProfilePhoto,
     this.nomineeAadhaarPhoto,
     this.nomineePanCardPhoto,
+    this.nomineeAadhaarBackPhoto,
+    this.nomineePanCardBackPhoto,
   });
 
   final int? nomineeId;
@@ -27,12 +29,20 @@ class InvestorNomineeModel {
   final String? nomineeProfilePhoto;
   final String? nomineeAadhaarPhoto;
   final String? nomineePanCardPhoto;
+  final String? nomineeAadhaarBackPhoto;
+  final String? nomineePanCardBackPhoto;
 
   String? get nomineeProfilePhotoUrl => resolveMediaUrl(nomineeProfilePhoto);
 
   String? get nomineeAadhaarPhotoUrl => resolveMediaUrl(nomineeAadhaarPhoto);
 
   String? get nomineePanCardPhotoUrl => resolveMediaUrl(nomineePanCardPhoto);
+
+  String? get nomineeAadhaarBackPhotoUrl =>
+      resolveMediaUrl(nomineeAadhaarBackPhoto);
+
+  String? get nomineePanCardBackPhotoUrl =>
+      resolveMediaUrl(nomineePanCardBackPhoto);
 
   bool get isEmpty {
     return (nomineeName?.trim().isEmpty ?? true) &&
@@ -44,7 +54,9 @@ class InvestorNomineeModel {
         (nomineePhoneNumber?.trim().isEmpty ?? true) &&
         (nomineeProfilePhoto?.trim().isEmpty ?? true) &&
         (nomineeAadhaarPhoto?.trim().isEmpty ?? true) &&
-        (nomineePanCardPhoto?.trim().isEmpty ?? true);
+        (nomineePanCardPhoto?.trim().isEmpty ?? true) &&
+        (nomineeAadhaarBackPhoto?.trim().isEmpty ?? true) &&
+        (nomineePanCardBackPhoto?.trim().isEmpty ?? true);
   }
 
   factory InvestorNomineeModel.fromJson(Map<String, dynamic> json) {
@@ -107,6 +119,18 @@ class InvestorNomineeModel {
             json['nomineePanCardImage'] ??
             json['NomineePanCardImage'],
       ),
+      nomineeAadhaarBackPhoto: _readString(
+        json['nomineeAadhaarBackPhoto'] ??
+            json['NomineeAadhaarBackPhoto'] ??
+            json['nomineeAadhaarCardBackImage'] ??
+            json['NomineeAadhaarCardBackImage'],
+      ),
+      nomineePanCardBackPhoto: _readString(
+        json['nomineePanCardBackPhoto'] ??
+            json['NomineePanCardBackPhoto'] ??
+            json['nomineePanCardBackImage'] ??
+            json['NomineePanCardBackImage'],
+      ),
     );
   }
 
@@ -146,6 +170,18 @@ class InvestorNomineeModel {
             json['NomineePanCardPhoto'] ??
             json['nomineePanCardImage'] ??
             json['NomineePanCardImage'],
+      ),
+      nomineeAadhaarBackPhoto: _readString(
+        json['nomineeAadhaarBackPhoto'] ??
+            json['NomineeAadhaarBackPhoto'] ??
+            json['nomineeAadhaarCardBackImage'] ??
+            json['NomineeAadhaarCardBackImage'],
+      ),
+      nomineePanCardBackPhoto: _readString(
+        json['nomineePanCardBackPhoto'] ??
+            json['NomineePanCardBackPhoto'] ??
+            json['nomineePanCardBackImage'] ??
+            json['NomineePanCardBackImage'],
       ),
     );
   }

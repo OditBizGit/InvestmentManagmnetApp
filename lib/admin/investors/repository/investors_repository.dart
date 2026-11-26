@@ -12,6 +12,16 @@ import '../model/update_investor_model.dart';
 class InvestorsRepository {
   final Dio dio;
 
+  /// Register and update can carry up to 20 images (about 40 MB), more than the
+  /// shared 30 s send timeout allows on slow links. Applied to those two calls
+  /// only, through per-request options.
+  static const Duration _uploadTimeout = Duration(seconds: 180);
+
+  static Options get _uploadOptions => Options(
+        sendTimeout: _uploadTimeout,
+        receiveTimeout: _uploadTimeout,
+      );
+
   InvestorsRepository({
     required this.dio,
   });
@@ -102,6 +112,7 @@ class InvestorsRepository {
       final response = await dio.post(
         ApiEndpoints.registerInvestor,
         data: formData,
+        options: _uploadOptions,
       );
 
       final payload = response.data is Map<String, dynamic>
@@ -137,6 +148,7 @@ class InvestorsRepository {
       final response = await dio.post(
         ApiEndpoints.updateInvestor,
         data: formData,
+        options: _uploadOptions,
       );
 
       if (response.statusCode == 200) {

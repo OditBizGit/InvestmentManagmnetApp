@@ -121,3 +121,18 @@ Format: date — decision — approved by — status.
 | D9 | CSV export neutralises leading `= + - @ \t \r`, except purely numeric values | Team Head | Done |
 | D10 | Secure-storage write failure keeps token in memory only (not plaintext prefs); session lost on restart | Team Head | Done |
 | D11 | Commit: the seven files that mix security fixes with earlier PM edits are committed whole | PM | Approved |
+
+## 2026-11-26 — KYC front and back images (spec: docs/superpowers/specs/2026-11-26-kyc-front-back-images-design.md)
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| K1 | Replace-only for KYC images: × cancels a newly picked image and restores the stored one; stored images are never removed; a stored file is deleted only after its replacement is saved and the DB update succeeded | PM | Approved |
+| K2 | Read-only screens (mobile document screen, nominee details, admin pending-request review) show Front and Back; an existing single image shows as Front | PM | Approved |
+| K3 | Front and back are independently optional; no "both required" rule | PM | Approved |
+| K4 | `RegisterInvestor` gets the 100 MB request-size attributes; Dio `sendTimeout` raised per request for register and update only; no global change | PM | Approved |
+| K5 | DB work on local `.\SQLEXPRESSMICTCO` / `MARIBEL_WELLNESS_CENTRE` only (Windows auth, `@@SERVERNAME` checked first); production and remote servers never touched | PM | Approved |
+| K6 | Work stays on `feature/high-priority-reports` in both repos; nothing committed or pushed | PM | Approved |
+| K7 | Profile photo upload and × behaviour unchanged | PM | Approved |
+| K8 | Four nullable columns (`AadhaarBackPhoto`, `PanCardBackPhoto`, `in_aadhaarbackphoto`, `in_pancardbackphoto`, VARCHAR(500)); existing columns stay as Front; no document table (approved schema change) | PM | Approved |
+| K9 | Extend the existing upload workflow only (endpoints, DTOs, service, `SavePublicImageAsync`, SP actions, nominee-slot mapping, tracking and cleanup); no new endpoint, service or storage | PM | Approved |
+| K10 | New flat request fields (`…Back…` twins) and response properties; no nested `documents[]` | Team Head (Solution Architect) | Approved |

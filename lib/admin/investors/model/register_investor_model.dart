@@ -41,7 +41,9 @@ class RegisterInvestorRequestModel {
 
   final MultipartFile? profileImage;
   final MultipartFile? aadhaarCardImage;
+  final MultipartFile? aadhaarCardBackImage;
   final MultipartFile? panCardImage;
+  final MultipartFile? panCardBackImage;
 
   RegisterInvestorRequestModel({
     required this.username,
@@ -74,7 +76,9 @@ class RegisterInvestorRequestModel {
     this.nominees = const [],
     this.profileImage,
     this.aadhaarCardImage,
+    this.aadhaarCardBackImage,
     this.panCardImage,
+    this.panCardBackImage,
   });
 
   Future<FormData> toFormData() async {
@@ -133,6 +137,16 @@ class RegisterInvestorRequestModel {
     }
     if (panCardImage != null) {
       formData.files.add(MapEntry('PanCardPhoto', panCardImage!.clone()));
+    }
+    if (aadhaarCardBackImage != null) {
+      formData.files.add(
+        MapEntry('AadhaarBackPhoto', aadhaarCardBackImage!.clone()),
+      );
+    }
+    if (panCardBackImage != null) {
+      formData.files.add(
+        MapEntry('PanCardBackPhoto', panCardBackImage!.clone()),
+      );
     }
 
     appendRegisterInvestorNomineesToFormData(formData, nominees);

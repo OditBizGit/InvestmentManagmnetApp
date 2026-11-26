@@ -16,7 +16,7 @@ Marketing-side review queue for investor payment requests (submitted by staff), 
 | screens/review_request/review_request_screen.dart | `ReviewRequestScreen` | Detail + decision screen |
 | screens/review_request/widgets/review_request_header.dart | `ReviewRequestHeader` | Back/title |
 | screens/review_request/widgets/review_request_details_section.dart | `ReviewRequestDetailsSection` + private cards | Payment summary, personal, KYC, bank, nominees |
-| screens/review_request/widgets/kyc_image_preview_dialog.dart | KYC image dialog | Enlarged Aadhaar/PAN images |
+| screens/review_request/widgets/kyc_image_preview_dialog.dart | KYC image dialog | Enlarged Aadhaar/PAN images (Front or Back) |
 | screens/review_request/widgets/reject_payment_request_dialog.dart | `showRejectPaymentRequestDialog` | Remarks dialog |
 | cubit/pending_requests_cubit.dart, pending_requests_state.dart | `PendingRequestsCubit`, `PendingRequestsState` (sealed) | State |
 | repository/pending_request_repository.dart | `PaymentRequestRepository` | 2 API calls |
@@ -29,7 +29,7 @@ Marketing-side review queue for investor payment requests (submitted by staff), 
 - View loads on first activation and each re-activation; `Timer.periodic` every 1 minute calls `loadRequests(silent: true)` only while active, no request selected, and no refresh in flight.
 - Selecting a request (`_selectedRequestId`) swaps the body to `ReviewRequestScreen(requestId, onBack)` (no route push).
 - List section filters: All, Pending, Approved, Rejected, Terminated Investor. Search (name, investor code/request ID, email, phone, allocation/narration, payment method; client-side). Terminated tab shows `TerminatedInvestorsSection` and triggers `ManageUsersCubit.fetchBlockRequests()`; its search covers name, code, email, phone, requested-by name, remarks.
-- Review screen: on init fetches investor details by `userId`; shows payment summary (Approve/Reject buttons only if request is awaiting review), personal & request info, KYC documents (thumbnails open preview dialog), bank details, nominees (from investor details). Approve shows confirm dialog ("Approve request?"); Reject shows remarks dialog (required, at least 3 chars). Success/failure toasts then `clearReviewFeedback()`.
+- Review screen: on init fetches investor details by `userId`; shows payment summary (Approve/Reject buttons only if request is awaiting review), personal & request info, KYC documents (Front and Back thumbnails open the preview dialog; see KYC images below), bank details, nominees (from investor details). Approve shows confirm dialog ("Approve request?"); Reject shows remarks dialog (required, at least 3 chars). Success/failure toasts then `clearReviewFeedback()`.
 - Approve loading message: `ReviewRequestScreen` keeps a local `_isApproving` flag (set after the confirm dialog and a re-check of `isReviewSubmitting`, reset in `finally` if still mounted). The private `_ReviewSubmittingOverlay` (opaque to taps) shows the spinner and, only when `isReviewSubmitting && _isApproving`, the text "Please wait... Sending email receipt and app receipt.". Reason: the backend `ReviewPaymentRequest` call, for Approved only, sends the "Payment Received" push notification, builds the PDF receipt and emails it before responding; Reject sends no receipt, so Reject shows the spinner only. Tests: `test/admin/pending_requests/review_request_receipt_message_test.dart` (R1-R11).
 - Terminated tab: per-card Approve/Reject (enabled only for pending-review items and when no review in progress); calls `ManageUsersCubit.reviewBlockRequest(requestId, status: 'Approved'|'Rejected')` and toasts result. No remarks captured on this tab.
 
@@ -47,6 +47,8 @@ Methods:
 |---|---|---|---|---|
 | `getPaymentRequests({status='All'})` | GET | `ApiEndpoints.getPaymentRequests` -> /api/Investor/GetPaymentRequests | query `status` | `PaymentRequestResponseModel` (throws `Exception(message)` if `status` false) |
 | `acceptOrRejectPaymentRequest({requestId,status,remarks})` | POST | `acceptOrRejectPaymentRequest` -> /api/Investor/ReviewPaymentRequest | JSON `{requestId, status, remarks}` | `AcceptOrRejectPaymentResponseModel` (throws if `status` false) |
+KYC images (read-only): investor details (`InvestorDetailsModel` in funding&payments) carry front (`aadhaarPhoto`, `panCardPhoto`) and back (`aadhaarBackPhoto`, `panCardBackPhoto`, URL getters `aadhaarBackPhotoUrl`/`panCardBackPhotoUrl`) paths per investor and per nominee (`nomineeAadhaarBackPhoto`, `nomineePanCardBackPhoto`); old responses without back keys parse with empty backs. The PAN card and Aadhaar cards show `PAN Front`/`PAN Back` and `Aadhaar Front`/`Aadhaar Back` tiles only for sides that exist (an old single image is Front); with no image at all the existing placeholder box is kept. Each nominee card shows the same Front/Back thumbnails, two per row. `PendingRequestNominee`/`PendingRequestModel` gained `aadhaarBackPhotoUrl`/`panBackPhotoUrl`.
+
 Related (other modules): `InvestorPaymentRepository.getInvestorDetails` (see ADMIN_FUNDING_PAYMENTS.md); `ManageUsersRepository` block requests: `ApiEndpoints.getBlockRequests` (/api/Investor/GetBlockRequests) and `reviewBlockRequest` (/api/Investor/ReviewBlockRequest) - documented under user_management.
 
 ## Models

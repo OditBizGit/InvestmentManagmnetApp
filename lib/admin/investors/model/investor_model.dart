@@ -28,8 +28,10 @@ class InvestorModel {
   // Personal / KYC
   final String? aadhaarNumber;
   final String? aadhaarCardImage;
+  final String? aadhaarCardBackImage;
   final String? panCardNumber;
   final String? panCardImage;
+  final String? panCardBackImage;
   final String? accountNumber;
   final String? ifscCode;
   final String? bankName;
@@ -70,7 +72,9 @@ class InvestorModel {
   final String? nomineePhoneNumber;
   final String? nomineeProfilePhoto;
   final String? nomineeAadhaarCardImage;
+  final String? nomineeAadhaarCardBackImage;
   final String? nomineePanCardImage;
+  final String? nomineePanCardBackImage;
   final List<InvestorNomineeRecord> nominees;
 
   InvestorModel({
@@ -100,8 +104,10 @@ class InvestorModel {
     // Personal / KYC
     this.aadhaarNumber,
     this.aadhaarCardImage,
+    this.aadhaarCardBackImage,
     this.panCardNumber,
     this.panCardImage,
+    this.panCardBackImage,
     this.accountNumber,
     this.ifscCode,
     this.bankName,
@@ -142,7 +148,9 @@ class InvestorModel {
     this.nomineePhoneNumber,
     this.nomineeProfilePhoto,
     this.nomineeAadhaarCardImage,
+    this.nomineeAadhaarCardBackImage,
     this.nomineePanCardImage,
+    this.nomineePanCardBackImage,
     this.nominees = const [],
   });
 
@@ -165,6 +173,12 @@ class InvestorModel {
 
   /// Absolute URL for [panCardImage].
   String? get panCardImageUrl => resolveMediaUrl(panCardImage);
+
+  /// Absolute URL for [aadhaarCardBackImage].
+  String? get aadhaarCardBackImageUrl => resolveMediaUrl(aadhaarCardBackImage);
+
+  /// Absolute URL for [panCardBackImage].
+  String? get panCardBackImageUrl => resolveMediaUrl(panCardBackImage);
 
   factory InvestorModel.fromJson(Map<String, dynamic> json) {
     final staffAllocations = parseInvestorStaffAllocations(json);
@@ -291,6 +305,13 @@ class InvestorModel {
             json['AadhaarImage'],
       ),
 
+      aadhaarCardBackImage: _readString(
+        json['aadhaarBackPhoto'] ??
+            json['AadhaarBackPhoto'] ??
+            json['aadhaarCardBackImage'] ??
+            json['AadhaarCardBackImage'],
+      ),
+
       panCardNumber: _readString(
         json['panCardNumber'] ?? json['PanCardNumber'],
       ),
@@ -302,6 +323,13 @@ class InvestorModel {
             json['PanCardPhoto'] ??
             json['panImage'] ??
             json['PanImage'],
+      ),
+
+      panCardBackImage: _readString(
+        json['panCardBackPhoto'] ??
+            json['PanCardBackPhoto'] ??
+            json['panCardBackImage'] ??
+            json['PanCardBackImage'],
       ),
 
       accountNumber: _readString(
@@ -452,9 +480,23 @@ class InvestorModel {
             json['NomineeAadhaarCardImage'],
       ),
 
+      nomineeAadhaarCardBackImage: _readString(
+        json['nomineeAadhaarBackPhoto'] ??
+            json['NomineeAadhaarBackPhoto'] ??
+            json['nomineeAadhaarCardBackImage'] ??
+            json['NomineeAadhaarCardBackImage'],
+      ),
+
       nomineePanCardImage: _readString(
         json['nomineePanCardImage'] ??
             json['NomineePanCardImage'],
+      ),
+
+      nomineePanCardBackImage: _readString(
+        json['nomineePanCardBackPhoto'] ??
+            json['NomineePanCardBackPhoto'] ??
+            json['nomineePanCardBackImage'] ??
+            json['NomineePanCardBackImage'],
       ),
 
       nominees: _readNomineesList(json),

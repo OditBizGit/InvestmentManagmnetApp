@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/cubit/investors_cubit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/staff_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_entry.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/kyc_document_images.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_additional_information.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
@@ -93,14 +94,10 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.bankNameController,
     required this.ifscController,
     required this.accountNumberController,
-    this.aadhaarCardPhoto,
-    this.existingAadhaarCardImageUrl,
-    required this.onPickAadhaarCardPhoto,
-    required this.onClearAadhaarCardPhoto,
-    this.panCardPhoto,
-    this.existingPanCardImageUrl,
-    required this.onPickPanCardPhoto,
-    required this.onClearPanCardPhoto,
+    required this.aadhaarImages,
+    required this.panImages,
+    required this.onPickInvestorKycPhoto,
+    required this.onClearInvestorKycPhoto,
     required this.nominees,
     required this.onAddNominee,
     required this.onRemoveNominee,
@@ -108,10 +105,8 @@ class AddInvestorFormCards extends StatelessWidget {
     required this.onPickNomineeDateOfBirth,
     required this.onPickNomineeProfilePhoto,
     required this.onClearNomineeProfilePhoto,
-    required this.onPickNomineeAadhaarCardPhoto,
-    required this.onClearNomineeAadhaarCardPhoto,
-    required this.onPickNomineePanCardPhoto,
-    required this.onClearNomineePanCardPhoto,
+    required this.onPickNomineeKycPhoto,
+    required this.onClearNomineeKycPhoto,
     DateTime? dateOfBirth,
   });
 
@@ -164,14 +159,11 @@ class AddInvestorFormCards extends StatelessWidget {
   final TextEditingController bankNameController;
   final TextEditingController ifscController;
   final TextEditingController accountNumberController;
-  final PickedPhoto? aadhaarCardPhoto;
-  final String? existingAadhaarCardImageUrl;
-  final VoidCallback onPickAadhaarCardPhoto;
-  final VoidCallback onClearAadhaarCardPhoto;
-  final PickedPhoto? panCardPhoto;
-  final String? existingPanCardImageUrl;
-  final VoidCallback onPickPanCardPhoto;
-  final VoidCallback onClearPanCardPhoto;
+  final KycDocumentImages aadhaarImages;
+  final KycDocumentImages panImages;
+  final void Function(KycDocument document, KycSide side) onPickInvestorKycPhoto;
+  final void Function(KycDocument document, KycSide side)
+      onClearInvestorKycPhoto;
   final List<InvestorNomineeEntry> nominees;
   final VoidCallback onAddNominee;
   final ValueChanged<int> onRemoveNominee;
@@ -179,10 +171,10 @@ class AddInvestorFormCards extends StatelessWidget {
   final ValueChanged<int> onPickNomineeDateOfBirth;
   final ValueChanged<int> onPickNomineeProfilePhoto;
   final ValueChanged<int> onClearNomineeProfilePhoto;
-  final ValueChanged<int> onPickNomineeAadhaarCardPhoto;
-  final ValueChanged<int> onClearNomineeAadhaarCardPhoto;
-  final ValueChanged<int> onPickNomineePanCardPhoto;
-  final ValueChanged<int> onClearNomineePanCardPhoto;
+  final void Function(int index, KycDocument document, KycSide side)
+      onPickNomineeKycPhoto;
+  final void Function(int index, KycDocument document, KycSide side)
+      onClearNomineeKycPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -249,14 +241,10 @@ class AddInvestorFormCards extends StatelessWidget {
             bankNameController: bankNameController,
             ifscController: ifscController,
             accountNumberController: accountNumberController,
-            aadhaarCardPhoto: aadhaarCardPhoto,
-            existingAadhaarCardImageUrl: existingAadhaarCardImageUrl,
-            onPickAadhaarCardPhoto: onPickAadhaarCardPhoto,
-            onClearAadhaarCardPhoto: onClearAadhaarCardPhoto,
-            panCardPhoto: panCardPhoto,
-            existingPanCardImageUrl: existingPanCardImageUrl,
-            onPickPanCardPhoto: onPickPanCardPhoto,
-            onClearPanCardPhoto: onClearPanCardPhoto,
+            aadhaarImages: aadhaarImages,
+            panImages: panImages,
+            onPickInvestorKycPhoto: onPickInvestorKycPhoto,
+            onClearInvestorKycPhoto: onClearInvestorKycPhoto,
             nominees: nominees,
             onAddNominee: onAddNominee,
             onRemoveNominee: onRemoveNominee,
@@ -265,10 +253,8 @@ class AddInvestorFormCards extends StatelessWidget {
             formatDate: formatDate,
             onPickNomineeProfilePhoto: onPickNomineeProfilePhoto,
             onClearNomineeProfilePhoto: onClearNomineeProfilePhoto,
-            onPickNomineeAadhaarCardPhoto: onPickNomineeAadhaarCardPhoto,
-            onClearNomineeAadhaarCardPhoto: onClearNomineeAadhaarCardPhoto,
-            onPickNomineePanCardPhoto: onPickNomineePanCardPhoto,
-            onClearNomineePanCardPhoto: onClearNomineePanCardPhoto,
+            onPickNomineeKycPhoto: onPickNomineeKycPhoto,
+            onClearNomineeKycPhoto: onClearNomineeKycPhoto,
           ),
         ],
       ),
@@ -1776,6 +1762,8 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
     required this.onClear,
     this.uploadLabel = 'Upload Profile Photo',
     this.changeLabel = 'Change Profile Photo',
+    this.existingLabel = 'Current profile photo',
+    this.showClearOnlyForPicked = false,
   });
 
   final PickedPhoto? photo;
@@ -1785,12 +1773,21 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
   final String uploadLabel;
   final String changeLabel;
 
+  /// Subtitle shown for a stored image with nothing picked.
+  final String existingLabel;
+
+  /// KYC rule: show x only for a newly picked photo. Pressing it cancels the
+  /// pick and the stored image shows again. A stored image has no x.
+  /// When false (profile photos) x shows for any image, as before.
+  final bool showClearOnlyForPicked;
+
   @override
   Widget build(BuildContext context) {
     final hasPickedPhoto = photo != null;
     final hasExistingImage =
         existingImageUrl != null && existingImageUrl!.trim().isNotEmpty;
     final hasPhoto = hasPickedPhoto || hasExistingImage;
+    final showClear = showClearOnlyForPicked ? hasPickedPhoto : hasPhoto;
 
     DecorationImage? image;
     if (hasPickedPhoto) {
@@ -1832,7 +1829,7 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
                           height: 4.h,
                         ),
                 ),
-                if (hasPhoto)
+                if (showClear)
                   Positioned(
                     top: -6,
                     right: -6,
@@ -1875,7 +1872,7 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
                     hasPickedPhoto
                         ? photo!.name
                         : hasExistingImage
-                            ? 'Current profile photo'
+                            ? existingLabel
                             : 'JPEG, PNG (Max 2MB)',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1891,6 +1888,65 @@ class AddInvestorPhotoUploadBox extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Front and Back upload boxes for one KYC document (Aadhaar or PAN).
+///
+/// Side by side when [twoCol] is true, stacked otherwise. Each side keeps its
+/// own state in [images]. Uses the KYC x rule: x only on a newly picked photo.
+class AddInvestorKycPhotoPair extends StatelessWidget {
+  const AddInvestorKycPhotoPair({
+    super.key,
+    required this.images,
+    required this.documentLabel,
+    required this.twoCol,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final KycDocumentImages images;
+
+  /// For example 'Aadhaar', 'PAN', 'Nominee Aadhaar'.
+  final String documentLabel;
+  final bool twoCol;
+  final ValueChanged<KycSide> onPick;
+  final ValueChanged<KycSide> onClear;
+
+  Widget _box(KycSide side) {
+    final sideName = side == KycSide.front ? 'Front' : 'Back';
+    return AddInvestorPhotoUploadBox(
+      photo: images.pickedFor(side),
+      existingImageUrl: images.existingFor(side),
+      onPick: () => onPick(side),
+      onClear: () => onClear(side),
+      uploadLabel: 'Upload $documentLabel $sideName',
+      changeLabel: 'Change $documentLabel $sideName',
+      existingLabel: 'Current ${sideName.toLowerCase()} image',
+      showClearOnlyForPicked: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (twoCol) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _box(KycSide.front)),
+          const SizedBox(width: 14),
+          Expanded(child: _box(KycSide.back)),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _box(KycSide.front),
+        const SizedBox(height: 16),
+        _box(KycSide.back),
+      ],
     );
   }
 }

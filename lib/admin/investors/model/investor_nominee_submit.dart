@@ -12,7 +12,9 @@ class InvestorNomineeSubmitData {
     this.phoneNumber = '',
     this.profilePhoto,
     this.aadhaarCardImage,
+    this.aadhaarCardBackImage,
     this.panCardImage,
+    this.panCardBackImage,
   });
 
   final int? nomineeId;
@@ -25,7 +27,9 @@ class InvestorNomineeSubmitData {
   final String phoneNumber;
   final MultipartFile? profilePhoto;
   final MultipartFile? aadhaarCardImage;
+  final MultipartFile? aadhaarCardBackImage;
   final MultipartFile? panCardImage;
+  final MultipartFile? panCardBackImage;
 
   /// Existing nominees keep their API id; new nominees are sent as 0.
   int get resolvedNomineeId {
@@ -44,7 +48,9 @@ class InvestorNomineeSubmitData {
         phoneNumber.trim().isEmpty &&
         profilePhoto == null &&
         aadhaarCardImage == null &&
-        panCardImage == null;
+        aadhaarCardBackImage == null &&
+        panCardImage == null &&
+        panCardBackImage == null;
   }
 }
 
@@ -96,6 +102,16 @@ void _appendRegisterNomineeSlot(
   _addMultipartFile(formData, profileKey, nominee.profilePhoto);
   _addMultipartFile(formData, aadhaarKey, nominee.aadhaarCardImage);
   _addMultipartFile(formData, panKey, nominee.panCardImage);
+  _addMultipartFile(
+    formData,
+    '${prefix}AadhaarBackPhoto',
+    nominee.aadhaarCardBackImage,
+  );
+  _addMultipartFile(
+    formData,
+    '${prefix}PanCardBackPhoto',
+    nominee.panCardBackImage,
+  );
 }
 
 String _registerNomineeFieldPrefix(int index) {
@@ -217,6 +233,16 @@ void _appendUpdateNomineeSlot(
     formData,
     'NomineePanCardPhoto$suffix',
     nominee.panCardImage,
+  );
+  _addMultipartFile(
+    formData,
+    'NomineeAadhaarBackPhoto$suffix',
+    nominee.aadhaarCardBackImage,
+  );
+  _addMultipartFile(
+    formData,
+    'NomineePanCardBackPhoto$suffix',
+    nominee.panCardBackImage,
   );
 }
 
