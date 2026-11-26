@@ -25,8 +25,8 @@ Base `lib/admin/user_management/`
 | .../terminate_user_remarks_dialog.dart | showTerminateUserRemarksDialog | remarks dialog |
 | .../user_benefits_summary_card.dart | UserBenefitsSummaryCard | investor benefits (discount, medical allowance etc.) |
 | .../user_refund_card.dart | UserRefundCard | refund form |
-| .../user_status_checkbox_card.dart | UserStatusCheckboxCard | MOU/LLP status + document upload |
-| .../user_receipts_card.dart | UserReceiptsCard | receipt list + download |
+| .../user_status_checkbox_card.dart | UserStatusCheckboxCard | MOU/LLP status + document upload (web: `PlatformFile.path` read in try/catch because it throws in browsers; upload uses the picked bytes) |
+| .../user_receipts_card.dart | UserReceiptsCard | receipt list + download (web: `TransactionReceiptPdf.download` saves the PDF through `saveExportFile` as a browser download; other platforms write the file and open it) |
 | .../user_status_update_header.dart | UserStatusUpdateHeader | header with back |
 | screens/manage_users/cubit/manage_users_cubit.dart, manage_users_state.dart | ManageUsersCubit, ManageUsersState (sealed) | all logic |
 | screens/manage_users/repository/manage_users_repository.dart | ManageUsersRepository | HTTP |

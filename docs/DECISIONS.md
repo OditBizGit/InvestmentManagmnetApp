@@ -2,6 +2,14 @@
 
 Format: date — decision — approved by — status.
 
+## 2026-11-25 — Web fixes: receipt download and MOU/LLP upload
+
+| # | Decision | Approved by | Status |
+|---|---|---|---|
+| WF1 | Root cause, receipt download: `TransactionReceiptPdf.download` saved the PDF with `dart:io` `File`, `path_provider` and `OpenFilex`, none of which work in a browser, so nothing was downloaded on web. Fix: when `kIsWeb`, build the same PDF and save it with the existing `saveExportFile` (browser Blob + anchor download, already used by exports and the investor statement). File name logic moved to `fileNameFor` (same name as before). Non-web path unchanged. `download` now returns `Future<void>` (no caller used the file). | PM request 2026-11-25 | Implemented, QA Ready |
+| WF2 | Root cause, MOU/LLP upload: in file_picker 8.3.7 `PlatformFile.path` throws on web, so `UserStatusCheckboxCard._pickFile` aborted before staging the picked file and there was nothing to upload. Fix: read `path` inside try/catch (null on web); the picked bytes (`withData: true`) were already used by the upload chain, which is web-safe (`MultipartFile.fromBytes`). No change to cubit, repository, API or backend. | PM request 2026-11-25 | Implemented, QA Ready |
+| WF3 | Not verified yet: manual browser check of both flows (Chrome, local API), and the web compile result (see report). Known low items: the web saver is chosen by `dart.library.html`, so a `--wasm` build would need a different saver (pre-existing for all exports); the user-side receipt file now imports an admin util (precedent exists); signature image in the PDF needs CORS on web; for a staged non-image file on web the view icon says it cannot open it until uploaded (pre-existing). | QA review | Open |
+
 ## 2026-11-25 — Receipt message while approving a payment request (spec: docs/superpowers/specs/2026-11-25-approve-receipt-loading-message-design.md)
 
 | # | Decision | Approved by | Status |
