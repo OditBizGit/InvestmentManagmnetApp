@@ -20,13 +20,13 @@ Base `lib/admin/user_management/`
 | widgets/user_management_table_widgets.dart | UserManagementTableCard/HeaderRow/HeaderCell/DataCell/StatusBadge/TableFrame, enum UserManagementBadgeTone | Table building blocks (also used by Settings investor rating table) |
 | screens/manage_users/screens/manage_users_screen.dart | ManageUsersScreen, _ManageUsersView | List screen; provides repository + cubit; swaps to detail |
 | screens/manage_users/screens/user_status_update_screen.dart | UserStatusUpdateScreen | Investor detail page |
-| screens/manage_users/screens/widgets/manage_users_overview_section.dart | ManageUsersOverviewSection | totals cards |
+| screens/manage_users/screens/widgets/manage_users_overview_section.dart | ManageUsersOverviewSection | totals cards (int?, null shows an em dash) |
 | .../manage_users_table_section.dart | ManageUsersTableSection, _ManageUserRow | table, search, filter, export, terminate |
 | .../terminate_user_remarks_dialog.dart | showTerminateUserRemarksDialog | remarks dialog |
 | .../user_benefits_summary_card.dart | UserBenefitsSummaryCard | investor benefits (discount, medical allowance etc.) |
 | .../user_refund_card.dart | UserRefundCard | refund form |
-| .../user_status_checkbox_card.dart | UserStatusCheckboxCard | MOU/LLP status + document upload |
-| .../user_receipts_card.dart | UserReceiptsCard | receipt list + download |
+| .../user_status_checkbox_card.dart | UserStatusCheckboxCard | MOU/LLP status + document upload (web: `PlatformFile.path` read in try/catch because it throws in browsers; upload uses the picked bytes) |
+| .../user_receipts_card.dart | UserReceiptsCard | receipt list + download (web: `TransactionReceiptPdf.download` saves the PDF through `saveExportFile` as a browser download; other platforms write the file and open it) |
 | .../user_status_update_header.dart | UserStatusUpdateHeader | header with back |
 | screens/manage_users/cubit/manage_users_cubit.dart, manage_users_state.dart | ManageUsersCubit, ManageUsersState (sealed) | all logic |
 | screens/manage_users/repository/manage_users_repository.dart | ManageUsersRepository | HTTP |
@@ -47,7 +47,7 @@ Base `lib/admin/user_management/`
 
 ## 3. Screens and widgets
 - **ManageUsersScreen(isActive)**: lives in the admin shell IndexedStack; refetches users when it becomes active; drops the detail view when the tab becomes inactive. Tapping a row sets `_selectedUserId/_selectedCommittedAmount/_selectedPaidAmount` and shows `UserStatusUpdateScreen`. Navigation swaps are deferred (`scheduleFrameCallback` + `Future.delayed(Duration.zero)`).
-- **ManageUsersTableSection**: search "Search by name, mobile, email...", filter All / Active / Blocked (client-side), export icons. Row action: "Terminate" for active users; after request submitted shows "Req sent" (still Active); terminated rows show "Terminated".
+- **ManageUsersTableSection**: search "Search by name, mobile, email...", filter chips Active / Blocked (default Active; each tap refetches `GetAllInvestors?status=all|blocked` through `ManageUsersCubit.setFilter`; the chips stay visible in the loading, empty and failed states; search stays client-side), export icons. Row action: "Terminate" for active users; after request submitted shows "Req sent" (still Active); terminated rows show "Terminated".
 - **UserStatusUpdateScreen**: on init fetches InvestorDetails (medical allowance / discount), MOU and LLP status; shows UserBenefitsSummaryCard, UserRefundCard, two UserStatusCheckboxCards (MOU, LLP), UserReceiptsCard. If the user is not found in cubit state, shows "Investor not found".
 - **DuePaymentsScreen(isActive)**: overview stats + table; row actions: view details dialog, send WhatsApp reminder (only when outstanding dues and not already sending).
 
@@ -58,6 +58,7 @@ States (sealed): `ManageUsersInitial`, `ManageUsersLoading`, `ManageUsersEmpty(i
 `ManageUsersSuccess` fields: users; mouStatus/llpStatus (Map<investorId, DocumentProcessStatus>); mou/llp IssuedAt/CompletedAt; mou/llp DocumentPath and DocumentUpdatedAt; statusUpdatingUserId, refundUpdatingUserId, mouUpdatingUserId, mouLoadingUserId, llpUpdatingUserId, llpLoadingUserId; statusFeedback (isSuccess,title,message); isTableLoading; isExporting; transactionHistoryResponse/isTransactionHistoryLoading/transactionHistoryError; blockRequestsResponse, isBlockRequestsLoading, blockRequestsError, blockRequestsStatusFilter, blockRequestReviewingId. Getters: totalUsers, activeUsers (`!isBlocked`), blockedUsers, usersWithPendingDues, blockRequests.
 
 Methods:
+- `filter` / `setFilter(filter)`: current Active/Blocked filter (default Active, kept on tab re-activation); `setFilter` refetches unless the filter is unchanged. `fetchUsers()` always uses the current filter and ignores a response that a newer call has superseded. The local "Req sent" flag is kept in the cubit so it survives chip switches. Unblock success drops the row if it no longer belongs to the active filter. Summary cards (Total/Active/Blocked) use cached counts from BOTH lists (`activeCount`, `blockedCount`, `totalCount` = sum), independent of the chip: `fetchUsers()` (first load, tab re-activation, Retry) makes 2 parallel calls (`status=all` and `status=blocked`); `setFilter` fetches only the selected list unless the other count is unknown. If one call fails its card keeps the last known value, or shows an em dash when none (never 0). Unblock success does Blocked -1 / Active +1; an approved terminate in `reviewBlockRequest` does the mirror (Active -1 / Blocked +1, row dropped from the Active list). Both calls share the stale-response guard. A refetch keeps `isExporting` (export running) and `statusUpdatingUserId` (request in flight).
 - `fetchUsers()`: Loading (or table-loading flag if data exists) -> Success / Empty (no rows) / Failure. A response is considered successful if status true OR code 200 OR message contains "success", or rows exist.
 - `toggleBlockStatus(user, {terminateRemarks})`: only valid when state is Success and none in progress. `targetIsActive = user.isBlocked`; if terminating (target inactive) remarks must be non-empty or it silently returns. Terminate success does **not** flip local `isActive`; sets `hasPendingTerminateRequest` so the row shows "Req sent", toast "Request Sent". Flag is preserved across list refresh while still Active. Unblock success still updates `isActive` locally.
 - `refundUser(user, refundAmount, paymentMethod, remarks)` -> bool. On success: `amountPaid` := `data.remainingRefundableAmount` if returned, else `(amountPaid - refundAmount)` floored at 0; feedback "Refund Saved".
@@ -75,7 +76,7 @@ States: Initial, Loading, Success(items,statusFilter,search,overview,isTableLoad
 
 | Method | HTTP | Constant | Path | Request | Response -> model |
 |---|---|---|---|---|---|
-| ManageUsersRepository.getInvestors | GET | investorsList | /api/Investor/GetInvestors | none | `_decodePayload` (accepts JSON string) -> ManageUsersResponse (data list or nested investors/items/list/data; totals from `total`) |
+| ManageUsersRepository.getInvestors({filter}) | GET | investorsAllList | /api/Investor/GetAllInvestors | query `status`: `all` = only active investors (Active chip), `block` = only blocked investors (Blocked chip; the API accepts only `All` or `Block`, `blocked` returns 400); mapping in `ManageUsersStatusFilter.apiValue` | `_decodePayload` (accepts JSON string) -> ManageUsersResponse (data list or nested investors/items/list/data; totals from `total`) |
 | getInvestorDetails | GET | investorDetails | /api/Investor/InvestorDetails/{userId} | path | `InvestorDetailsResponseModel` (medicalAllowance string, discountAmount) |
 | getBlockRequests({status}) | GET | getBlockRequests | /api/Investor/GetBlockRequests | optional query `status` | InvestorBlockRequestsResponse; throws unless status or code 200 |
 | reviewBlockRequest | POST | reviewBlockRequest | /api/Investor/ReviewBlockRequest | JSON requestId, status, remarks | ReviewBlockRequestResponse |

@@ -34,6 +34,8 @@ class PendingRequestNominee {
     this.panNumber,
     this.aadhaarPhotoUrl,
     this.panPhotoUrl,
+    this.aadhaarBackPhotoUrl,
+    this.panBackPhotoUrl,
   });
 
   final String name;
@@ -43,6 +45,8 @@ class PendingRequestNominee {
   final String? panNumber;
   final String? aadhaarPhotoUrl;
   final String? panPhotoUrl;
+  final String? aadhaarBackPhotoUrl;
+  final String? panBackPhotoUrl;
 }
 
 class PendingRequestModel {
@@ -69,10 +73,13 @@ class PendingRequestModel {
     this.aadhaarPhotoUrl,
     this.panNumber,
     this.panPhotoUrl,
+    this.aadhaarBackPhotoUrl,
+    this.panBackPhotoUrl,
     this.bankName,
     this.accountNumber,
     this.ifscCode,
     this.nominees = const [],
+    this.staffName = '',
   });
 
   final String id;
@@ -97,10 +104,13 @@ class PendingRequestModel {
   final String? aadhaarPhotoUrl;
   final String? panNumber;
   final String? panPhotoUrl;
+  final String? aadhaarBackPhotoUrl;
+  final String? panBackPhotoUrl;
   final String? bankName;
   final String? accountNumber;
   final String? ifscCode;
   final List<PendingRequestNominee> nominees;
+  final String staffName;
 
   factory PendingRequestModel.fromPaymentRequest(
     PaymentRequestDataModel data,
@@ -131,6 +141,7 @@ class PendingRequestModel {
       discountAmount: data.discountAmount,
       submittedAt: data.requestedDate ?? DateTime.now(),
       status: PendingRequestStatusX.fromApi(data.status),
+      staffName: data.staffName.trim(),
     );
   }
 
@@ -193,10 +204,13 @@ class PendingRequestModel {
       aadhaarPhotoUrl: aadhaarPhotoUrl,
       panNumber: panNumber,
       panPhotoUrl: panPhotoUrl,
+      aadhaarBackPhotoUrl: aadhaarBackPhotoUrl,
+      panBackPhotoUrl: panBackPhotoUrl,
       bankName: bankName,
       accountNumber: accountNumber,
       ifscCode: ifscCode,
       nominees: nominees,
+      staffName: staffName,
     );
   }
 }

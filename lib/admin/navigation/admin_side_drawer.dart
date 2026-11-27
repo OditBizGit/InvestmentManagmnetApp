@@ -15,6 +15,11 @@ enum AdminDrawerItem {
   workProgress,
   reports,
   staffReport,
+  // PM 2026-11-23: Collection Aging hidden for now — uncomment to restore.
+  // collectionAging,
+  expectedVsActual,
+  refundTermination,
+  investorStatement,
   manageUsers,
   duePayments,
   pendingRequests,
@@ -86,6 +91,27 @@ class AdminSideDrawer extends StatelessWidget {
           label: 'Staff Report',
           icon: ImageConstants.team,
         ),
+        // PM 2026-11-23: Collection Aging hidden for now — uncomment to restore.
+        // _DrawerDestination(
+        //   item: AdminDrawerItem.collectionAging,
+        //   label: 'Collection Aging',
+        //   icon: ImageConstants.timeLine,
+        // ),
+        _DrawerDestination(
+          item: AdminDrawerItem.expectedVsActual,
+          label: 'Expected vs Actual',
+          icon: ImageConstants.totalCollection,
+        ),
+        _DrawerDestination(
+          item: AdminDrawerItem.refundTermination,
+          label: 'Refunds & Terminations',
+          icon: ImageConstants.disableUser,
+        ),
+        _DrawerDestination(
+          item: AdminDrawerItem.investorStatement,
+          label: 'Investor Statement',
+          icon: ImageConstants.investmentDetails,
+        ),
       ],
     ),
     _DrawerDestination(
@@ -99,7 +125,7 @@ class AdminSideDrawer extends StatelessWidget {
       icon: ImageConstants.addPayment,
     ),
     _DrawerDestination(
-      label: 'User Management',
+      label: 'Investor Management',
       icon: ImageConstants.username,
       children: [
         _DrawerDestination(

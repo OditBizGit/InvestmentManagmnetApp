@@ -191,7 +191,13 @@ class _UserStatusCheckboxCardState extends State<UserStatusCheckboxCard> {
       return;
     }
 
-    final path = file.path?.trim();
+    // On web `PlatformFile.path` throws; the picked bytes are used instead.
+    String? path;
+    try {
+      path = file.path?.trim();
+    } catch (_) {
+      path = null;
+    }
     final bytes = file.bytes;
     if (bytes == null || bytes.isEmpty) {
       AppToast.error('Could not read the selected file.', context: context);

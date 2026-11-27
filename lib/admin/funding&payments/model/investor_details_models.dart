@@ -44,6 +44,8 @@ class InvestorNomineeModel {
   final String nomineeProfilePhoto;
   final String nomineeAadhaarPhoto;
   final String nomineePanCardPhoto;
+  final String nomineeAadhaarBackPhoto;
+  final String nomineePanCardBackPhoto;
 
   InvestorNomineeModel({
     required this.nomineeId,
@@ -57,11 +59,17 @@ class InvestorNomineeModel {
     required this.nomineeProfilePhoto,
     required this.nomineeAadhaarPhoto,
     required this.nomineePanCardPhoto,
+    this.nomineeAadhaarBackPhoto = '',
+    this.nomineePanCardBackPhoto = '',
   });
 
   String? get nomineeProfilePhotoUrl => resolveMediaUrl(nomineeProfilePhoto);
   String? get nomineeAadhaarPhotoUrl => resolveMediaUrl(nomineeAadhaarPhoto);
   String? get nomineePanCardPhotoUrl => resolveMediaUrl(nomineePanCardPhoto);
+  String? get nomineeAadhaarBackPhotoUrl =>
+      resolveMediaUrl(nomineeAadhaarBackPhoto);
+  String? get nomineePanCardBackPhotoUrl =>
+      resolveMediaUrl(nomineePanCardBackPhoto);
 
   factory InvestorNomineeModel.fromJson(Map<String, dynamic> json) {
     return InvestorNomineeModel(
@@ -80,6 +88,8 @@ class InvestorNomineeModel {
       nomineePanCardPhoto: _readString(
         json['nomineePanCardPhoto'] ?? json['nomineePanCardImage'],
       ),
+      nomineeAadhaarBackPhoto: _readString(_nomineeAadhaarBackRaw(json)),
+      nomineePanCardBackPhoto: _readString(_nomineePanCardBackRaw(json)),
     );
   }
 }
@@ -100,6 +110,8 @@ class InvestorDetailsModel {
   final String panCardNumber;
   final String aadhaarPhoto;
   final String panCardPhoto;
+  final String aadhaarBackPhoto;
+  final String panCardBackPhoto;
   final String accountNumber;
   final String ifscCode;
   final String bankName;
@@ -152,6 +164,8 @@ class InvestorDetailsModel {
     required this.panCardNumber,
     required this.aadhaarPhoto,
     required this.panCardPhoto,
+    this.aadhaarBackPhoto = '',
+    this.panCardBackPhoto = '',
     required this.accountNumber,
     required this.ifscCode,
     required this.bankName,
@@ -186,6 +200,8 @@ class InvestorDetailsModel {
   String? get profileImageUrl => resolveMediaUrl(profileImage);
   String? get aadhaarPhotoUrl => resolveMediaUrl(aadhaarPhoto);
   String? get panCardPhotoUrl => resolveMediaUrl(panCardPhoto);
+  String? get aadhaarBackPhotoUrl => resolveMediaUrl(aadhaarBackPhoto);
+  String? get panCardBackPhotoUrl => resolveMediaUrl(panCardBackPhoto);
 
   InvestorDetailsModel copyWith({
     List<InvestorDueDateModel>? dueDates,
@@ -206,6 +222,8 @@ class InvestorDetailsModel {
       panCardNumber: panCardNumber,
       aadhaarPhoto: aadhaarPhoto,
       panCardPhoto: panCardPhoto,
+      aadhaarBackPhoto: aadhaarBackPhoto,
+      panCardBackPhoto: panCardBackPhoto,
       accountNumber: accountNumber,
       ifscCode: ifscCode,
       bankName: bankName,
@@ -263,6 +281,18 @@ class InvestorDetailsModel {
       ),
       panCardPhoto: _readString(
         json['panCardPhoto'] ?? json['panCardImage'],
+      ),
+      aadhaarBackPhoto: _readString(
+        json['aadhaarBackPhoto'] ??
+            json['AadhaarBackPhoto'] ??
+            json['aadhaarCardBackImage'] ??
+            json['AadhaarCardBackImage'],
+      ),
+      panCardBackPhoto: _readString(
+        json['panCardBackPhoto'] ??
+            json['PanCardBackPhoto'] ??
+            json['panCardBackImage'] ??
+            json['PanCardBackImage'],
       ),
       accountNumber: _readString(json['accountNumber']),
       ifscCode: _readString(json['ifscCode']),
@@ -345,6 +375,8 @@ class InvestorDetailsModel {
         nomineePanCardPhoto: _readString(
           json['nomineePanCardPhoto'] ?? json['nomineePanCardImage'],
         ),
+        nomineeAadhaarBackPhoto: _readString(_nomineeAadhaarBackRaw(json)),
+        nomineePanCardBackPhoto: _readString(_nomineePanCardBackRaw(json)),
       ),
     ];
   }
@@ -423,6 +455,18 @@ class InvestorPaymentHistoryModel {
     );
   }
 }
+
+dynamic _nomineeAadhaarBackRaw(Map<String, dynamic> json) =>
+    json['nomineeAadhaarBackPhoto'] ??
+    json['NomineeAadhaarBackPhoto'] ??
+    json['nomineeAadhaarCardBackImage'] ??
+    json['NomineeAadhaarCardBackImage'];
+
+dynamic _nomineePanCardBackRaw(Map<String, dynamic> json) =>
+    json['nomineePanCardBackPhoto'] ??
+    json['NomineePanCardBackPhoto'] ??
+    json['nomineePanCardBackImage'] ??
+    json['NomineePanCardBackImage'];
 
 String _readString(dynamic value) {
   if (value == null) return '';

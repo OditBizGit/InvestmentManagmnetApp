@@ -6,7 +6,7 @@ Complete feature inventory of the Maribel Wellness Centre Flutter app. Source of
 
 - One codebase, two interfaces selected at compile time by `const bool isAdmin` in `lib/main.dart` (`true` = admin web/desktop shell, `false` = investor/user mobile app). Role at login is additionally checked by `LoginCubit`; see [AUTHENTICATION.md](AUTHENTICATION.md).
 - Every feature follows `cubit/ + repository/ + model/ + screens|widgets` (see [ARCHITECTURE.md](ARCHITECTURE.md)). Repositories take the shared `Dio` from `get_it`; there is no router, navigation is `IndexedStack` + in-place sub-screens ([NAVIGATION.md](NAVIGATION.md)).
-- Admin role access (`AdminNavPermissions`, client-side only): `Admin`/`SuperAdmin` see all drawer items except Pending Requests; `MarketingManager` sees only Pending Requests; `FinancialManager` sees only Monthly List.
+- Admin role access (`AdminNavPermissions`): `SuperAdmin` sees all drawer items (Pending Requests and Monthly List view-only); `Admin` sees all except Pending Requests and Monthly List; `MarketingManager` sees only Pending Requests (can review); `FinancialManager` sees only Monthly List (can modify). The API enforces the same split with `[Authorize(Roles=...)]` (2026-11-25, SA1-SA7 in DECISIONS.md).
 
 ## 2. Admin modules (`lib/admin/*`)
 
@@ -15,7 +15,7 @@ Complete feature inventory of the Maribel Wellness Centre Flutter app. Source of
 - **Screens/widgets:** `AdminDashboardScreen`; `dashboard_overview`, `dashboard_details_section`, `dashboard_activity_section`, `dashboard_shimmer`.
 - **Business logic:** default range month start..today, invalid range rejected; only the summary reacts to the range; offline message applied to all sections. Hidden from Marketing/Financial roles.
 - **Cubit/Repository:** `DashboardCubit` / `DashboardRepository` (4 calls) + `AddPhaseRepository.workPhaseList`.
-- **API:** `GetFundingDashboard`, `GetTopInvestors`, `AllInvestorTransactionHistory`, `GetWorkUpdates`, `WorkProgressDetails`.
+- **API:** `GetDashboard`, `GetTopInvestors`, `AllInvestorTransactionHistory`, `GetWorkUpdates`, `WorkProgressDetails`.
 - **Depends on:** work_progress, navigation, core. **Doc:** [modules/ADMIN_DASHBOARD.md](modules/ADMIN_DASHBOARD.md).
 
 ### 2.2 Funding & Payments (`lib/admin/funding&payments`)
@@ -56,10 +56,10 @@ Complete feature inventory of the Maribel Wellness Centre Flutter app. Source of
 - **Depends on:** funding&payments, user_management, navigation. **Doc:** [modules/ADMIN_PENDING_REQUESTS.md](modules/ADMIN_PENDING_REQUESTS.md).
 
 ### 2.7 Reports (`lib/admin/reports`, incl. `staff_report`)
-- **Responsibility:** funding/payment overview chart by date range, work-progress report, investor-type counts, recent transactions; staff report (ThisMonth/LastMonth/Custom, search) and per-staff details.
-- **Screens:** `reports_screen` (+ overview cards, details section with custom painter chart, recent transactions table), `staff_report_screen`, `staff_details_screen` (+ table/investor sections).
-- **Cubit/Repository:** `ReportCubit` / `ReportRepository` (+ `AddPhaseRepository`, `InvestorPaymentRepository`); `StaffReportCubit` / `StaffReportRepository`.
-- **API:** `FundingPaymentOverview` (POST), `InvestorTypeCount`, `GetStaffReport`, `GetStaffReportDetails/{staffId}`, `WorkProgressDetails`, `AllInvestorTransactionHistory`.
+- **Responsibility:** funding/payment overview chart by date range, work-progress report, investor-type counts, recent transactions; staff report (ThisMonth/LastMonth/Custom, search) and per-staff details; finance reports (2026-11-23): Collection Aging (built, navigation commented out for now), Expected vs Actual (+ month drill-down), Refunds & Terminations, Investor Statement (+ client PDF).
+- **Screens:** `reports_screen` (+ overview cards, details section with custom painter chart, recent transactions table), `staff_report_screen`, `staff_details_screen` (+ table/investor sections), `collection_aging_screen`, `expected_vs_actual_screen` (+ details), `refund_termination_screen`, `investor_statement_screen`; shared `month_range_picker`, `report_period_range`, `investor_statement_pdf`.
+- **Cubit/Repository:** `ReportCubit` / `ReportRepository` (+ `AddPhaseRepository`, `InvestorPaymentRepository`); `StaffReportCubit` / `StaffReportRepository`; `CollectionAgingCubit`, `ExpectedVsActualCubit`, `RefundTerminationCubit`, `InvestorStatementCubit` with one repository each (created by the screen with `getIt<Dio>()`).
+- **API:** `FundingPaymentOverview` (POST), `InvestorTypeCount`, `GetStaffReport`, `GetStaffReportDetails/{staffId}`, `WorkProgressDetails`, `AllInvestorTransactionHistory`, `Report/CollectionAging`, `Report/ExpectedVsActual`, `Report/ExpectedVsActualDetails`, `Report/RefundTermination`, `Report/InvestorStatement/{userId}`.
 - **Doc:** [modules/ADMIN_REPORTS.md](modules/ADMIN_REPORTS.md).
 
 ### 2.8 Settings (`lib/admin/settings`)

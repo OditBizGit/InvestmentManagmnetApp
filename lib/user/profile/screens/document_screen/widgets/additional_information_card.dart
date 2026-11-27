@@ -59,13 +59,23 @@ class AdditionalInformationCard extends StatelessWidget {
                   photos: [
                     if (_hasValue(details?.aadhaarPhotoUrl))
                       (
-                        label: 'Aadhaar Photo',
+                        label: 'Aadhaar Front',
                         imageUrl: details!.aadhaarPhotoUrl!,
+                      ),
+                    if (_hasValue(details?.aadhaarBackPhotoUrl))
+                      (
+                        label: 'Aadhaar Back',
+                        imageUrl: details!.aadhaarBackPhotoUrl!,
                       ),
                     if (_hasValue(details?.panCardPhotoUrl))
                       (
-                        label: 'PAN Photo',
+                        label: 'PAN Front',
                         imageUrl: details!.panCardPhotoUrl!,
+                      ),
+                    if (_hasValue(details?.panCardBackPhotoUrl))
+                      (
+                        label: 'PAN Back',
+                        imageUrl: details!.panCardBackPhotoUrl!,
                       ),
                   ],
                 ),
@@ -90,7 +100,7 @@ class _AdditionalInformationShimmer extends StatelessWidget {
     ('Email Address', 'Not Provided'),
   ];
 
-  static const _photos = ['Aadhaar Photo', 'PAN Photo'];
+  static const _photos = ['Aadhaar Front', 'PAN Front'];
 
   @override
   Widget build(BuildContext context) {
@@ -398,10 +408,15 @@ class _PhotoAvatar extends StatelessWidget {
   }
 }
 
+typedef _DocumentPhoto = ({String label, String imageUrl});
+
 class _DocumentPhotoRow extends StatelessWidget {
   const _DocumentPhotoRow({required this.photos});
 
-  final List<({String label, String imageUrl})> photos;
+  final List<_DocumentPhoto> photos;
+
+  /// Tiles are laid out two per row; a lone last tile fills its row.
+  static const int _perRow = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -409,57 +424,76 @@ class _DocumentPhotoRow extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(4.w, 0.6.h, 4.w, 1.6.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var i = 0; i < photos.length; i++) ...[
-            if (i > 0) SizedBox(width: 3.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    photos[i].label,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  SizedBox(height: 0.6.h),
-                  GestureDetector(
-                    onTap: () => DocumentFullscreenImage.open(
-                      context,
-                      imageUrl: photos[i].imageUrl,
-                      title: photos[i].label,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(2.w),
-                      child: Image.network(
-                        photos[i].imageUrl,
-                        width: double.infinity,
-                        height: 12.h,
-                        fit: BoxFit.fill,
-                        errorBuilder: (_, _, _) => Container(
-                          width: double.infinity,
-                          height: 12.h,
-                          color: AppColors.cardBg,
-                          alignment: Alignment.center,
-                          child: SvgPicture.asset(
-                            ImageConstants.imageError,
-                            width: 10.w,
-                            height: 10.w,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+          for (var start = 0; start < photos.length; start += _perRow) ...[
+            if (start > 0) SizedBox(height: 1.2.h),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = start;
+                    i < start + _perRow && i < photos.length;
+                    i++) ...[
+                  if (i > start) SizedBox(width: 3.w),
+                  Expanded(child: _DocumentPhotoTile(photo: photos[i])),
                 ],
-              ),
+              ],
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _DocumentPhotoTile extends StatelessWidget {
+  const _DocumentPhotoTile({required this.photo});
+
+  final _DocumentPhoto photo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          photo.label,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textMuted,
+          ),
+        ),
+        SizedBox(height: 0.6.h),
+        GestureDetector(
+          onTap: () => DocumentFullscreenImage.open(
+            context,
+            imageUrl: photo.imageUrl,
+            title: photo.label,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2.w),
+            child: Image.network(
+              photo.imageUrl,
+              width: double.infinity,
+              height: 12.h,
+              fit: BoxFit.fill,
+              errorBuilder: (_, _, _) => Container(
+                width: double.infinity,
+                height: 12.h,
+                color: AppColors.cardBg,
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  ImageConstants.imageError,
+                  width: 10.w,
+                  height: 10.w,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

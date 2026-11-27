@@ -31,15 +31,14 @@ class ManageUsersTableSection extends StatefulWidget {
 
 class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
   static const double _minTableWidth = 1040;
+  // Order matches ManageUsersStatusFilter.values (chip index == enum index).
   static const _filters = [
-    'All',
     'Active',
-    'Blocked',
+    'Block',
   ];
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  ManageUsersStatusFilter _filter = ManageUsersStatusFilter.all;
 
   @override
   void dispose() {
@@ -50,13 +49,8 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
   List<ManageUsersInvestor> _filteredUsers(List<ManageUsersInvestor> users) {
     final query = _query.trim().toLowerCase();
 
+    // Active / Blocked filtering is done by the API; only search stays local.
     return users.where((user) {
-      final matchesFilter = switch (_filter) {
-        ManageUsersStatusFilter.all => true,
-        ManageUsersStatusFilter.active => !user.isBlocked,
-        ManageUsersStatusFilter.blocked => user.isBlocked,
-      };
-      if (!matchesFilter) return false;
       if (query.isEmpty) return true;
 
       return user.userId.toLowerCase().contains(query) ||
@@ -145,6 +139,8 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<ManageUsersCubit>();
+
     return BlocBuilder<ManageUsersCubit, ManageUsersState>(
       builder: (context, state) {
         final isTableLoading = state is ManageUsersInitial ||
@@ -190,11 +186,12 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
                   setState(() => _query = '');
                 },
                 filters: _filters,
-                selectedFilterIndex: _filter.index,
+                selectedFilterIndex: cubit.filter.index,
                 onFilterSelected: (index) {
-                  setState(() {
-                    _filter = ManageUsersStatusFilter.values[index];
-                  });
+                  cubit.setFilter(ManageUsersStatusFilter.values[index]);
+                  // The cubit may not emit (e.g. already Loading); make sure
+                  // the selected chip repaints.
+                  setState(() {});
                 },
                 trailing: UserManagementExportIcons(
                   isExporting: isExporting,
@@ -242,8 +239,7 @@ class _ManageUsersTableSectionState extends State<ManageUsersTableSection> {
                     ],
                   ),
                   rowCount: filteredUsers.length,
-                  emptyMessage: _query.trim().isEmpty &&
-                          _filter == ManageUsersStatusFilter.all
+                  emptyMessage: _query.trim().isEmpty
                       ? 'No investors found'
                       : 'No investors match your search or filter',
                   rowBuilder: (context, index) {

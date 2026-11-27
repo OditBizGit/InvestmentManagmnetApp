@@ -34,22 +34,33 @@ class MonthlyPaymentListScreen extends StatelessWidget {
       return const _MonthlyPaymentListAccessDenied();
     }
 
+    final canModify = AdminNavPermissions.canModifyMonthlyList(role);
+
     return RepositoryProvider(
       create: (_) => MonthlyPaymentListRepository(dio: getIt<Dio>()),
       child: BlocProvider(
         create: (context) => PaymentListCubit(
           repository: context.read<MonthlyPaymentListRepository>(),
         ),
-        child: _MonthlyPaymentListView(isActive: isActive),
+        child: _MonthlyPaymentListView(
+          isActive: isActive,
+          canModify: canModify,
+        ),
       ),
     );
   }
 }
 
 class _MonthlyPaymentListView extends StatefulWidget {
-  const _MonthlyPaymentListView({required this.isActive});
+  const _MonthlyPaymentListView({
+    required this.isActive,
+    required this.canModify,
+  });
 
   final bool isActive;
+
+  /// False for view-only roles (SuperAdmin): no review intents or API writes.
+  final bool canModify;
 
   @override
   State<_MonthlyPaymentListView> createState() =>
@@ -194,6 +205,7 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
   }
 
   void _setApproveIntent(int id, bool selected) {
+    if (!widget.canModify) return;
     setState(() {
       if (selected) {
         _reviewIntents[id] = PaymentReviewIntent.approve;
@@ -204,6 +216,7 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
   }
 
   void _setRejectIntent(int id, bool selected) {
+    if (!widget.canModify) return;
     setState(() {
       if (selected) {
         _reviewIntents[id] = PaymentReviewIntent.reject;
@@ -217,6 +230,7 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
     int id, {
     required List<MonthlyPayment> payments,
   }) async {
+    if (!widget.canModify) return;
     final intent = _reviewIntents[id];
     if (intent == null) return;
 
@@ -257,6 +271,7 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
     List<MonthlyPayment> pendingPayments,
     bool selected,
   ) {
+    if (!widget.canModify) return;
     setState(() {
       if (selected) {
         for (final payment in pendingPayments) {
@@ -271,6 +286,7 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
   }
 
   Future<void> _onApproveAll(List<MonthlyPayment> filteredPayments) async {
+    if (!widget.canModify) return;
     final pending = filteredPayments
         .where((payment) => payment.status == PaymentStatus.pending)
         .toList();
@@ -458,6 +474,7 @@ class _MonthlyPaymentListViewState extends State<_MonthlyPaymentListView> {
             )
           else
             MonthlyPaymentTable(
+              readOnly: !widget.canModify,
               payments: filteredPayments,
               reviewIntents: _reviewIntents,
               searchController: _searchController,

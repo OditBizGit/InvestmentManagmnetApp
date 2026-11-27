@@ -15,7 +15,7 @@ User build uses a global `notificationNavigatorKey` (`lib/core/notifications/not
 5. On `LoginSuccess` both screens `pushReplacement` to `widget.home`.
 
 ## Admin shell (`lib/admin/navigation/admin_main_screen.dart`)
-- Not route-based: `AdminSideDrawer` + `IndexedStack(index: _selectedItem.index)` over `AdminDrawerItem.values` (dashboard, investors, fundingPayments, workProgress, reports, staffReport, manageUsers, duePayments, pendingRequests, settings, monthlyList).
+- Not route-based: `AdminSideDrawer` + `IndexedStack(index: _selectedItem.index)` over `AdminDrawerItem.values` (dashboard, investors, fundingPayments, workProgress, reports, staffReport, expectedVsActual, refundTermination, investorStatement, manageUsers, duePayments, pendingRequests, settings, monthlyList). `collectionAging` is commented out for now (R35).
 - `_screenFor` returns `SizedBox.shrink()` for items the role cannot open so their fetches never run.
 - Initial item: `AdminNavPermissions.defaultDrawerItem(role)`; selection blocked by `canOpen`.
 - Sidebar auto-collapses below width 1050 and re-expands above 1180.

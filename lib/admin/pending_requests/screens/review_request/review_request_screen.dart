@@ -8,22 +8,30 @@ import 'package:maribel_wellness_centre_application/admin/pending_requests/scree
 import 'package:maribel_wellness_centre_application/admin/user_management/widgets/user_management_confirm_dialog.dart';
 import 'package:maribel_wellness_centre_application/core/constants/app_colors.dart';
 import 'package:maribel_wellness_centre_application/core/utils/app_toast.dart';
+import 'package:sizer/sizer.dart';
 
 class ReviewRequestScreen extends StatefulWidget {
   const ReviewRequestScreen({
     super.key,
     required this.requestId,
     required this.onBack,
+    required this.canReview,
   });
 
   final String requestId;
   final VoidCallback onBack;
+
+  /// False for view-only roles (SuperAdmin): details only, no approve/reject.
+  final bool canReview;
 
   @override
   State<ReviewRequestScreen> createState() => _ReviewRequestScreenState();
 }
 
 class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
+  /// True only while an Approve call is in flight (drives the receipt message).
+  bool _isApproving = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +58,7 @@ class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
   }
 
   Future<void> _accept(BuildContext context, PendingRequestModel request) async {
+    if (!widget.canReview) return;
     final cubit = context.read<PendingRequestsCubit>();
     final current = cubit.state;
     if (current is PendingRequestsSuccess && current.isReviewSubmitting) {
@@ -66,13 +75,25 @@ class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
     );
     if (!confirmed || !context.mounted) return;
 
-    await cubit.reviewPaymentRequest(
-      requestId: int.tryParse(request.id) ?? 0,
-      status: 'Approved',
-    );
+    // A double tap can open two confirm dialogs; do not start a second call.
+    final latest = cubit.state;
+    if (latest is PendingRequestsSuccess && latest.isReviewSubmitting) {
+      return;
+    }
+
+    setState(() => _isApproving = true);
+    try {
+      await cubit.reviewPaymentRequest(
+        requestId: int.tryParse(request.id) ?? 0,
+        status: 'Approved',
+      );
+    } finally {
+      if (mounted) setState(() => _isApproving = false);
+    }
   }
 
   Future<void> _reject(BuildContext context, PendingRequestModel request) async {
+    if (!widget.canReview) return;
     final cubit = context.read<PendingRequestsCubit>();
     final current = cubit.state;
     if (current is PendingRequestsSuccess && current.isReviewSubmitting) {
@@ -199,10 +220,12 @@ class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
                                     .read<PendingRequestsCubit>()
                                     .fetchInvestorDetails(request.userId)
                                 : null,
-                            onAccept: request.isAwaitingReview
+                            onAccept: widget.canReview &&
+                                    request.isAwaitingReview
                                 ? () => _accept(context, request)
                                 : null,
-                            onReject: request.isAwaitingReview
+                            onReject: widget.canReview &&
+                                    request.isAwaitingReview
                                 ? () => _reject(context, request)
                                 : null,
                           ),
@@ -211,19 +234,9 @@ class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
                     ],
                   ),
                   if (isReviewSubmitting)
-                    const Positioned.fill(
-                      child: ColoredBox(
-                        color: Color(0x66FFFFFF),
-                        child: Center(
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.8,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ),
+                    Positioned.fill(
+                      child: _ReviewSubmittingOverlay(
+                        showReceiptMessage: _isApproving,
                       ),
                     ),
                 ],
@@ -231,6 +244,54 @@ class _ReviewRequestScreenState extends State<ReviewRequestScreen> {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// Full-screen loading overlay (opaque to taps, so duplicate clicks stay
+/// blocked). Shows the receipt message under the spinner for Approve only.
+class _ReviewSubmittingOverlay extends StatelessWidget {
+  const _ReviewSubmittingOverlay({required this.showReceiptMessage});
+
+  static const String receiptMessage =
+      'Please wait... Sending email receipt and app receipt.';
+
+  final bool showReceiptMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0x66FFFFFF),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.8,
+                  color: AppColors.accent,
+                ),
+              ),
+              if (showReceiptMessage) ...[
+                const SizedBox(height: 16),
+                Text(
+                  receiptMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

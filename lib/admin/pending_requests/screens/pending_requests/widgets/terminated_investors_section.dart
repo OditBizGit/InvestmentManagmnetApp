@@ -13,9 +13,13 @@ class TerminatedInvestorsSection extends StatefulWidget {
   const TerminatedInvestorsSection({
     super.key,
     required this.searchQuery,
+    required this.canReview,
   });
 
   final String searchQuery;
+
+  /// False for view-only roles (SuperAdmin): list only, no approve/reject.
+  final bool canReview;
 
   @override
   State<TerminatedInvestorsSection> createState() =>
@@ -60,6 +64,7 @@ class _TerminatedInvestorsSectionState extends State<TerminatedInvestorsSection>
   }
 
   Future<void> _approve(InvestorBlockRequestModel item) async {
+    if (!widget.canReview) return;
     final message = await context.read<ManageUsersCubit>().reviewBlockRequest(
           requestId: item.requestId,
           status: 'Approved',
@@ -77,6 +82,7 @@ class _TerminatedInvestorsSectionState extends State<TerminatedInvestorsSection>
   }
 
   Future<void> _reject(InvestorBlockRequestModel item) async {
+    if (!widget.canReview) return;
     final message = await context.read<ManageUsersCubit>().reviewBlockRequest(
           requestId: item.requestId,
           status: 'Rejected',
@@ -164,10 +170,14 @@ class _TerminatedInvestorsSectionState extends State<TerminatedInvestorsSection>
               _TerminatedInvestorCard(
                 item: items[i],
                 isReviewing: reviewingId == items[i].requestId,
-                onApprove: items[i].isPendingReview && reviewingId == null
+                onApprove: widget.canReview &&
+                        items[i].isPendingReview &&
+                        reviewingId == null
                     ? () => _approve(items[i])
                     : null,
-                onReject: items[i].isPendingReview && reviewingId == null
+                onReject: widget.canReview &&
+                        items[i].isPendingReview &&
+                        reviewingId == null
                     ? () => _reject(items[i])
                     : null,
               ),

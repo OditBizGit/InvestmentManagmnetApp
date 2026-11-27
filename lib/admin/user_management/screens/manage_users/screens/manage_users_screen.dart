@@ -172,16 +172,15 @@ class _ManageUsersViewState extends State<_ManageUsersView> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (showOverview)
+                            // Counts come from both lists (not the selected
+                            // chip); the cubit emits right after updating them.
                             ManageUsersOverviewSection(
-                              totalUsers: state is ManageUsersSuccess
-                                  ? state.totalUsers
-                                  : 0,
-                              activeUsers: state is ManageUsersSuccess
-                                  ? state.activeUsers
-                                  : 0,
-                              blockedUsers: state is ManageUsersSuccess
-                                  ? state.blockedUsers
-                                  : 0,
+                              totalUsers:
+                                  context.read<ManageUsersCubit>().totalCount,
+                              activeUsers:
+                                  context.read<ManageUsersCubit>().activeCount,
+                              blockedUsers:
+                                  context.read<ManageUsersCubit>().blockedCount,
                             )
                           else
                             const UserManagementSectionHeader(

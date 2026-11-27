@@ -64,6 +64,7 @@ class PaymentRequestDataModel {
   final DateTime? reviewedDate;
   final String? reviewRemarks;
   final int? paymentEntryNo;
+  final String staffName;
 
   PaymentRequestDataModel({
     required this.requestId,
@@ -88,6 +89,7 @@ class PaymentRequestDataModel {
     this.reviewedDate,
     this.reviewRemarks,
     this.paymentEntryNo,
+    this.staffName = '',
   });
 
   factory PaymentRequestDataModel.fromJson(Map<String, dynamic> json) {
@@ -122,6 +124,7 @@ class PaymentRequestDataModel {
           : null,
       reviewRemarks: json['reviewRemarks'],
       paymentEntryNo: json['paymentEntryNo'],
+      staffName: (json['staffName'] ?? '').toString(),
     );
   }
 }

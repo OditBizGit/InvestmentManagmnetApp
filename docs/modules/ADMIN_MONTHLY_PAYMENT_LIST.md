@@ -59,7 +59,8 @@ Error mapping (all three): server `message` if present; timeouts -> "Request tim
 - Status values sent to API: exactly `Approved` or `Rejected`; remark `''` for approval; rejection remark must be >= 3 chars.
 - Only pending rows can be selected/saved. "Approve All" acts on pending rows of the current search-filtered list; blocked with toast if none pending or if any pending row has a Reject intent selected. Confirms via `showUserManagementConfirmDialog` (green Approve All) before batching.
 - Approve All is a sequential per-transaction loop.
-- Role gate: `AdminNavPermissions.canAccessMonthlyList`. Per the permission table, Admin, SuperAdmin and FinancialManager can access; MarketingManager cannot (access-denied widget).
+- Role gate: `AdminNavPermissions.canAccessMonthlyList` = FinancialManager or SuperAdmin; Admin, MarketingManager and null/unknown roles get the access-denied widget (PM 2026-11-25, SA1).
+- Read-only for SuperAdmin: the screen computes `canModify = AdminNavPermissions.canModifyMonthlyList(role)` (FinancialManager only) and passes `readOnly: !canModify` (required) to `MonthlyPaymentTable`. When read-only the table does not build the header select-all checkbox, row checkboxes, the Actions header/column (Approve, Reject, Save) or the "Approve All" button, and the minimum table width shrinks by the removed columns; search, date filters, status badges, overview cards and "View history" stay. `_setApproveIntent`, `_setRejectIntent`, `_selectAllApprove`, `_onSaveRow` and `_onApproveAll` also return early when `!canModify`. The API allows SuperAdmin on the two verification GETs only; `ReviewPaymentVerification` stays FinancialManager-only.
 
 ## User workflow
 1. Open Monthly List tab -> list for current month loads.
@@ -92,6 +93,6 @@ In: drawer item "Monthly List" (default tab for Financial Manager). Out: in-plac
 navigation (`AdminNavPermissions`), core (`LocalStorage`, `getIt<Dio>`, `AppToast`, ApiEndpoints), user_management shared widget `UserManagementTableCard`, `AdminInitialLoadingBody`.
 
 ## Unclear
-- Net role access: `canAccessMonthlyList` = `canOpen(monthlyList)`; per `AdminNavPermissions`, Admin/SuperAdmin/FinancialManager pass. Whether Admin should see it - Unclear - needs human clarification.
+- Net role access: `canAccessMonthlyList` = `canOpen(monthlyList)`; FinancialManager and SuperAdmin pass (Admin removed by PM decision G1, 2026-11-25).
 - `receiptNumber`, `entryNo`, `investorId`, `userId` are parsed but not obviously displayed in the list table - Unclear.
 - Batch approve stops at the first failing id with earlier ones already approved server-side.

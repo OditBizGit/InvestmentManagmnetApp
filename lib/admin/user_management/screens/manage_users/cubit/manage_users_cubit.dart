@@ -23,6 +23,14 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
 
   final ManageUsersRepository _repository;
   bool _exportInProgress = false;
+  ManageUsersStatusFilter _filter = ManageUsersStatusFilter.active;
+  int _usersRequestId = 0;
+  int? _activeCount;
+  int? _blockedCount;
+
+  /// Investors with a terminate request awaiting approval (local flag; the
+  /// list API does not return it). Kept here so it survives chip switches.
+  final Set<int> _pendingTerminateIds = <int>{};
 
   Future<ManageUsersExportResult> exportInvestorPaymentReport({
     required bool asPdf,
@@ -117,9 +125,117 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     }
   }
 
-  Future<void> fetchUsers() async {
+  /// Current list filter. Survives re-activation refetches.
+  ManageUsersStatusFilter get filter => _filter;
+
+  /// Summary card counts. They come from BOTH lists (`status=all` and
+  /// `status=blocked`), so they do not depend on the selected chip. `null`
+  /// means "not known yet" (shown as an em dash, never as 0).
+  int? get activeCount => _activeCount;
+  int? get blockedCount => _blockedCount;
+  int? get totalCount => (_activeCount == null || _blockedCount == null)
+      ? null
+      : _activeCount! + _blockedCount!;
+
+  /// Switches the Active / Blocked chip and loads that list. The cached card
+  /// counts stay as they are; the other list is only fetched again when its
+  /// count is not known (an earlier call failed).
+  Future<void> setFilter(ManageUsersStatusFilter filter) async {
+    if (filter == _filter) return;
+    _filter = filter;
+    final otherCount = filter == ManageUsersStatusFilter.active
+        ? _blockedCount
+        : _activeCount;
+    await _loadUsers(refreshCounts: otherCount == null);
+  }
+
+  /// Keeps [_pendingTerminateIds] in line with what the server just returned:
+  /// the flag only means something for investors that are still active.
+  void _syncPendingTerminateIds(List<ManageUsersInvestor> users) {
+    if (_filter == ManageUsersStatusFilter.active) {
+      final activeIds = {
+        for (final user in users)
+          if (user.isActive) user.id,
+      };
+      _pendingTerminateIds.retainWhere(activeIds.contains);
+    } else {
+      _pendingTerminateIds.removeAll([for (final user in users) user.id]);
+    }
+  }
+
+  /// After a local status change, keep only rows that belong to the current
+  /// filter (e.g. an unblocked investor leaves the Blocked list).
+  List<ManageUsersInvestor> _rowsForCurrentFilter(
+    List<ManageUsersInvestor> users,
+  ) {
+    return [
+      for (final user in users)
+        if (_filter == ManageUsersStatusFilter.active
+            ? user.isActive
+            : user.isBlocked)
+          user,
+    ];
+  }
+
+  /// Full refetch (first load, tab re-activation, retry): the selected list
+  /// plus the other list for the card counts, in parallel.
+  Future<void> fetchUsers() => _loadUsers(refreshCounts: true);
+
+  Future<_UsersResult> _requestUsers(ManageUsersStatusFilter filter) async {
+    try {
+      return _UsersResult.ok(await _repository.getInvestors(filter: filter));
+    } catch (error) {
+      if (error is! DioException) {
+        appLog(
+          'Get manage users unexpected error: $error',
+          name: 'ManageUsersCubit',
+        );
+      }
+      return _UsersResult.failed(error);
+    }
+  }
+
+  /// Unblock: one investor moves from the Blocked to the Active count.
+  void _moveCountToActive() {
+    final blocked = _blockedCount;
+    if (blocked != null && blocked > 0) _blockedCount = blocked - 1;
+    final active = _activeCount;
+    if (active != null) _activeCount = active + 1;
+  }
+
+  /// Approved terminate: one investor moves from the Active to the Blocked
+  /// count. Unknown (null) counts stay unknown.
+  void _moveCountToBlocked() {
+    final active = _activeCount;
+    if (active != null && active > 0) _activeCount = active - 1;
+    final blocked = _blockedCount;
+    if (blocked != null) _blockedCount = blocked + 1;
+  }
+
+  /// A response is usable when it looks successful or carries rows.
+  bool _isUsable(ManageUsersResponse response) {
+    final looksSuccessful = response.status ||
+        response.code == 200 ||
+        response.message.toLowerCase().contains('success');
+    return looksSuccessful || response.users.isNotEmpty;
+  }
+
+  void _storeCount(ManageUsersStatusFilter filter, _UsersResult result) {
+    final response = result.response;
+    if (response == null || !_isUsable(response)) return;
+    if (filter == ManageUsersStatusFilter.active) {
+      _activeCount = response.users.length;
+    } else {
+      _blockedCount = response.users.length;
+    }
+  }
+
+  Future<void> _loadUsers({required bool refreshCounts}) async {
     final previous = state;
-    if (previous is ManageUsersLoading) return;
+    // A newer call supersedes any request still in flight (chip switched
+    // quickly, tab re-activated): only the latest response may update state
+    // or counts. This covers both parallel calls.
+    final requestId = ++_usersRequestId;
 
     if (previous is ManageUsersSuccess) {
       emit(previous.copyWith(isTableLoading: true));
@@ -129,72 +245,81 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       emit(const ManageUsersLoading());
     }
 
-    try {
-      final response = await _repository.getInvestors();
-      if (isClosed) return;
+    final selected = _filter;
+    final other = selected == ManageUsersStatusFilter.active
+        ? ManageUsersStatusFilter.blocked
+        : ManageUsersStatusFilter.active;
 
-      if (response.skippedCount > 0) {
-        appLog(
-          'Get manage users skipped ${response.skippedCount} invalid rows',
-          name: 'ManageUsersCubit',
-        );
-      }
+    final selectedFuture = _requestUsers(selected);
+    final otherFuture = refreshCounts ? _requestUsers(other) : null;
+    final selectedResult = await selectedFuture;
+    final otherResult = otherFuture == null ? null : await otherFuture;
+    if (isClosed || requestId != _usersRequestId) return;
 
-      final hasData = response.users.isNotEmpty;
-      final looksSuccessful = response.status ||
-          response.code == 200 ||
-          response.message.toLowerCase().contains('success');
+    // A failed call keeps the last known count.
+    if (otherResult != null) _storeCount(other, otherResult);
+    _storeCount(selected, selectedResult);
 
-      if (!looksSuccessful && !hasData) {
-        emit(
-          ManageUsersFailure(
-            response.message.isNotEmpty
-                ? response.message
-                : 'Failed to load users',
-          ),
-        );
-        return;
-      }
-
-      if (!hasData) {
-        emit(const ManageUsersEmpty());
-        return;
-      }
-
-      final pendingTerminateIds = <int>{
-        if (previous is ManageUsersSuccess)
-          for (final user in previous.users)
-            if (user.hasPendingTerminateRequest && user.isActive) user.id,
-      };
-
-      final users = [
-        for (final user in response.users)
-          if (pendingTerminateIds.contains(user.id) && user.isActive)
-            user.copyWith(hasPendingTerminateRequest: true)
-          else
-            user,
-      ];
-
-      emit(ManageUsersSuccess(users: users));
-    } on DioException catch (error) {
-      if (isClosed) return;
+    final response = selectedResult.response;
+    if (response == null) {
       emit(
         ManageUsersFailure(
-          ApiErrorMessage.from(error, fallback: 'Failed to load users'),
+          ApiErrorMessage.from(
+            selectedResult.error!,
+            fallback: 'Failed to load users',
+          ),
+          isExporting: _exportInProgress,
         ),
       );
-    } catch (error) {
+      return;
+    }
+
+    if (response.skippedCount > 0) {
       appLog(
-        'Get manage users unexpected error: $error',
+        'Get manage users skipped ${response.skippedCount} invalid rows',
         name: 'ManageUsersCubit',
       );
-      if (isClosed) return;
+    }
+
+    final hasData = response.users.isNotEmpty;
+    if (!_isUsable(response)) {
       emit(
         ManageUsersFailure(
-          ApiErrorMessage.from(error, fallback: 'Failed to load users'),
+          response.message.isNotEmpty
+              ? response.message
+              : 'Failed to load users',
+          isExporting: _exportInProgress,
         ),
       );
+      return;
     }
+
+    _syncPendingTerminateIds(response.users);
+
+    // Transient flags of work still running must survive the fresh state:
+    // an export in progress and a status update in flight.
+    if (!hasData) {
+      emit(ManageUsersEmpty(isExporting: _exportInProgress));
+      return;
+    }
+
+    final users = [
+      for (final user in response.users)
+        if (_pendingTerminateIds.contains(user.id) && user.isActive)
+          user.copyWith(hasPendingTerminateRequest: true)
+        else
+          user,
+    ];
+
+    final current = state;
+    emit(
+      ManageUsersSuccess(
+        users: users,
+        isExporting: _exportInProgress,
+        statusUpdatingUserId:
+            current is ManageUsersSuccess ? current.statusUpdatingUserId : null,
+      ),
+    );
   }
 
   Future<void> toggleBlockStatus(
@@ -236,6 +361,7 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
       // Terminate creates a pending approval request — do not flip local
       // status to Terminated until the request is approved elsewhere.
       if (isTerminating) {
+        _pendingTerminateIds.add(user.id);
         final message = response.message.trim().isNotEmpty
             ? response.message.trim()
             : 'Termination request for $displayName has been sent for approval.';
@@ -268,15 +394,19 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
           ? response.message.trim()
           : '$displayName has been unblocked';
 
+      _moveCountToActive();
+
       emit(
         latest.copyWith(
-          users: [
+          // The row may no longer belong to the active filter (unblocked
+          // investor in the Blocked list): drop it instead of refetching.
+          users: _rowsForCurrentFilter([
             for (final item in latest.users)
               if (item.id == user.id)
                 item.copyWith(isActive: targetIsActive)
               else
                 item,
-          ],
+          ]),
           clearStatusUpdatingUserId: true,
           statusFeedback: ManageUsersStatusFeedback(
             isSuccess: true,
@@ -1158,20 +1288,39 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
         }
       }
 
+      if (reviewedUserId != null) _pendingTerminateIds.remove(reviewedUserId);
+
+      final approvedActive = response.data?.isActive ?? false;
+      if (reviewedUserId != null &&
+          normalizedStatus == 'Approved' &&
+          !approvedActive) {
+        // Mirror of unblock: an active investor became blocked. If the row is
+        // not in the loaded list, the list tells us its side: it is missing
+        // from the Active list (so already blocked) or from the Blocked list
+        // (so it was active).
+        final row = latest.users
+            .where((item) => item.id == reviewedUserId)
+            .firstOrNull;
+        final wasActive =
+            row?.isActive ?? (_filter == ManageUsersStatusFilter.blocked);
+        if (wasActive) _moveCountToBlocked();
+      }
+
+      // Drop the row if it no longer belongs to the selected list.
       final updatedUsers = reviewedUserId == null
           ? latest.users
-          : [
+          : _rowsForCurrentFilter([
               for (final item in latest.users)
                 if (item.id == reviewedUserId)
                   item.copyWith(
                     isActive: normalizedStatus == 'Approved'
-                        ? (response.data?.isActive ?? false)
+                        ? approvedActive
                         : item.isActive,
                     hasPendingTerminateRequest: false,
                   )
                 else
                   item,
-            ];
+            ]);
 
       emit(
         latest.copyWith(
@@ -1361,4 +1510,13 @@ class ManageUsersCubit extends Cubit<ManageUsersState> {
     if (trimmed == null || trimmed.isEmpty) return current;
     return {...current, investorId: trimmed};
   }
+}
+
+/// Outcome of one `GetAllInvestors` call: a response or the error thrown.
+class _UsersResult {
+  const _UsersResult.ok(ManageUsersResponse this.response) : error = null;
+  const _UsersResult.failed(Object this.error) : response = null;
+
+  final ManageUsersResponse? response;
+  final Object? error;
 }

@@ -21,6 +21,8 @@ class InvestorDetailsModel {
   final String? panCardNumber;
   final String? aadhaarPhoto;
   final String? panCardPhoto;
+  final String? aadhaarBackPhoto;
+  final String? panCardBackPhoto;
   final String? accountNumber;
   final String? ifscCode;
   final String? bankName;
@@ -64,6 +66,8 @@ class InvestorDetailsModel {
     this.panCardNumber,
     this.aadhaarPhoto,
     this.panCardPhoto,
+    this.aadhaarBackPhoto,
+    this.panCardBackPhoto,
     this.accountNumber,
     this.ifscCode,
     this.bankName,
@@ -97,6 +101,10 @@ class InvestorDetailsModel {
   String? get aadhaarPhotoUrl => resolveMediaUrl(aadhaarPhoto);
 
   String? get panCardPhotoUrl => resolveMediaUrl(panCardPhoto);
+
+  String? get aadhaarBackPhotoUrl => resolveMediaUrl(aadhaarBackPhoto);
+
+  String? get panCardBackPhotoUrl => resolveMediaUrl(panCardBackPhoto);
 
   factory InvestorDetailsModel.fromJson(Map<String, dynamic> json) {
     return InvestorDetailsModel(
@@ -133,6 +141,18 @@ class InvestorDetailsModel {
             json['PanCardPhoto'] ??
             json['panCardImage'] ??
             json['PanCardImage'],
+      ),
+      aadhaarBackPhoto: _readString(
+        json['aadhaarBackPhoto'] ??
+            json['AadhaarBackPhoto'] ??
+            json['aadhaarCardBackImage'] ??
+            json['AadhaarCardBackImage'],
+      ),
+      panCardBackPhoto: _readString(
+        json['panCardBackPhoto'] ??
+            json['PanCardBackPhoto'] ??
+            json['panCardBackImage'] ??
+            json['PanCardBackImage'],
       ),
       accountNumber: _readString(json['accountNumber'] ?? json['AccountNumber']),
       ifscCode: _readString(json['ifscCode'] ?? json['IfscCode']),

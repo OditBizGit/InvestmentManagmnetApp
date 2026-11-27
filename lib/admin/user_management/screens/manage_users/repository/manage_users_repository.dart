@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/model/managed_user_model.dart';
 import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/model/manage_users_response_model.dart';
 import 'package:maribel_wellness_centre_application/core/constants/api_endpoints.dart';
 
@@ -52,9 +53,14 @@ class ManageUsersRepository {
     }
   }
 
-  Future<ManageUsersResponse> getInvestors() async {
+  Future<ManageUsersResponse> getInvestors({
+    required ManageUsersStatusFilter filter,
+  }) async {
     try {
-      final response = await dio.get(ApiEndpoints.investorsList);
+      final response = await dio.get(
+        ApiEndpoints.investorsAllList,
+        queryParameters: {'status': filter.apiValue},
+      );
       final payload = _decodePayload(response.data);
       return ManageUsersResponse.fromJson(payload);
     } on DioException catch (error) {

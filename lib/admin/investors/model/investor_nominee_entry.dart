@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_record.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/kyc_document_images.dart';
 import 'package:maribel_wellness_centre_application/core/utils/photo_picker_helper.dart';
 
 /// One nominee row in the add/edit investor form (UI state + controllers).
@@ -19,10 +20,13 @@ class InvestorNomineeEntry {
 
   PickedPhoto? profilePhoto;
   String? existingProfileImageUrl;
-  PickedPhoto? aadhaarCardPhoto;
-  String? existingAadhaarCardImageUrl;
-  PickedPhoto? panCardPhoto;
-  String? existingPanCardImageUrl;
+
+  /// Aadhaar and PAN, each with a front and a back image.
+  final KycDocumentImages aadhaar = KycDocumentImages();
+  final KycDocumentImages pan = KycDocumentImages();
+
+  KycDocumentImages kycImages(KycDocument document) =>
+      document == KycDocument.aadhaar ? aadhaar : pan;
 
   void dispose() {
     nameController.dispose();
@@ -44,14 +48,7 @@ class InvestorNomineeEntry {
         (existingProfileImageUrl?.trim().isNotEmpty ?? false)) {
       return true;
     }
-    if (aadhaarCardPhoto != null ||
-        (existingAadhaarCardImageUrl?.trim().isNotEmpty ?? false)) {
-      return true;
-    }
-    if (panCardPhoto != null ||
-        (existingPanCardImageUrl?.trim().isNotEmpty ?? false)) {
-      return true;
-    }
+    if (aadhaar.hasAnyData || pan.hasAnyData) return true;
     return false;
   }
 
@@ -65,8 +62,12 @@ class InvestorNomineeEntry {
     relationship = record.relationship;
     dateOfBirth = record.dateOfBirth;
     existingProfileImageUrl = record.profilePhotoUrl;
-    existingAadhaarCardImageUrl = record.aadhaarCardImageUrl;
-    existingPanCardImageUrl = record.panCardImageUrl;
+    aadhaar
+      ..setExisting(KycSide.front, record.aadhaarCardImageUrl)
+      ..setExisting(KycSide.back, record.aadhaarCardBackImageUrl);
+    pan
+      ..setExisting(KycSide.front, record.panCardImageUrl)
+      ..setExisting(KycSide.back, record.panCardBackImageUrl);
   }
 }
 
@@ -85,7 +86,9 @@ List<InvestorNomineeRecord> nomineeRecordsFromInvestor(InvestorModel investor) {
     phoneNumber: investor.nomineePhoneNumber,
     profilePhoto: investor.nomineeProfilePhoto,
     aadhaarCardImage: investor.nomineeAadhaarCardImage,
+    aadhaarCardBackImage: investor.nomineeAadhaarCardBackImage,
     panCardImage: investor.nomineePanCardImage,
+    panCardBackImage: investor.nomineePanCardBackImage,
   );
   if (single.isEmpty) return const [];
   return [single];

@@ -84,6 +84,13 @@ class DashboardOverview extends StatelessWidget {
         iconBg: const Color(0xFFF0EBF6),
       ),
       _StatCardData(
+        label: 'Committed Amount',
+        value: CurrencyFormatter.format(dashboard.totalInvestmentAmount),
+        icon: ImageConstants.totalCommitment,
+        iconColor: const Color(0xFF3CB371),
+        iconBg: const Color(0xFFE8F8EF),
+      ),
+      _StatCardData(
         label: 'Amount Received',
         value: CurrencyFormatter.format(dashboard.totalReceivedAmount),
         icon: ImageConstants.amountReceivable,
@@ -103,13 +110,6 @@ class DashboardOverview extends StatelessWidget {
         icon: ImageConstants.totalInvestors,
         iconColor: const Color(0xFFE89A3C),
         iconBg: const Color(0xFFFFF3E8),
-      ),
-      _StatCardData(
-        label: 'Active Investors',
-        value: investorsCount,
-        icon: ImageConstants.activeInvestors,
-        iconColor: const Color(0xFF3CB371),
-        iconBg: const Color(0xFFE8F8EF),
       ),
       _StatCardData(
         label: 'Funding Progress',

@@ -6,6 +6,7 @@ import 'package:maribel_wellness_centre_application/admin/investors/model/invest
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_entry.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_nominee_submit.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/investor_staff_assignment.dart';
+import 'package:maribel_wellness_centre_application/admin/investors/model/kyc_document_images.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/register_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/model/update_investor_model.dart';
 import 'package:maribel_wellness_centre_application/admin/investors/screens/add_new_investor/widget/add_investor_additional_information.dart';
@@ -110,10 +111,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
   DateTime? _investmentDate = DateTime.now();
   PickedPhoto? _profilePhoto;
   String? _existingProfileImageUrl;
-  PickedPhoto? _aadhaarCardPhoto;
-  String? _existingAadhaarCardImageUrl;
-  PickedPhoto? _panCardPhoto;
-  String? _existingPanCardImageUrl;
+  final KycDocumentImages _aadhaarImages = KycDocumentImages();
+  final KycDocumentImages _panImages = KycDocumentImages();
   DateTime? _dateOfBirth;
 
   /// Set Due Date / Split Payment is always required.
@@ -191,8 +190,12 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       }
     }
     _existingProfileImageUrl = investor.profileImageUrl;
-    _existingAadhaarCardImageUrl = investor.aadhaarCardImageUrl;
-    _existingPanCardImageUrl = investor.panCardImageUrl;
+    _aadhaarImages
+      ..setExisting(KycSide.front, investor.aadhaarCardImageUrl)
+      ..setExisting(KycSide.back, investor.aadhaarCardBackImageUrl);
+    _panImages
+      ..setExisting(KycSide.front, investor.panCardImageUrl)
+      ..setExisting(KycSide.back, investor.panCardBackImageUrl);
     _dateOfBirth = investor.dateOfBirth;
 
     // KYC / bank — only prefill values that pass form validators so Update
@@ -597,10 +600,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       _investmentDate = DateTime.now();
       _profilePhoto = null;
       _existingProfileImageUrl = null;
-      _aadhaarCardPhoto = null;
-      _existingAadhaarCardImageUrl = null;
-      _panCardPhoto = null;
-      _existingPanCardImageUrl = null;
+      _aadhaarImages.reset();
+      _panImages.reset();
       _dateOfBirth = null;
       _selectedFrequency = 'Month';
       _selectedInstallmentCount = '12';
@@ -714,9 +715,12 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       );
     }
 
-    final aadhaarCardImage = _multipartFromPhoto(_aadhaarCardPhoto);
+    // Files are added only for sides that were newly picked.
+    final aadhaarFront = _multipartFromPhoto(_aadhaarImages.frontPhoto);
+    final aadhaarBack = _multipartFromPhoto(_aadhaarImages.backPhoto);
+    final panFront = _multipartFromPhoto(_panImages.frontPhoto);
+    final panBack = _multipartFromPhoto(_panImages.backPhoto);
     final nomineePayload = _nomineeSubmitPayload();
-    final panCardImage = _multipartFromPhoto(_panCardPhoto);
 
     if (_isEditing) {
       final investor = widget.investorToEdit!;
@@ -755,8 +759,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
             : nomineePayload.first.resolvedNomineeId,
         nominees: nomineePayload,
         profileImage: profileImage,
-        aadhaarPhoto: aadhaarCardImage,
-        panCardPhoto: panCardImage,
+        aadhaarPhoto: aadhaarFront,
+        aadhaarBackPhoto: aadhaarBack,
+        panCardPhoto: panFront,
+        panCardBackPhoto: panBack,
       );
 
       await context.read<InvestorsCubit>().updateInvestor(updateRequest);
@@ -783,8 +789,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
       investmentAmount: amount,
       investmentDate: _investmentDate!,
       profileImage: profileImage,
-      aadhaarCardImage: aadhaarCardImage,
-      panCardImage: panCardImage,
+      aadhaarCardImage: aadhaarFront,
+      aadhaarCardBackImage: aadhaarBack,
+      panCardImage: panFront,
+      panCardBackImage: panBack,
       investmentSplitMonths: count,
       investmentSplitType: _selectedFrequency,
       investmentSplitGap: _resolvedSplitGap,
@@ -832,8 +840,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
             panCardNumber: entry.panController.text.trim(),
             phoneNumber: entry.phoneController.text.trim(),
             profilePhoto: _multipartFromPhoto(entry.profilePhoto),
-            aadhaarCardImage: _multipartFromPhoto(entry.aadhaarCardPhoto),
-            panCardImage: _multipartFromPhoto(entry.panCardPhoto),
+            aadhaarCardImage: _multipartFromPhoto(entry.aadhaar.frontPhoto),
+            aadhaarCardBackImage: _multipartFromPhoto(entry.aadhaar.backPhoto),
+            panCardImage: _multipartFromPhoto(entry.pan.frontPhoto),
+            panCardBackImage: _multipartFromPhoto(entry.pan.backPhoto),
           ),
         )
         .toList();
@@ -1001,30 +1011,18 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     });
   }
 
-  Future<void> _pickAadhaarCardPhoto() async {
+  KycDocumentImages _investorKyc(KycDocument document) =>
+      document == KycDocument.aadhaar ? _aadhaarImages : _panImages;
+
+  Future<void> _pickInvestorKycPhoto(KycDocument document, KycSide side) async {
     final photo = await PhotoPickerHelper.pickProfilePhoto();
     if (photo == null || !mounted) return;
-    setState(() => _aadhaarCardPhoto = photo);
+    setState(() => _investorKyc(document).setPicked(side, photo));
   }
 
-  void _clearAadhaarCardPhoto() {
-    setState(() {
-      _aadhaarCardPhoto = null;
-      _existingAadhaarCardImageUrl = null;
-    });
-  }
-
-  Future<void> _pickPanCardPhoto() async {
-    final photo = await PhotoPickerHelper.pickProfilePhoto();
-    if (photo == null || !mounted) return;
-    setState(() => _panCardPhoto = photo);
-  }
-
-  void _clearPanCardPhoto() {
-    setState(() {
-      _panCardPhoto = null;
-      _existingPanCardImageUrl = null;
-    });
+  /// Cancels a newly picked image only; the stored image shows again.
+  void _clearInvestorKycPhoto(KycDocument document, KycSide side) {
+    setState(() => _investorKyc(document).cancelPicked(side));
   }
 
   Future<void> _pickNomineeProfilePhoto(int index) async {
@@ -1040,30 +1038,19 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
     });
   }
 
-  Future<void> _pickNomineeAadhaarCardPhoto(int index) async {
+  Future<void> _pickNomineeKycPhoto(
+    int index,
+    KycDocument document,
+    KycSide side,
+  ) async {
     final photo = await PhotoPickerHelper.pickProfilePhoto();
     if (photo == null || !mounted) return;
-    setState(() => _nominees[index].aadhaarCardPhoto = photo);
+    setState(() => _nominees[index].kycImages(document).setPicked(side, photo));
   }
 
-  void _clearNomineeAadhaarCardPhoto(int index) {
-    setState(() {
-      _nominees[index].aadhaarCardPhoto = null;
-      _nominees[index].existingAadhaarCardImageUrl = null;
-    });
-  }
-
-  Future<void> _pickNomineePanCardPhoto(int index) async {
-    final photo = await PhotoPickerHelper.pickProfilePhoto();
-    if (photo == null || !mounted) return;
-    setState(() => _nominees[index].panCardPhoto = photo);
-  }
-
-  void _clearNomineePanCardPhoto(int index) {
-    setState(() {
-      _nominees[index].panCardPhoto = null;
-      _nominees[index].existingPanCardImageUrl = null;
-    });
+  /// Cancels a newly picked image only; the stored image shows again.
+  void _clearNomineeKycPhoto(int index, KycDocument document, KycSide side) {
+    setState(() => _nominees[index].kycImages(document).cancelPicked(side));
   }
 
   Future<void> _pickDate() async {
@@ -1234,14 +1221,10 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 bankNameController: _bankNameController,
                 ifscController: _ifscController,
                 accountNumberController: _accountNumberController,
-                aadhaarCardPhoto: _aadhaarCardPhoto,
-                existingAadhaarCardImageUrl: _existingAadhaarCardImageUrl,
-                onPickAadhaarCardPhoto: _pickAadhaarCardPhoto,
-                onClearAadhaarCardPhoto: _clearAadhaarCardPhoto,
-                panCardPhoto: _panCardPhoto,
-                existingPanCardImageUrl: _existingPanCardImageUrl,
-                onPickPanCardPhoto: _pickPanCardPhoto,
-                onClearPanCardPhoto: _clearPanCardPhoto,
+                aadhaarImages: _aadhaarImages,
+                panImages: _panImages,
+                onPickInvestorKycPhoto: _pickInvestorKycPhoto,
+                onClearInvestorKycPhoto: _clearInvestorKycPhoto,
                 nominees: _nominees,
                 onAddNominee: _addNominee,
                 onRemoveNominee: _removeNominee,
@@ -1252,10 +1235,8 @@ class _AddNewInvestorViewState extends State<_AddNewInvestorView> {
                 onPickNomineeDateOfBirth: _pickNomineeDateOfBirth,
                 onPickNomineeProfilePhoto: _pickNomineeProfilePhoto,
                 onClearNomineeProfilePhoto: _clearNomineeProfilePhoto,
-                onPickNomineeAadhaarCardPhoto: _pickNomineeAadhaarCardPhoto,
-                onClearNomineeAadhaarCardPhoto: _clearNomineeAadhaarCardPhoto,
-                onPickNomineePanCardPhoto: _pickNomineePanCardPhoto,
-                onClearNomineePanCardPhoto: _clearNomineePanCardPhoto,
+                onPickNomineeKycPhoto: _pickNomineeKycPhoto,
+                onClearNomineeKycPhoto: _clearNomineeKycPhoto,
               );
 
               final sidePanel = AddInvestorSidePanel(

@@ -37,7 +37,8 @@ Roles: `Admin`, `SuperAdmin`, `FinancialManager`, `MarketingManager`; investors 
 |---|---|---|
 | MarketingManager | pendingRequests only | pendingRequests |
 | FinancialManager | monthlyList only | monthlyList |
-| Admin / SuperAdmin / other | all except pendingRequests (includes monthlyList) | dashboard |
+| SuperAdmin | all items; Pending Requests and Monthly List are view-only | dashboard |
+| Admin / other / null | all except pendingRequests and monthlyList | dashboard |
 Comment in source: "Local until backend permissions arrive" - permissions are client-side only; backend enforcement is not implemented yet; server-side role checks are planned by the backend team (security finding H2, decision D2 in DECISIONS.md). Logout is always available.
 
 ## Unauthorized (401/403) handling

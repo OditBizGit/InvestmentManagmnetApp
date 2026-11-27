@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
+import 'package:maribel_wellness_centre_application/admin/user_management/screens/manage_users/utils/export_file_saver.dart';
 import 'package:maribel_wellness_centre_application/user/investments/investments_screen.dart';
 import 'package:maribel_wellness_centre_application/user/investments/model/investor_transaction_item_model.dart';
 import 'package:open_filex/open_filex.dart';
@@ -16,16 +16,42 @@ import 'package:share_plus/share_plus.dart';
 class TransactionReceiptPdf {
   TransactionReceiptPdf._();
 
-  static Future<File> download({
+  static Future<void> download({
     required Uint8List receiptPngBytes,
     required InvestorTransactionItemModel transaction,
   }) async {
+    if (kIsWeb) {
+      // dart:io / path_provider / OpenFilex are unavailable in the browser.
+      final bytes = await _buildPdf(receiptPngBytes);
+      await saveExportFile(
+        bytes: bytes,
+        fileName: fileNameFor(
+          entryNo: transaction.entryNo,
+          transactionId: transaction.transactionId,
+          transactionDate: transaction.date,
+        ),
+        mimeType: 'application/pdf',
+      );
+      return;
+    }
+
     final file = await _createFile(
       receiptPngBytes: receiptPngBytes,
       transaction: transaction,
     );
     await OpenFilex.open(file.path);
-    return file;
+  }
+
+  /// File name shared by the web download and the saved-to-disk copy.
+  @visibleForTesting
+  static String fileNameFor({
+    required int entryNo,
+    required int transactionId,
+    DateTime? transactionDate,
+  }) {
+    final safeEntry = entryNo > 0 ? entryNo : transactionId;
+    final dateStamp = UserInvestmentsScreen.formatDate(transactionDate);
+    return 'Payment Receipt - $safeEntry - $dateStamp.pdf';
   }
 
   static Future<void> share({
@@ -83,9 +109,11 @@ class TransactionReceiptPdf {
     DateTime? transactionDate,
   }) async {
     final directory = await _resolveSaveDirectory();
-    final safeEntry = entryNo > 0 ? entryNo : transactionId;
-    final dateStamp = UserInvestmentsScreen.formatDate(transactionDate);
-    final fileName = 'Payment Receipt - $safeEntry - $dateStamp.pdf';
+    final fileName = fileNameFor(
+      entryNo: entryNo,
+      transactionId: transactionId,
+      transactionDate: transactionDate,
+    );
     final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
     return file;

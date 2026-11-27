@@ -44,6 +44,8 @@ class ReviewRequestDetailsSection extends StatelessWidget {
             panNumber: nominee.nomineePanCardNumber,
             aadhaarPhotoUrl: nominee.nomineeAadhaarPhotoUrl,
             panPhotoUrl: nominee.nomineePanCardPhotoUrl,
+            aadhaarBackPhotoUrl: nominee.nomineeAadhaarBackPhotoUrl,
+            panBackPhotoUrl: nominee.nomineePanCardBackPhotoUrl,
           ),
         )
         .toList(growable: false);
@@ -660,6 +662,10 @@ class _KycDocumentsColumn extends StatelessWidget {
     final panPhotoUrl = details?.panCardPhotoUrl ?? request.panPhotoUrl;
     final aadhaarPhotoUrl =
         details?.aadhaarPhotoUrl ?? request.aadhaarPhotoUrl;
+    final panBackPhotoUrl =
+        details?.panCardBackPhotoUrl ?? request.panBackPhotoUrl;
+    final aadhaarBackPhotoUrl =
+        details?.aadhaarBackPhotoUrl ?? request.aadhaarBackPhotoUrl;
 
     return Column(
       children: [
@@ -669,7 +675,9 @@ class _KycDocumentsColumn extends StatelessWidget {
           number: isLoading && (panNumber == null || panNumber.isEmpty)
               ? 'Loading...'
               : _text(panNumber),
+          documentName: 'PAN',
           photoUrl: panPhotoUrl,
+          backPhotoUrl: panBackPhotoUrl,
           photoLabel: 'PAN card photo',
         ),
         const SizedBox(height: 14),
@@ -679,7 +687,9 @@ class _KycDocumentsColumn extends StatelessWidget {
           number: isLoading && (aadhaarNumber == null || aadhaarNumber.isEmpty)
               ? 'Loading...'
               : _text(aadhaarNumber),
+          documentName: 'Aadhaar',
           photoUrl: aadhaarPhotoUrl,
+          backPhotoUrl: aadhaarBackPhotoUrl,
           photoLabel: 'Aadhaar photo',
         ),
       ],
@@ -693,14 +703,22 @@ class _DocumentCard extends StatelessWidget {
     required this.numberLabel,
     required this.number,
     required this.photoLabel,
+    required this.documentName,
     this.photoUrl,
+    this.backPhotoUrl,
   });
 
   final String title;
   final String numberLabel;
   final String number;
+
+  /// Placeholder label, shown only when neither side has an image.
   final String photoLabel;
+
+  /// Short name used in the Front / Back captions, e.g. `PAN`.
+  final String documentName;
   final String? photoUrl;
+  final String? backPhotoUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -711,13 +729,32 @@ class _DocumentCard extends StatelessWidget {
         children: [
           _FieldTile(label: numberLabel, value: number),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 148,
-            child: _DocumentPhoto(
-              label: photoLabel,
-              photoUrl: photoUrl,
+          if (!_hasUrl(photoUrl) && !_hasUrl(backPhotoUrl))
+            _DocumentPhoto(label: photoLabel)
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_hasUrl(photoUrl))
+                  Expanded(
+                    child: _DocumentPhoto(
+                      label: '$documentName Front',
+                      photoUrl: photoUrl,
+                      showCaption: true,
+                    ),
+                  ),
+                if (_hasUrl(photoUrl) && _hasUrl(backPhotoUrl))
+                  const SizedBox(width: 10),
+                if (_hasUrl(backPhotoUrl))
+                  Expanded(
+                    child: _DocumentPhoto(
+                      label: '$documentName Back',
+                      photoUrl: backPhotoUrl,
+                      showCaption: true,
+                    ),
+                  ),
+              ],
             ),
-          ),
         ],
       ),
     );
@@ -728,10 +765,14 @@ class _DocumentPhoto extends StatelessWidget {
   const _DocumentPhoto({
     required this.label,
     this.photoUrl,
+    this.showCaption = false,
   });
 
   final String label;
   final String? photoUrl;
+
+  /// Shows [label] under the image (used for the Front / Back tiles).
+  final bool showCaption;
 
   @override
   Widget build(BuildContext context) {
@@ -741,22 +782,43 @@ class _DocumentPhoto extends StatelessWidget {
         title: label,
         imageUrl: photoUrl,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: const Color(0xFFF5F1F8),
-          foregroundDecoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 148,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: const Color(0xFFF5F1F8),
+                foregroundDecoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: _KycThumbnailContent(
+                  label: label,
+                  imageUrl: photoUrl,
+                  iconSize: 28,
+                ),
+              ),
+            ),
           ),
-          child: _KycThumbnailContent(
-            label: label,
-            imageUrl: photoUrl,
-            iconSize: 28,
-          ),
-        ),
+          if (showCaption) ...[
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 8.5.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -954,29 +1016,87 @@ class _NomineeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _KycThumbnail(
-                  label: 'Aadhaar',
-                  imageUrl: nominee.aadhaarPhotoUrl,
-                  previewTitle: '${nominee.name} · Aadhaar',
-                  previewSubtitle: _text(nominee.aadhaarNumber),
-                ),
+          _KycThumbnailGrid(
+            thumbnails: [
+              ..._nomineeKycThumbnails(
+                nominee: nominee,
+                documentName: 'Aadhaar',
+                frontUrl: nominee.aadhaarPhotoUrl,
+                backUrl: nominee.aadhaarBackPhotoUrl,
+                number: nominee.aadhaarNumber,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _KycThumbnail(
-                  label: 'PAN',
-                  imageUrl: nominee.panPhotoUrl,
-                  previewTitle: '${nominee.name} · PAN',
-                  previewSubtitle: _text(nominee.panNumber),
-                ),
+              ..._nomineeKycThumbnails(
+                nominee: nominee,
+                documentName: 'PAN',
+                frontUrl: nominee.panPhotoUrl,
+                backUrl: nominee.panBackPhotoUrl,
+                number: nominee.panNumber,
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+bool _hasUrl(String? url) => url != null && url.trim().isNotEmpty;
+
+/// One thumbnail per side that has an image (Front, Back). A document with no
+/// image at all keeps the single placeholder it always had.
+List<Widget> _nomineeKycThumbnails({
+  required PendingRequestNominee nominee,
+  required String documentName,
+  required String? frontUrl,
+  required String? backUrl,
+  required String? number,
+}) {
+  Widget thumbnail(String label, String? url) => _KycThumbnail(
+        label: label,
+        imageUrl: url,
+        previewTitle: '${nominee.name} · $label',
+        previewSubtitle: _text(number),
+      );
+
+  if (!_hasUrl(frontUrl) && !_hasUrl(backUrl)) {
+    return [thumbnail(documentName, null)];
+  }
+  return [
+    if (_hasUrl(frontUrl)) thumbnail('$documentName Front', frontUrl),
+    if (_hasUrl(backUrl)) thumbnail('$documentName Back', backUrl),
+  ];
+}
+
+/// Lays thumbnails out two per row; a lone last thumbnail keeps half width.
+class _KycThumbnailGrid extends StatelessWidget {
+  const _KycThumbnailGrid({required this.thumbnails});
+
+  final List<Widget> thumbnails;
+
+  static const int _perRow = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var start = 0; start < thumbnails.length; start += _perRow) ...[
+          if (start > 0) const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = start; i < start + _perRow; i++) ...[
+                if (i > start) const SizedBox(width: 8),
+                Expanded(
+                  child: i < thumbnails.length
+                      ? thumbnails[i]
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ],
     );
   }
 }

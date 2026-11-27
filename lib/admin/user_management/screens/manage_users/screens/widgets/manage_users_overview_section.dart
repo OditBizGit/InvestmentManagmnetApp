@@ -11,9 +11,12 @@ class ManageUsersOverviewSection extends StatelessWidget {
     // required this.usersWithPendingDues,
   });
 
-  final int totalUsers;
-  final int activeUsers;
-  final int blockedUsers;
+  /// `null` = not known (shown as an em dash, never as 0).
+  final int? totalUsers;
+  final int? activeUsers;
+  final int? blockedUsers;
+
+  static String _text(int? value) => value == null ? '—' : '$value';
   // final int usersWithPendingDues;
 
   @override
@@ -30,21 +33,21 @@ class ManageUsersOverviewSection extends StatelessWidget {
           stats: [
             UserManagementStatCardData(
               label: 'Total Users',
-              value: '$totalUsers',
+              value: _text(totalUsers),
               icon: ImageConstants.totalInvestors,
               iconColor: const Color(0xFF9B7EBF),
               iconBg: const Color(0xFFF0EBF6),
             ),
             UserManagementStatCardData(
               label: 'Active Users',
-              value: '$activeUsers',
+              value: _text(activeUsers),
               icon: ImageConstants.activeInvestors,
               iconColor: const Color(0xFF2CB5A8),
               iconBg: const Color(0xFFE6F7F5),
             ),
             UserManagementStatCardData(
               label: 'Blocked Users',
-              value: '$blockedUsers',
+              value: _text(blockedUsers),
               icon: ImageConstants.complaints,
               iconColor: const Color(0xFFE06B7A),
               iconBg: const Color(0xFFFDECEE),

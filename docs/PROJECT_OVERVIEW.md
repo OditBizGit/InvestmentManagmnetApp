@@ -25,7 +25,7 @@ Business domain (inferred from endpoints and models): investor funding for a wel
 See `DEPENDENCIES.md` for every package.
 
 ## Features
-Admin (drawer items, enum `AdminDrawerItem` in `lib/admin/navigation/admin_side_drawer.dart`): Dashboard, Investors, Payments (funding), Work Progress, Reports (Overview, Staff Report), User Management (Manage Users, Due Payments), Pending Requests, Monthly List, Settings. Settings sub-screens exist under `lib/admin/settings` (create project, create admin, staff allocation, investor rating, user complaints).
+Admin (drawer items, enum `AdminDrawerItem` in `lib/admin/navigation/admin_side_drawer.dart`): Dashboard, Investors, Payments (funding), Work Progress, Reports (Overview, Staff Report, Expected vs Actual, Refunds & Terminations, Investor Statement; Collection Aging built but hidden for now), User Management (Manage Users, Due Payments), Pending Requests, Monthly List, Settings. Settings sub-screens exist under `lib/admin/settings` (create project, create admin, staff allocation, investor rating, user complaints).
 
 User (bottom tabs in `lib/user/navigation/user_bottom_nav.dart`): Home, Investment, Status, Updates, Profile; plus notification screen, complaint registration, receipt PDF export/share, status media download to gallery, work-update inline video.
 

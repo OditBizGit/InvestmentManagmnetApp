@@ -64,7 +64,7 @@ Auth and account, API client core, local storage, configuration, state managemen
 ## 5. Unclear business logic (aggregated; preserved from module docs)
 
 Dashboard
-- "Active Investors" card shows the same value as "Total Investors" - intentional?
+- (Resolved 2026-11-25) Dashboard "Active Investors" card removed; replaced by "Committed Amount".
 - `fundingProgress` scale (0-1 fraction or percent): details card normalises heuristically, stats card appends "%".
 
 Funding and Payments
@@ -76,7 +76,7 @@ Investors
 - Exact second-staff / nominee payload naming beyond listed fields; whether "Active Investors" uses `isActive` only; add/edit screen creates its own cubit instead of the `get_it` factory.
 
 Monthly Payment List
-- Whether Admin should have access (`canAccessMonthlyList` passes Admin, SuperAdmin, FinancialManager).
+- Resolved 2026-11-25 (PM G1): `canAccessMonthlyList` passes FinancialManager and SuperAdmin only.
 - `receiptNumber`, `entryNo`, `investorId`, `userId` parsed but not obviously displayed.
 
 Pending Requests

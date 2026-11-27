@@ -79,6 +79,7 @@ class MonthlyPayment {
 class MonthlyPaymentTable extends StatefulWidget {
   const MonthlyPaymentTable({
     super.key,
+    required this.readOnly,
     required this.payments,
     required this.reviewIntents,
     required this.searchController,
@@ -97,6 +98,9 @@ class MonthlyPaymentTable extends StatefulWidget {
     this.isReviewSubmitting = false,
   });
 
+  /// When true (view-only roles) every modify control is not built: select
+  /// checkboxes, Actions column (Approve, Reject, Save) and "Approve All".
+  final bool readOnly;
   final List<MonthlyPayment> payments;
   final Map<int, PaymentReviewIntent> reviewIntents;
   final TextEditingController searchController;
@@ -127,6 +131,7 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
   static const double _rowHeight = 54;
   static const double _actionsWidth = 148;
   static const double _actionsLeadingGap = 16;
+  static const double _checkboxColumnWidth = 36;
 
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalController = ScrollController();
@@ -353,18 +358,19 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
       color: AppColors.white,
       child: Row(
         children: [
-          SizedBox(
-            width: 36,
-            child: _selectionCheckbox(
-              value: isApproveSelected,
-              onChanged: isPending && !widget.isReviewSubmitting
-                  ? (selected) => widget.onApproveIntentChanged(
-                        payment.id,
-                        selected,
-                      )
-                  : null,
+          if (!widget.readOnly)
+            SizedBox(
+              width: _checkboxColumnWidth,
+              child: _selectionCheckbox(
+                value: isApproveSelected,
+                onChanged: isPending && !widget.isReviewSubmitting
+                    ? (selected) => widget.onApproveIntentChanged(
+                          payment.id,
+                          selected,
+                        )
+                    : null,
+              ),
             ),
-          ),
           _dataCell('${payment.id}', 40),
           SizedBox(
             width: 132,
@@ -411,69 +417,71 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
               tone: _statusTone(payment.status),
             ),
           ),
-          const SizedBox(width: _actionsLeadingGap),
-          SizedBox(
-            width: _actionsWidth,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: isPending
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _iconAction(
-                          tooltip: 'Approve',
-                          icon: Icons.check_rounded,
-                          color: AppColors.green,
-                          selected: isApproveSelected,
-                          onTap: widget.isReviewSubmitting
-                              ? null
-                              : () => widget.onApproveIntentChanged(
-                                    payment.id,
-                                    !isApproveSelected,
-                                  ),
-                        ),
-                        const SizedBox(width: 4),
-                        _iconAction(
-                          tooltip: 'Reject',
-                          icon: Icons.close_rounded,
-                          color: AppColors.error,
-                          selected: isRejectSelected,
-                          onTap: widget.isReviewSubmitting
-                              ? null
-                              : () => widget.onRejectIntentChanged(
-                                    payment.id,
-                                    !isRejectSelected,
-                                  ),
-                        ),
-                        if (hasPendingSelection) ...[
-                          const SizedBox(width: 6),
-                          FilledButton(
-                            onPressed: widget.isReviewSubmitting
+          if (!widget.readOnly) ...[
+            const SizedBox(width: _actionsLeadingGap),
+            SizedBox(
+              width: _actionsWidth,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: isPending
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _iconAction(
+                            tooltip: 'Approve',
+                            icon: Icons.check_rounded,
+                            color: AppColors.green,
+                            selected: isApproveSelected,
+                            onTap: widget.isReviewSubmitting
                                 ? null
-                                : () => widget.onSaveRow(payment.id),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: AppColors.white,
-                              minimumSize: const Size(52, 32),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              'Save',
-                              style: TextStyle(
-                                fontSize: 8.5.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                                : () => widget.onApproveIntentChanged(
+                                      payment.id,
+                                      !isApproveSelected,
+                                    ),
                           ),
+                          const SizedBox(width: 4),
+                          _iconAction(
+                            tooltip: 'Reject',
+                            icon: Icons.close_rounded,
+                            color: AppColors.error,
+                            selected: isRejectSelected,
+                            onTap: widget.isReviewSubmitting
+                                ? null
+                                : () => widget.onRejectIntentChanged(
+                                      payment.id,
+                                      !isRejectSelected,
+                                    ),
+                          ),
+                          if (hasPendingSelection) ...[
+                            const SizedBox(width: 6),
+                            FilledButton(
+                              onPressed: widget.isReviewSubmitting
+                                  ? null
+                                  : () => widget.onSaveRow(payment.id),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: AppColors.white,
+                                minimumSize: const Size(52, 32),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                'Save',
+                                style: TextStyle(
+                                  fontSize: 8.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    )
-                  : const SizedBox.shrink(),
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -625,7 +633,7 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
           alignment: WrapAlignment.end,
           children: [
             viewHistory,
-            approveAll,
+            if (!widget.readOnly) approveAll,
           ],
         );
 
@@ -697,8 +705,14 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
           const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
-              final tableWidth = constraints.maxWidth < _minTableWidth
-                  ? _minTableWidth
+              final minTableWidth = widget.readOnly
+                  ? _minTableWidth -
+                      _checkboxColumnWidth -
+                      _actionsLeadingGap -
+                      _actionsWidth
+                  : _minTableWidth;
+              final tableWidth = constraints.maxWidth < minTableWidth
+                  ? minTableWidth
                   : constraints.maxWidth;
 
               return Scrollbar(
@@ -720,37 +734,38 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
                           ),
                           child: Row(
                             children: [
-                              SizedBox(
-                                width: 36,
-                                child: Checkbox(
-                                  tristate: true,
-                                  value: headerApproveValue,
-                                  onChanged: pendingPayments.isEmpty ||
-                                          widget.isReviewSubmitting
-                                      ? null
-                                      : (value) =>
-                                          widget.onSelectAllApproveChanged(
-                                            value ?? true,
-                                          ),
-                                  fillColor: WidgetStateProperty.resolveWith(
-                                    (states) {
-                                      if (states.contains(WidgetState.selected)) {
-                                        return MonthlyPaymentTable
-                                            ._checkboxFillSelected;
-                                      }
-                                      return AppColors.white;
-                                    },
+                              if (!widget.readOnly)
+                                SizedBox(
+                                  width: _checkboxColumnWidth,
+                                  child: Checkbox(
+                                    tristate: true,
+                                    value: headerApproveValue,
+                                    onChanged: pendingPayments.isEmpty ||
+                                            widget.isReviewSubmitting
+                                        ? null
+                                        : (value) =>
+                                            widget.onSelectAllApproveChanged(
+                                              value ?? true,
+                                            ),
+                                    fillColor: WidgetStateProperty.resolveWith(
+                                      (states) {
+                                        if (states.contains(WidgetState.selected)) {
+                                          return MonthlyPaymentTable
+                                              ._checkboxFillSelected;
+                                        }
+                                        return AppColors.white;
+                                      },
+                                    ),
+                                    checkColor: AppColors.white,
+                                    side: const BorderSide(
+                                      color: AppColors.border,
+                                      width: 1.2,
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  checkColor: AppColors.white,
-                                  side: const BorderSide(
-                                    color: AppColors.border,
-                                    width: 1.2,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
-                              ),
                               _headerCell('#ID', 40),
                               _headerCell('Investor Name', 132),
                               _headerCell('Investor Code', 88),
@@ -760,14 +775,16 @@ class _MonthlyPaymentTableState extends State<MonthlyPaymentTable> {
                               _headerCell('Paid Amount', 100),
                               _headerCell('Payment Date', 100),
                               _headerCell('Status', 88),
-                              const SizedBox(width: _actionsLeadingGap),
-                              SizedBox(
-                                width: _actionsWidth,
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: _headerCell('Actions', null),
+                              if (!widget.readOnly) ...[
+                                const SizedBox(width: _actionsLeadingGap),
+                                SizedBox(
+                                  width: _actionsWidth,
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: _headerCell('Actions', null),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),

@@ -4,6 +4,7 @@ class ApiEndpoints {
   static const String refreshToken = "/api/User/RefreshToken";
   static const String logout = "/api/User/Logout";
   static const String investorsList = "/api/Investor/GetInvestors";
+  static const String investorsAllList = "/api/Investor/GetAllInvestors";
   static const String registerInvestor = "/api/Investor/RegisterInvestor";
   static const String updateInvestor = "/api/Investor/UpdateInvestor";
   static const String investorTypes = "/api/Investor/GetInvestorTypes";
@@ -72,6 +73,13 @@ class ApiEndpoints {
   static const String getAllSettings = "/api/Settings/GetAllSettings";
   static const String getStaffReport = "/api/Staff/GetStaffReport";
   static const String getStaffReportByID = "/api/Staff/GetStaffReportDetails/{staffId}";
+  static const String reportCollectionAging = "/api/Report/CollectionAging";
+  static const String reportExpectedVsActual = "/api/Report/ExpectedVsActual";
+  static const String reportExpectedVsActualDetails =
+      "/api/Report/ExpectedVsActualDetails";
+  static const String reportRefundTermination = "/api/Report/RefundTermination";
+  static const String reportInvestorStatement =
+      "/api/Report/InvestorStatement/{userId}";
   static const String monthlyPaymentList = "/api/Investor/PaymentVerificationList";
   static const String paymentVerificationHistory =
       '/api/Investor/PaymentVerificationHistory';
