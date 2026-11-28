@@ -119,9 +119,9 @@ class _AdminWebLoginScreenState extends State<AdminWebLoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            SvgPicture.asset(
+                            Image.asset(
                               ImageConstants.newAdminIcon,
-                              height: 10.h,
+                              height: 9.h,
                               fit: BoxFit.contain,
                               alignment: Alignment.centerLeft,
                             ),

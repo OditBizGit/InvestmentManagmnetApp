@@ -470,7 +470,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                 muted: muted,
                 companySize: companySize,
                 smallSize: smallSize,
-                logoHeight: 50 * scale,
+                logoHeight: 42 * scale,
               ),
               SizedBox(height: 16 * scale),
               Text(
@@ -654,7 +654,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                   SizedBox(
                     width: 150 * scale,
                     child: Text(
-                      'for MARIBEL MATERNITY\nCARE MANJERI LLP',
+                      'for MARIBEL WELLNESS\nCENTRE MANJERI LLP',
                       textAlign: TextAlign.right,
                       style: TextStyle(
                         fontSize: smallSize,
@@ -771,7 +771,7 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MARIBEL MATERNITY CARE MANJERI LLP',
+                'MARIBEL WELLNESS CENTRE MANJERI LLP',
                 style: TextStyle(
                   fontSize: companySize,
                   fontWeight: FontWeight.w700,
@@ -803,8 +803,8 @@ class _Header extends StatelessWidget {
           ),
         ),
         SizedBox(width: 8),
-        SvgPicture.asset(
-          ImageConstants.Meribel,
+        Image.asset(
+          ImageConstants.newAdminIcon,
           height: logoHeight,
           fit: BoxFit.contain,
         ),
