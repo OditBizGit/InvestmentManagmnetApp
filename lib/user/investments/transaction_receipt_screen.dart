@@ -136,7 +136,9 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
     final amount = transaction.paidAmount > 0
         ? transaction.paidAmount
         : transaction.receivedAmount;
-    final amountNumeric = CurrencyFormatter.format(amount, symbol: '');
+    final amountFormatted = CurrencyFormatter.format(amount, symbol: '');
+    final amountNumeric =
+        '${amountFormatted.endsWith('.00') ? amountFormatted.substring(0, amountFormatted.length - 3) : amountFormatted} /-';
     final amountInWords = CurrencyFormatter.amountInWords(amount);
     final date = transaction.date;
     final dateLabel = UserInvestmentsScreen.formatDate(date);
@@ -453,15 +455,16 @@ class TransactionReceiptDocument extends StatelessWidget {
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         final scale = (w / 640).clamp(0.72, 1.15);
-        final padH = 25.0 * scale;
+        final padH = 40.0 * scale;
         final padV = 25.0 * scale;
         final titleSize = 13.5 * scale;
         final bodySize = 8.2 * scale;
         final smallSize = 7.5 * scale;
         final companySize = 8.0 * scale;
+        final rowGap = 10 * scale;
 
         return Padding(
-          padding: EdgeInsets.fromLTRB(padH, 20, padH, padV * 1.5),
+          padding: EdgeInsets.fromLTRB(padH, 20, padH, padV * 0.6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -470,9 +473,9 @@ class TransactionReceiptDocument extends StatelessWidget {
                 muted: muted,
                 companySize: companySize,
                 smallSize: smallSize,
-                logoHeight: 42 * scale,
+                logoHeight: 46 * scale,
               ),
-              SizedBox(height: 16 * scale),
+              SizedBox(height: 18 * scale),
               Text(
                 'PROVISIONAL PROJECT CONTRIBUTION RECEIPT',
                 textAlign: TextAlign.center,
@@ -490,17 +493,15 @@ class TransactionReceiptDocument extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2.2),
                     child: Text(
-                      'Receipt No : ',
+                      'Receipt No :   ',
                       style: _receiptBodyStyle(bodySize, ink),
                     ),
                   ),
-                  SizedBox(
-                    width: w * 0.1,
-                    child: _DottedValue(
-                      value: receiptNo,
-                      fontSize: bodySize,
-                      color: ink,
-                      lineColor: line,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2.2),
+                    child: Text(
+                      receiptNo,
+                      style: _receiptBodyStyle(bodySize, ink),
                     ),
                   ),
                   const Spacer(),
@@ -512,7 +513,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                     ),
                   ),
                   SizedBox(
-                    width: w * 0.15,
+                    width: w * 0.2,
                     child: _DottedValue(
                       value: dateLabel,
                       fontSize: bodySize,
@@ -522,7 +523,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 10 * scale),
+              SizedBox(height: rowGap * 1.8),
               _AmountInWordsLines(
                 amountInWords: amountInWords,
                 projectName: projectName,
@@ -531,7 +532,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                 lineColor: line,
                 scale: scale,
               ),
-              SizedBox(height: 8 * scale),
+              SizedBox(height: rowGap),
               _FillLine(
                 leading: 'Project of the LLP from Mr./Ms./ M/S ',
                 value: investorName,
@@ -539,14 +540,14 @@ class TransactionReceiptDocument extends StatelessWidget {
                 color: ink,
                 lineColor: line,
               ),
-              SizedBox(height: 8 * scale),
+              SizedBox(height: rowGap),
               _DottedValue(
                 value: '',
                 fontSize: bodySize,
                 color: ink,
                 lineColor: line,
               ),
-              SizedBox(height: 8 * scale),
+              SizedBox(height: rowGap),
               _FillLine(
                 leading: 'Residing at/ having registered office at ',
                 value: address,
@@ -554,7 +555,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                 color: ink,
                 lineColor: line,
               ),
-              SizedBox(height: 8 * scale),
+              SizedBox(height: rowGap),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -576,12 +577,12 @@ class TransactionReceiptDocument extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 8 * scale),
+              SizedBox(height: rowGap),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   SizedBox(
-                    width: 40 * scale,
+                    width: 85 * scale,
                     child: _DottedValue(
                       value: day,
                       fontSize: bodySize,
@@ -594,12 +595,12 @@ class TransactionReceiptDocument extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2.2),
                     child: Text(
-                      ' Day of ',
+                      '  Day of  ',
                       style: _receiptBodyStyle(bodySize, ink),
                     ),
                   ),
                   SizedBox(
-                    width: 100 * scale,
+                    width: 165 * scale,
                     child: _DottedValue(
                       value: month,
                       fontSize: bodySize,
@@ -612,12 +613,11 @@ class TransactionReceiptDocument extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2.2),
                     child: Text(
-                      ' Month of ',
+                      '  Month of  ',
                       style: _receiptBodyStyle(bodySize, ink),
                     ),
                   ),
-                  SizedBox(
-                    width: 44 * scale,
+                  Expanded(
                     child: _DottedValue(
                       value: yearSuffix,
                       fontSize: bodySize,
@@ -629,7 +629,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(),
+              SizedBox(height: rowGap * 2.0),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -639,20 +639,20 @@ class TransactionReceiptDocument extends StatelessWidget {
                     fontSize: bodySize,
                     color: ink,
                     scale: scale,
-                    boxWidth: 108,
+                    boxWidth: 150,
                   ),
-                  SizedBox(width: 14 * scale),
+                  SizedBox(width: 30 * scale),
                   _PaymentMethodBox(
                     label: 'Others',
                     value: !isCheque ? othersLabel : '',
                     fontSize: bodySize,
                     color: ink,
                     scale: scale,
-                    boxWidth: 118,
+                    boxWidth: 150,
                   ),
                   const Spacer(),
                   SizedBox(
-                    width: 150 * scale,
+                    width: 130 * scale,
                     child: Text(
                       'for MARIBEL WELLNESS\nCENTRE MANJERI LLP',
                       textAlign: TextAlign.right,
@@ -666,12 +666,11 @@ class TransactionReceiptDocument extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 12 * scale),
+              SizedBox(height: 2 * scale),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    width: 148 * scale,
                     padding: EdgeInsets.symmetric(
                       horizontal: 8 * scale,
                       vertical: 5 * scale,
@@ -680,26 +679,28 @@ class TransactionReceiptDocument extends StatelessWidget {
                       border: Border.all(color: ink, width: 1.1),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           '₹',
                           style: TextStyle(
-                            fontSize: bodySize + 1,
+                            fontSize: bodySize * 1.6,
                             fontWeight: FontWeight.w700,
                             color: ink,
                           ),
                         ),
                         Container(
                           width: 1,
-                          height: 16 * scale,
-                          margin: EdgeInsets.symmetric(horizontal: 6 * scale),
+                          height: 22 * scale,
+                          margin: EdgeInsets.symmetric(horizontal: 8 * scale),
                           color: ink,
                         ),
-                        Expanded(
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14 * scale),
                           child: Text(
                             amountNumeric,
                             style: TextStyle(
-                              fontSize: bodySize,
+                              fontSize: bodySize * 1.5,
                               fontWeight: FontWeight.w700,
                               color: ink,
                             ),
@@ -713,7 +714,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       SizedBox(
-                        height: 48 * scale,
+                        height: 60 * scale,
                         width: 180 * scale,
                         child: signatureUrl.isNotEmpty
                             ? Image.network(
@@ -725,7 +726,7 @@ class TransactionReceiptDocument extends StatelessWidget {
                               )
                             : const SizedBox.shrink(),
                       ),
-                      SizedBox(height: 10 * scale),
+                      SizedBox(height: 4 * scale),
                       Text(
                         'Authorized Signature',
                         style: TextStyle(
@@ -1075,7 +1076,7 @@ class _AmountInWordsLines extends StatelessWidget {
               ellipsize: false,
             ),
             if (fullWidthLine.isNotEmpty) ...[
-              SizedBox(height: 8 * scale),
+              SizedBox(height: 10 * scale),
               _DottedValue(
                 value: fullWidthLine,
                 fontSize: fontSize,
@@ -1084,7 +1085,7 @@ class _AmountInWordsLines extends StatelessWidget {
                 ellipsize: false,
               ),
             ],
-            SizedBox(height: 8 * scale),
+            SizedBox(height: 10 * scale),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -1339,12 +1340,12 @@ class _PaymentMethodBox extends StatelessWidget {
           label,
           style: _receiptBodyStyle(fontSize, color),
         ),
-        SizedBox(width: 8 * scale),
+        SizedBox(width: 12 * scale),
         CustomPaint(
           painter: _DashedRectPainter(color: color.withValues(alpha: 0.85)),
           child: SizedBox(
             width: boxWidth * scale,
-            height: 26 * scale,
+            height: 32 * scale,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 6 * scale),
               child: Align(

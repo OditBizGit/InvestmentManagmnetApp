@@ -37,7 +37,7 @@ import 'package:maribel_wellness_centre_application/user/updates/repository/upda
 final GetIt getIt = GetIt.instance;
 
 /// API base URL used by network clients / repositories.
-const String kBaseUrl = 'http://103.38.50.206:3052/';
+const String kBaseUrl = 'http://maribell.mictco.com:3052/';
 
 /// Builds a full URL from a stored relative path such as `/investorphotos/...`.
 String? resolveMediaUrl(String? path) {

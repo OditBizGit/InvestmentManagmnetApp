@@ -112,7 +112,9 @@ class TransactionReceiptDownloader {
     final amount = transaction.paidAmount > 0
         ? transaction.paidAmount
         : transaction.receivedAmount;
-    final amountNumeric = CurrencyFormatter.format(amount, symbol: '');
+    final amountFormatted = CurrencyFormatter.format(amount, symbol: '');
+    final amountNumeric =
+        '${amountFormatted.endsWith('.00') ? amountFormatted.substring(0, amountFormatted.length - 3) : amountFormatted} /-';
     final amountInWords = CurrencyFormatter.amountInWords(amount);
     final date = transaction.date;
     final dateLabel = UserInvestmentsScreen.formatDate(date);
